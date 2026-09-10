@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -14,6 +15,8 @@ import java.util.UUID;
 @Table(name = "bookings")
 @Builder
 @Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class Booking {
@@ -51,6 +54,8 @@ public class Booking {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private List<BookingDetail> bookingDetails;
+    @Builder.Default
+    private List<BookingDetail> bookingDetails = new ArrayList<>();
 
     // Quan hệ 1-1: 1 Booking gắn liền với 1 Payment tổng
     @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)
@@ -62,10 +67,13 @@ public class Booking {
     private Set<UUID> serviceIds;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
     private BookingStatus status = BookingStatus.PENDING;
 
     private int totalServices;
 
+    @Column(name = "total_amount")
     private BigDecimal totalAmount;
 
     @Version

@@ -5,11 +5,13 @@ import demo.bookingsalon.Payload.DTO.SalonDTO;
 import demo.bookingsalon.Payload.DTO.UserDTO;
 import demo.bookingsalon.Service.SalonService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,6 +32,7 @@ public class SalonController {
     }
 
     @GetMapping("/{city}")
+    @GetMapping("/city/{city}")
     public ResponseEntity<List<SalonDTO>> getSalonByCity(@PathVariable String city) {
         return ResponseEntity.status(HttpStatus.OK).body(salonService.getSalonByCity(city));
     }
@@ -42,6 +45,10 @@ public class SalonController {
     @GetMapping("/{city}/{openTime}")
     public ResponseEntity<List<SalonDTO>> getSalonByCityAndOpenTime(@PathVariable String city,
                                                                  @PathVariable LocalDateTime openTime) {
+    @GetMapping("/filter")
+    public ResponseEntity<List<SalonDTO>> getSalonByCityAndOpenTime(
+            @RequestParam String city,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime openTime) {
         return ResponseEntity.status(HttpStatus.OK).body(salonService.getSalonByCityAndOpenTime(city, openTime));
     }
 
@@ -53,10 +60,12 @@ public class SalonController {
     @PutMapping()
     public ResponseEntity<?> updateSalon(@RequestBody SalonDTO salonDTO) {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(salonService.updateSalon(salonDTO));
+        return ResponseEntity.status(HttpStatus.OK).body(salonService.updateSalon(salonDTO));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSalon(@PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(salonService.deleteSalon(id));
+        return ResponseEntity.status(HttpStatus.OK).body(salonService.deleteSalon(id));
     }
 }

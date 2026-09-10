@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,8 +22,10 @@ public class SalonDTO {
     private String address;
 
     private LocalDateTime openTime;
+    private LocalTime openTime;
 
     private LocalDateTime closeTime;
+    private LocalTime closeTime;
 
     private List<String> images;
 
@@ -32,4 +35,5 @@ public class SalonDTO {
 
     private String city;
 
+    private boolean enabled;
 }

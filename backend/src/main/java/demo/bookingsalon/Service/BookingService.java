@@ -88,8 +88,10 @@ public class BookingService {
                                         LocalDateTime bookingEndTime) throws Exception {
 
         if (bookingStartTime.isBefore(salonDTO.getOpenTime()))
+        if (salonDTO.getOpenTime() != null && bookingStartTime.toLocalTime().isBefore(salonDTO.getOpenTime()))
             throw new Exception("Booking start time is earlier than Salon open time");
         if (bookingEndTime.isAfter(salonDTO.getCloseTime()))
+        if (salonDTO.getCloseTime() != null && bookingEndTime.toLocalTime().isAfter(salonDTO.getCloseTime()))
             throw new Exception("Booking end time is later than Salon close time");
 
         // Sử dụng query với PESSIMISTIC_WRITE lock để tránh race condition

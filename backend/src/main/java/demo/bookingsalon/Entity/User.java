@@ -10,8 +10,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +22,8 @@ import java.util.UUID;
 @Table(name = "users")
 @Data
 @Builder
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -26,13 +31,26 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+@SuperBuilder
+@AttributeOverride(name = "id", column = @Column(name = "user_id"))
+public class User extends BaseUser {
 
     @Column(name = "keycloak_id")
     private UUID keycloakId;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private List<Booking> bookings = new ArrayList<>();
 
     @Column(name = "username", unique = true)
     @NotBlank(message = "Username mustn't be blank!")
     private String username;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private List<Order> orders = new ArrayList<>();
 
     @Column(name = "full_name")
     private String fullName;
@@ -60,4 +78,9 @@ public class User {
 
     @Column(name = "enabled")
     private boolean enabled = true;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private List<Review> reviews = new ArrayList<>();
 }

@@ -9,9 +9,11 @@ import lombok.*;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +23,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Stylist {
@@ -28,6 +31,8 @@ public class Stylist {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "stylist_id")
     private UUID id;
+@AttributeOverride(name = "id", column = @Column(name = "stylist_id"))
+public class Stylist extends BaseUser {
 
     @Column(name = "keycloak_id")
     @NotNull(message = "Keycloak ID mustn't be null!")
@@ -55,10 +60,12 @@ public class Stylist {
     @Column(name = "join_date")
     @CreationTimestamp
     private LocalDateTime joinDate;
+    private LocalDate joinDate;
 
     @Column(name = "leave_date")
     @UpdateTimestamp
     private LocalDateTime leaveDate;
+    private LocalDate leaveDate;
 
     @Column(name = "enabled")
     private boolean enabled = true;
@@ -71,17 +78,22 @@ public class Stylist {
 
     @Column(name = "rating")
     private Double rating;
+    @Builder.Default
+    private Double rating = 5.0;
 
     // Một thợ có thể nhận nhiều lịch đặt
     @OneToMany(mappedBy = "stylist")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private List<Booking> bookings;
+    @Builder.Default
+    private List<Booking> bookings = new ArrayList<>();
 
     // Một thợ có thể nhận nhiều dịch vụ
     @OneToMany(mappedBy = "stylist", cascade = CascadeType.ALL, orphanRemoval = true)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @Builder.Default
     private List<StylistService> stylistServices = new ArrayList<>();
 
     // Thợ làm việc tại Salon nào
