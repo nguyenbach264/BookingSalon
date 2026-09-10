@@ -3,37 +3,27 @@ package demo.bookingsalon.Entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.*;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CreationTimestamp;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "service_offerings")
-@Data
-@Builder
 @Getter
 @Setter
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ServiceOffering {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "service_offering_id")
-    private UUID id;
 @AttributeOverride(name = "id", column = @Column(name = "service_offering_id"))
 public class ServiceOffering extends BaseEntity {
 
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "description", nullable = false)
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "price", nullable = false)
@@ -53,9 +43,6 @@ public class ServiceOffering extends BaseEntity {
     @Column(name = "rating")
     @Builder.Default
     private Double rating = 5.0;
-
-    @CreationTimestamp
-    private LocalDateTime createdAt;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
@@ -78,3 +65,4 @@ public class ServiceOffering extends BaseEntity {
     @Builder.Default
     private List<StylistService> stylistServices = new ArrayList<>();
 }
+

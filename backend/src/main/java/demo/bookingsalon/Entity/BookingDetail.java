@@ -5,21 +5,14 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Entity
 @Table(name = "booking_details")
 @Getter
 @Setter
-@Builder
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-public class BookingDetail {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "booking_detail_id")
-    private UUID id;
 @AttributeOverride(name = "id", column = @Column(name = "booking_detail_id"))
 public class BookingDetail extends BaseEntity {
 
@@ -35,7 +28,7 @@ public class BookingDetail extends BaseEntity {
     @ToString.Exclude
     private ServiceOffering serviceOffering;
 
-    // RẤT QUAN TRỌNG: Lưu giá của dịch vụ tại THỜI ĐIỂM ĐẶT (tránh sai lệch hóa đơn nếu sau này dịch vụ tăng giá)
+    // Lưu giá của dịch vụ tại THỜI ĐIỂM ĐẶT (tránh sai lệch hóa đơn nếu sau này dịch vụ tăng giá)
     @Column(name = "current_price", nullable = false)
     private BigDecimal currentPrice;
 }

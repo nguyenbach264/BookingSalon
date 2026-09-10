@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import demo.bookingsalon.Entity.Product;
 import demo.bookingsalon.Entity.Review;
 import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Exception.NotFoundException;
 import demo.bookingsalon.Handler.NotificationWebSocketHandler;
-import demo.bookingsalon.Entity.Review;
 import demo.bookingsalon.Mapper.ReviewMapper;
 import demo.bookingsalon.Payload.DTO.ReviewDTO;
 import demo.bookingsalon.Repository.ProductRepository;
@@ -33,7 +31,6 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<ReviewDTO> getAllReviews() {
-        return reviewRepository.findAll().stream().map(item -> reviewMapper.toReviewDTO(item)).toList();
         return reviewRepository.findAll().stream().map(reviewMapper::toReviewDTO).toList();
     }
 
@@ -46,10 +43,6 @@ public class ReviewService {
 
     @Transactional
     public ReviewDTO createReview(ReviewDTO reviewDTO) {
-        Review review = new Review();
-        review.setUserId(reviewDTO.getUserId());
-        review.setType(reviewDTO.getType());
-        review.setReviewContent(reviewDTO.getReviewContent());
         User user = null;
         if (reviewDTO.getUserId() != null) {
             user = userRepository.findById(reviewDTO.getUserId())

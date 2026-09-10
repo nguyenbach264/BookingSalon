@@ -5,32 +5,21 @@ import demo.bookingsalon.Enum.PaymentMethod;
 import demo.bookingsalon.Enum.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "orders")
 @Getter
 @Setter
-@Builder
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Order {
 @AttributeOverride(name = "id", column = @Column(name = "order_id"))
 public class Order extends BaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "order_id")
-    private UUID id;
 
     @Column(name = "order_code", unique = true, nullable = false)
     private String orderCode;
@@ -89,13 +78,6 @@ public class Order extends BaseEntity {
 
     @Version
     private Long version;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 }
+
 

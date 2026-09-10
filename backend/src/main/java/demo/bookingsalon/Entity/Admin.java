@@ -16,4 +16,3 @@ import lombok.experimental.SuperBuilder;
 public class Admin extends BaseUser {
 
 }
-

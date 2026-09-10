@@ -9,23 +9,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "bookings")
-@Builder
-@Data
-@SuperBuilder
 @Getter
 @Setter
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Booking {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "booking_id")
-    private UUID id;
 @AttributeOverride(name = "id", column = @Column(name = "booking_id"))
 public class Booking extends BaseEntity {
 
@@ -57,7 +48,6 @@ public class Booking extends BaseEntity {
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private List<BookingDetail> bookingDetails;
     @Builder.Default
     private List<BookingDetail> bookingDetails = new ArrayList<>();
 
@@ -67,15 +57,10 @@ public class Booking extends BaseEntity {
     @ToString.Exclude
     private Payment payment;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    private Set<UUID> serviceIds;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default
     private BookingStatus status = BookingStatus.PENDING;
-
-    private int totalServices;
 
     @Column(name = "total_amount")
     private BigDecimal totalAmount;
@@ -83,5 +68,5 @@ public class Booking extends BaseEntity {
     @Version
     @Column(name = "version")
     private Long version;
-
 }
+

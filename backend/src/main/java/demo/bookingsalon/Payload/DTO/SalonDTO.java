@@ -21,10 +21,8 @@ public class SalonDTO {
 
     private String address;
 
-    private LocalDateTime openTime;
     private LocalTime openTime;
 
-    private LocalDateTime closeTime;
     private LocalTime closeTime;
 
     private List<String> images;

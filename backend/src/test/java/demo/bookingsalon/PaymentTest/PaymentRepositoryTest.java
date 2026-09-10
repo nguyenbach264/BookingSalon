@@ -55,8 +55,6 @@ public class PaymentRepositoryTest {
                 .phoneNumber("0901234567")
                 .email("salon@test.com")
                 .city("Ho Chi Minh")
-                .openTime(LocalDateTime.now().withHour(8).withMinute(0))
-                .closeTime(LocalDateTime.now().withHour(20).withMinute(0))
                 .openTime(java.time.LocalTime.of(8, 0))
                 .closeTime(java.time.LocalTime.of(20, 0))
                 .build());
@@ -87,8 +85,6 @@ public class PaymentRepositoryTest {
                 .startTime(LocalDateTime.now())
                 .endTime(LocalDateTime.now().plusMinutes(5))
                 .totalAmount(BigDecimal.valueOf(205000))
-                .totalServices(serviceIds.size())
-                .serviceIds(serviceIds)
                 .build());
 
         payment = Payment.builder()

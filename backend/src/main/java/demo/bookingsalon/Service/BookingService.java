@@ -87,10 +87,8 @@ public class BookingService {
                                         LocalDateTime bookingStartTime,
                                         LocalDateTime bookingEndTime) throws Exception {
 
-        if (bookingStartTime.isBefore(salonDTO.getOpenTime()))
         if (salonDTO.getOpenTime() != null && bookingStartTime.toLocalTime().isBefore(salonDTO.getOpenTime()))
             throw new Exception("Booking start time is earlier than Salon open time");
-        if (bookingEndTime.isAfter(salonDTO.getCloseTime()))
         if (salonDTO.getCloseTime() != null && bookingEndTime.toLocalTime().isAfter(salonDTO.getCloseTime()))
             throw new Exception("Booking end time is later than Salon close time");
 
@@ -140,8 +138,6 @@ public class BookingService {
         BigDecimal totalPrice = offeringDTOs.stream().map(ServiceOffering::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Set<UUID> idList = offeringDTOs.stream().map(ServiceOffering::getId).collect(Collectors.toSet());
-
         User user = userRepository.findById(bookingRequest.getUserId()).orElseThrow(() ->
                 new NotFoundException("User not found"));
 
@@ -152,9 +148,7 @@ public class BookingService {
                 .startTime(bookingStartTime)
                 .endTime(bookingEndTime)
                 .status(BookingStatus.PENDING)
-                .serviceIds(idList)
                 .salon(salon)
-                .totalServices(idList.size())
                 .totalAmount(totalPrice)
                 .user(user)
                 .stylist(stylist)
@@ -165,7 +159,7 @@ public class BookingService {
         bookingEventPublisher.publishBookingCreatedEvent(booking, user, salon);
 
         List<BookingDetail> bookingDetails = offeringDTOs.stream()
-                .map(service -> BookingDetail.builder()
+                .map(service -> (BookingDetail) BookingDetail.builder()
                         .booking(booking)
                         .serviceOffering(service)
                         .currentPrice(service.getPrice())

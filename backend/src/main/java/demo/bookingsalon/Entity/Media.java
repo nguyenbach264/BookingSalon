@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -19,16 +18,10 @@ import java.util.UUID;
 )
 @Getter
 @Setter
-@Builder
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Media {
 public class Media extends BaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "owner_type", nullable = false, length = 30)
@@ -38,16 +31,16 @@ public class Media extends BaseEntity {
     private UUID ownerId; // ID của Service/Product/Salon...
 
     @Column(name = "public_id", nullable = false, unique = true, length = 500)
-    private String publicId; // booking-salon/services/massage-body-xxx/image_abc
+    private String publicId;
 
     @Column(name = "secure_url", nullable = false, length = 1000)
     private String secureUrl;
 
     @Column(name = "resource_type", nullable = false, length = 30)
-    private String resourceType; //image / video / raw
+    private String resourceType; // image / video / raw
 
     @Column(name = "format", length = 30)
-    private String format; // png/jgp
+    private String format; // png / jpg
 
     @Column(name = "original_filename", length = 500)
     private String originalFilename;
@@ -61,46 +54,18 @@ public class Media extends BaseEntity {
     @Column(name = "height")
     private Integer height;
 
-    // Ảnh chính của owner.
-    @Column(name = "is_primary", nullable = false)
-    private boolean primary;
-
-    // Dùng để sắp xếp gallery.
-    @Column(name = "sort_order", nullable = false)
-    private Integer sortOrder;
+    // Ảnh chính của owner
     @Builder.Default
+    @Column(name = "is_primary", nullable = false)
+    private boolean primary = false;
+
+    // Dùng để sắp xếp gallery
+    @Builder.Default
+    @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
-    private MediaStatus status;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-
-        createdAt = now;
-        updatedAt = now;
-
-        if (status == null) {
-            status = MediaStatus.ACTIVE;
-        }
-
-        if (sortOrder == null) {
-            sortOrder = 0;
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
     @Builder.Default
+    @Column(name = "status", nullable = false, length = 30)
     private MediaStatus status = MediaStatus.ACTIVE;
 }

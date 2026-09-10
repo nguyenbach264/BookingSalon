@@ -5,7 +5,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Entity
 @Table(name = "cart_items", uniqueConstraints = {
@@ -13,18 +12,11 @@ import java.util.UUID;
 })
 @Getter
 @Setter
-@Builder
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartItem {
 @AttributeOverride(name = "id", column = @Column(name = "cart_item_id"))
 public class CartItem extends BaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "cart_item_id")
-    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id", nullable = false)
@@ -44,4 +36,5 @@ public class CartItem extends BaseEntity {
     @Column(name = "unit_price", nullable = false)
     private BigDecimal unitPrice;
 }
+
 

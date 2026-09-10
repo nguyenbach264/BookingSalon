@@ -1,40 +1,21 @@
 package demo.bookingsalon.Entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import lombok.experimental.SuperBuilder;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "reviews")
 @Getter
 @Setter
-@Builder
-@Data
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Review {
 @AttributeOverride(name = "id", column = @Column(name = "review_id"))
 public class Review extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "review_id")
-    private UUID id;
-
-    @Column(name = "user_id")
-    private UUID userId;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     @EqualsAndHashCode.Exclude
@@ -58,14 +39,5 @@ public class Review extends BaseEntity {
 
     @Column(name = "type")
     private String type;
-
-    @Column(name = "review_content")
-    private String reviewContent;
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 }
+

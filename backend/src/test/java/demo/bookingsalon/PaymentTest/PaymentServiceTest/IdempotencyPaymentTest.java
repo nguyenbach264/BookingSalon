@@ -92,8 +92,6 @@ public class IdempotencyPaymentTest {
                 .phoneNumber("090" + String.format("%07d", Math.abs(suffix.hashCode() % 10_000_000)))
                 .email("salon-" + suffix + "@test.com")
                 .city("Ho Chi Minh")
-                .openTime(LocalDateTime.now().withHour(8).withMinute(0).withSecond(0).withNano(0))
-                .closeTime(LocalDateTime.now().withHour(20).withMinute(0).withSecond(0).withNano(0))
                 .openTime(java.time.LocalTime.of(8, 0))
                 .closeTime(java.time.LocalTime.of(20, 0))
                 .build());
@@ -124,8 +122,6 @@ public class IdempotencyPaymentTest {
                 .startTime(LocalDateTime.now())
                 .endTime(LocalDateTime.now().plusMinutes(60))
                 .totalAmount(BigDecimal.valueOf(264000))
-                .totalServices(serviceIds.size())
-                .serviceIds(serviceIds)
                 .build());
 
         businessKey = user.getId() + "-" + booking.getId();

@@ -4,14 +4,12 @@ import demo.bookingsalon.Enum.PaymentMethod;
 import demo.bookingsalon.Enum.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "payment_transactions")
@@ -20,12 +18,6 @@ import java.util.UUID;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class PaymentTransaction {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "payment_transaction_id")
-    private UUID id;
 @AttributeOverride(name = "id", column = @Column(name = "payment_transaction_id"))
 public class PaymentTransaction extends BaseEntity {
 
@@ -60,11 +52,7 @@ public class PaymentTransaction extends BaseEntity {
     @Version
     private Integer version;
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "expired_at", updatable = false)
     @Column(name = "expired_at")
     private LocalDateTime expiredAt;
 }
+
