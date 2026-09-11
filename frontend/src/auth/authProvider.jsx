@@ -163,6 +163,7 @@ export function AuthProvider({ children }) {
       let config = {
         authUrl: "http://localhost:8081/realms/booking-salon-realm/protocol/openid-connect/auth",
         clientId: "booking-salon-client",
+        googleConfigured: true,
       };
 
       try {
@@ -172,6 +173,11 @@ export function AuthProvider({ children }) {
         }
       } catch (e) {
         console.warn("Could not fetch OAuth2 config, using default", e);
+      }
+
+      if (config.googleConfigured === false) {
+        setAuthError("Google Identity Provider chưa được kích hoạt trong Keycloak! Vui lòng cấu hình GOOGLE_CLIENT_ID và GOOGLE_CLIENT_SECRET.");
+        return;
       }
 
       const codeVerifier = generateCodeVerifier();
@@ -191,7 +197,8 @@ export function AuthProvider({ children }) {
         code_challenge: codeChallenge,
         code_challenge_method: "S256",
         state: state,
-        kc_idp_hint: "google", // Yeu cau Keycloak chuyen huong truc tiep toi Google Login
+        kc_idp_hint: "google", // Yeu cau Keycloak chuyen tiep thang toi Google Login
+        prompt: "select_account", // Bat buoc Google va Keycloak hien thi hop thoai chon tai khoan
       });
 
       window.location.href = `${config.authUrl}?${params.toString()}`;
@@ -276,16 +283,37 @@ export function AuthProvider({ children }) {
   // ── 8. LOGOUT ───────────────────────────────────────────────────────────────
   const logout = useCallback(async () => {
     const storedRefreshToken = storage.getRefreshToken();
+    const user = storage.getUser();
+    const token = storage.getToken();
+    const keycloakId = user?.keycloakId || user?.id;
+
     storage.clearSession();
     setAuthenticated(false);
     setUserInfo(null);
     setAuthError(null);
-    if (storedRefreshToken) {
+
+    // 1. Gọi backend để revoke refresh token VÀ kết thúc toàn bộ active sessions của user trên Keycloak DB
+    if (storedRefreshToken || keycloakId) {
       fetch("http://localhost:8080/api/auth/logout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken: storedRefreshToken }),
-      }).catch(() => console.warn("Failed to revoke refresh token at server"));
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          refreshToken: storedRefreshToken,
+          keycloakId: keycloakId,
+        }),
+      }).catch((e) => console.warn("Failed to revoke session at server", e));
+    }
+
+    // 2. Kích hoạt OIDC front-channel logout để xoá session cookie tại Keycloak (localhost:8081)
+    try {
+      const oidcLogoutUrl = `http://localhost:8081/realms/booking-salon-realm/protocol/openid-connect/logout?client_id=booking-salon-client&post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`;
+      const img = new Image();
+      img.src = oidcLogoutUrl;
+    } catch (e) {
+      console.warn("Front-channel logout ping error", e);
     }
   }, []);
 

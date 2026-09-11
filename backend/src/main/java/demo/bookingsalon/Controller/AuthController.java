@@ -60,8 +60,25 @@ public class AuthController {
 
     // GET /api/auth/oauth2/config — Lấy thông tin cấu hình OIDC/OAuth2 cho frontend
     @GetMapping("/oauth2/config")
-    public ResponseEntity<Map<String, String>> getOAuth2Config() {
+    public ResponseEntity<Map<String, Object>> getOAuth2Config() {
         return ResponseEntity.ok(authService.getOAuth2Config());
+    }
+
+    // GET /api/auth/oauth2/google-status — Kiểm tra trạng thái Google IDP trong Keycloak
+    @GetMapping("/oauth2/google-status")
+    public ResponseEntity<Map<String, Object>> getGoogleStatus() {
+        return ResponseEntity.ok(authService.getGoogleIdpStatus());
+    }
+
+    // POST /api/auth/oauth2/setup-google — Cấu hình nhanh Google IDP vào Keycloak
+    @PostMapping("/oauth2/setup-google")
+    public ResponseEntity<Map<String, Object>> setupGoogle(@RequestBody Map<String, String> body) {
+        String clientId = body.get("clientId");
+        String clientSecret = body.get("clientSecret");
+        if (clientId == null || clientSecret == null || clientId.isBlank() || clientSecret.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "clientId và clientSecret không được để trống!"));
+        }
+        return ResponseEntity.ok(authService.setupGoogleIdp(clientId, clientSecret));
     }
 
     // POST /api/auth/refresh-token
@@ -74,13 +91,16 @@ public class AuthController {
         return ResponseEntity.ok(authService.refreshToken(refreshToken));
     }
 
-    // POST /api/auth/logout
+    // POST /api/auth/logout — Revoke token và xoá user session trong Keycloak
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody Map<String, String> body) {
-        String refreshToken = body.get("refreshToken");
-        if (refreshToken != null && !refreshToken.isBlank()) {
-            authService.logout(refreshToken);
+    public ResponseEntity<Void> logout(@RequestBody(required = false) Map<String, String> body,
+                                       @AuthenticationPrincipal Jwt jwt) {
+        String refreshToken = body != null ? body.get("refreshToken") : null;
+        String keycloakId = body != null ? body.get("keycloakId") : null;
+        if (keycloakId == null && jwt != null) {
+            keycloakId = jwt.getSubject();
         }
+        authService.logout(refreshToken, keycloakId);
         return ResponseEntity.noContent().build();
     }
 

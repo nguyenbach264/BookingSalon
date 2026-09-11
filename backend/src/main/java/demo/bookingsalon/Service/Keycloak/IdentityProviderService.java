@@ -13,6 +13,8 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -29,8 +31,27 @@ public class IdentityProviderService {
     @Value("${keycloak.realm}")
     private String realm;
 
+    @Value("${keycloak.idp.google.client-id:}")
+    private String configuredGoogleClientId;
+
+    @Value("${keycloak.idp.google.client-secret:}")
+    private String configuredGoogleClientSecret;
+
     public IdentityProviderService(Keycloak keycloak) {
         this.keycloak = keycloak;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void autoConfigureGoogleIdpOnStartup() {
+        if (configuredGoogleClientId != null && !configuredGoogleClientId.isBlank() &&
+            configuredGoogleClientSecret != null && !configuredGoogleClientSecret.isBlank()) {
+            try {
+                log.info("Auto-configuring Google Identity Provider in Keycloak on startup...");
+                initOrUpdateGoogle(configuredGoogleClientId, configuredGoogleClientSecret);
+            } catch (Exception ex) {
+                log.warn("Failed to auto-configure Google IDP on startup: {}", ex.getMessage());
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -234,11 +255,55 @@ public class IdentityProviderService {
         Map<String, String> config = new HashMap<>();
         config.put("clientId", clientId);
         config.put("clientSecret", clientSecret);
-        config.put("defaultScope", "email profile");
-        config.put("prompt", "consent");
+        config.put("defaultScope", "email profile openid");
+        config.put("prompt", "select_account");
+        config.put("syncMode", "FORCE");
         request.setConfig(config);
 
         return request;
+    }
+
+    /**
+     * Khởi tạo hoặc cập nhật Google Identity Provider vào Keycloak
+     */
+    public IdentityProviderResponse initOrUpdateGoogle(String clientId, String clientSecret) {
+        String alias = "google";
+        try {
+            List<IdentityProviderRepresentation> list = keycloak.realm(realm).identityProviders().findAll();
+            boolean exists = list != null && list.stream().anyMatch(idp -> alias.equalsIgnoreCase(idp.getAlias()));
+            if (exists) {
+                IdentityProviderResource resource = keycloak.realm(realm).identityProviders().get(alias);
+                IdentityProviderRepresentation rep = resource.toRepresentation();
+                if (rep.getConfig() == null) rep.setConfig(new HashMap<>());
+                rep.getConfig().put("clientId", clientId);
+                rep.getConfig().put("clientSecret", clientSecret);
+                rep.getConfig().put("defaultScope", "email profile openid");
+                rep.getConfig().put("prompt", "select_account");
+                rep.getConfig().put("syncMode", "FORCE");
+                rep.setEnabled(true);
+                rep.setTrustEmail(true);
+                resource.update(rep);
+                log.info("Google Identity Provider in Keycloak realm '{}' updated successfully", realm);
+                return getIdentityProvider(alias);
+            }
+        } catch (Exception ex) {
+            log.warn("Could not check existing Google IDP, will try create: {}", ex.getMessage());
+        }
+
+        CreateIdentityProviderRequest request = buildGoogleConfig(alias, clientId, clientSecret);
+        return createIdentityProvider(request);
+    }
+
+    /**
+     * Kiểm tra Google IDP đã được cấu hình và kích hoạt trong Keycloak chưa
+     */
+    public boolean isGoogleIdpConfigured() {
+        try {
+            List<IdentityProviderRepresentation> list = keycloak.realm(realm).identityProviders().findAll();
+            return list != null && list.stream().anyMatch(idp -> "google".equalsIgnoreCase(idp.getAlias()) && Boolean.TRUE.equals(idp.isEnabled()));
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     /**

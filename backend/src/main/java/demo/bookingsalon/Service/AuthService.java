@@ -14,6 +14,7 @@ import demo.bookingsalon.Payload.Request.Business.SendOtpRequest;
 import demo.bookingsalon.Payload.Request.Business.VerifyOtpRequest;
 import demo.bookingsalon.Payload.Response.Business.AuthResponse;
 import demo.bookingsalon.Repository.UserRepository;
+import demo.bookingsalon.Service.Keycloak.IdentityProviderService;
 import demo.bookingsalon.Service.Keycloak.RoleService;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +52,7 @@ public class AuthService {
     private final ObjectMapper objectMapper;
     private final EmailOtpService emailOtpService;
     private final UserService userService;
+    private final IdentityProviderService identityProviderService;
 
     @Value("${keycloak.server-url}")
     private String keycloakServerUrl;
@@ -212,13 +214,34 @@ public class AuthService {
     // =====================================================
     // 4. LẤY CẤU HÌNH OAUTH2 CHO FRONTEND
     // =====================================================
-    public Map<String, String> getOAuth2Config() {
-        Map<String, String> config = new HashMap<>();
+    public Map<String, Object> getOAuth2Config() {
+        Map<String, Object> config = new HashMap<>();
         config.put("serverUrl", keycloakServerUrl);
         config.put("realm", realm);
         config.put("clientId", frontendClientId);
         config.put("authUrl", keycloakServerUrl + "/realms/" + realm + "/protocol/openid-connect/auth");
+        config.put("googleConfigured", identityProviderService.isGoogleIdpConfigured());
+        config.put("googleBrokerUrl", keycloakServerUrl + "/realms/" + realm + "/broker/google/endpoint");
         return config;
+    }
+
+    public Map<String, Object> setupGoogleIdp(String clientId, String clientSecret) {
+        identityProviderService.initOrUpdateGoogle(clientId, clientSecret);
+        return Map.of(
+                "message", "Cấu hình Google Identity Provider trong Keycloak thành công!",
+                "alias", "google",
+                "authorizedRedirectUri", keycloakServerUrl + "/realms/" + realm + "/broker/google/endpoint"
+        );
+    }
+
+    public Map<String, Object> getGoogleIdpStatus() {
+        boolean configured = identityProviderService.isGoogleIdpConfigured();
+        return Map.of(
+                "configured", configured,
+                "alias", "google",
+                "authorizedRedirectUri", keycloakServerUrl + "/realms/" + realm + "/broker/google/endpoint",
+                "message", configured ? "Google IDP đã sẵn sàng" : "Google IDP chưa được cấu hình trong Keycloak"
+        );
     }
 
     // =====================================================
@@ -388,28 +411,40 @@ public class AuthService {
     }
 
     // =====================================================
-    // 8. LOGOUT — Revoke refresh token tại Keycloak
+    // 8. LOGOUT — Revoke refresh token & xoá sạch user sessions tại Keycloak
     // =====================================================
-    public void logout(String refreshToken) {
-        String logoutUrl = keycloakServerUrl + "/realms/" + realm + "/protocol/openid-connect/logout";
+    public void logout(String refreshToken, String keycloakId) {
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            String logoutUrl = keycloakServerUrl + "/realms/" + realm + "/protocol/openid-connect/logout";
 
-        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        formData.add("client_id", clientId);
-        formData.add("client_secret", clientSecret);
-        formData.add("refresh_token", refreshToken);
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("client_id", clientId);
+            formData.add("client_secret", clientSecret);
+            formData.add("refresh_token", refreshToken);
 
-        try {
-            webClientBuilder.build()
-                    .post()
-                    .uri(logoutUrl)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body(BodyInserters.fromFormData(formData))
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();
-            log.info("Refresh token revoked successfully");
-        } catch (Exception ex) {
-            log.warn("Failed to revoke refresh token at Keycloak: {}", ex.getMessage());
+            try {
+                webClientBuilder.build()
+                        .post()
+                        .uri(logoutUrl)
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .body(BodyInserters.fromFormData(formData))
+                        .retrieve()
+                        .bodyToMono(Void.class)
+                        .block();
+                log.info("Refresh token revoked successfully at Keycloak");
+            } catch (Exception ex) {
+                log.warn("Failed to revoke refresh token at Keycloak: {}", ex.getMessage());
+            }
+        }
+
+        // Xóa sạch toàn bộ active sessions của user trên Keycloak để lần đăng nhập sau không bị tự động login
+        if (keycloakId != null && !keycloakId.isBlank()) {
+            try {
+                keycloak.realm(realm).users().get(keycloakId).logout();
+                log.info("Terminated all active Keycloak sessions for user {}", keycloakId);
+            } catch (Exception ex) {
+                log.warn("Failed to terminate user sessions in Keycloak for {}: {}", keycloakId, ex.getMessage());
+            }
         }
     }
 
