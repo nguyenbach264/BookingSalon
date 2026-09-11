@@ -16,7 +16,7 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -46,8 +46,8 @@ public class CreateSalonTest {
                 .phoneNumber("0901234567")
                 .email("salon@test.com")
                 .city("Ho Chi Minh")
-                .openTime(LocalDateTime.now().withHour(8).withMinute(0))
-                .closeTime(LocalDateTime.now().withHour(20).withMinute(0))
+                .openTime(LocalTime.of(8, 0))
+                .closeTime(LocalTime.of(20, 0))
                 .build();
     }
 
@@ -58,6 +58,5 @@ public class CreateSalonTest {
                 .content(objectMapper.writeValueAsString(salonDTO)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.salonName").value("Test Salon"));
-
     }
 }

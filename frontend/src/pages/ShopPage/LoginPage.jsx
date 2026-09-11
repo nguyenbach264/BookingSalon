@@ -1,21 +1,20 @@
-import React, { useState } from 'react';
-import { 
-  Checkbox, 
-  Input, 
-  Button, 
-  Modal, 
-  Form
-} from 'antd';
-import { useAuth } from '../../auth/authProvider';
+import React, { useState } from "react";
+import { Checkbox, Input, Button, Modal, Form, Alert } from "antd";
+import { useAuth } from "../../auth/authProvider";
 
-const LoginPage = ({visible, onClose, onGoToRegister, onLoggedIn}) => {
+const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
   const [isForgot, setIsForgot] = useState(false);
+  const [form] = Form.useForm();
+  const { login, loginWithGoogle, loginWithKeycloak, loading, authError } = useAuth();
 
-  const { login } = useAuth(); 
-
-  const handleClickOnRegister = () => {
-
-  }
+  const handleLogin = async (values) => {
+    const result = await login(values.identifier, values.password);
+    if (result.success) {
+      form.resetFields();
+      onClose();
+      if (onLoggedIn) onLoggedIn(result.user);
+    }
+  };
 
   return (
     <Modal
@@ -23,55 +22,77 @@ const LoginPage = ({visible, onClose, onGoToRegister, onLoggedIn}) => {
       onCancel={onClose}
       footer={null}
       centered
-      width={720}
-      className="rounded-xl overflow-hidden"
+      width={680}
+      className="rounded-2xl overflow-hidden"
+      destroyOnClose
+      afterClose={() => {
+        form.resetFields();
+        setIsForgot(false);
+      }}
     >
-      <div className="p-6">
+      <div className="p-6 sm:p-8">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-black text-gray-900 tracking-wider">30SHINE SHOP</h2>
+          <h2 className="text-2xl font-black text-[#1b2a4a] tracking-wider">30SHINE SHOP</h2>
           <p className="text-sm text-gray-500 mt-1">
-            {isForgot ? 'Khôi phục mật khẩu tài khoản của bạn' : 'Đăng nhập để trải nghiệm dịch vụ tốt nhất'}
+            {isForgot ? "Khôi phục mật khẩu tài khoản của bạn" : "Đăng nhập để trải nghiệm dịch vụ tốt nhất"}
           </p>
         </div>
 
+        {authError && !isForgot && (
+          <Alert message={authError} type="error" showIcon className="mb-4 rounded-xl" />
+        )}
+
         {!isForgot ? (
-          <Form layout="vertical" className="space-y-4">
-            <Form.Item label="Email hoặc Số điện thoại" name="identifier" className="mb-3">
-              <Input placeholder="Nhập email hoặc số điện thoại..." size="large" className="rounded-lg" />
+          <Form form={form} layout="vertical" onFinish={handleLogin}>
+            <Form.Item
+              label={<span className="font-semibold text-gray-700">Tên đăng nhập</span>}
+              name="identifier"
+              rules={[{ required: true, message: "Vui lòng nhập tên đăng nhập!" }]}
+              className="mb-3"
+            >
+              <Input placeholder="Nhập tên đăng nhập..." size="large" className="rounded-xl h-11" />
             </Form.Item>
 
-            <Form.Item label="Mật khẩu" name="password" className="mb-2">
-              <Input.Password placeholder="Nhập mật khẩu..." size="large" className="rounded-lg" />
+            <Form.Item
+              label={<span className="font-semibold text-gray-700">Mật khẩu</span>}
+              name="password"
+              rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+              className="mb-2"
+            >
+              <Input.Password placeholder="Nhập mật khẩu..." size="large" className="rounded-xl h-11" />
             </Form.Item>
 
-            <div className="flex items-center justify-between text-sm mb-4">
-              <Checkbox>Ghi nhớ đăng nhập</Checkbox>
+            <div className="flex items-center justify-between text-sm mb-5">
+              <Checkbox className="text-gray-600">Ghi nhớ đăng nhập</Checkbox>
               <span
-                onClick={() => setIsForgot(true)} 
+                onClick={() => setIsForgot(true)}
                 className="text-blue-600 hover:underline cursor-pointer font-medium"
               >
                 Quên mật khẩu?
               </span>
             </div>
 
-            <Button 
-              type="primary" 
-              htmlType="submit"   
-              className="w-full h-11 bg-[#1b2a4a] hover:bg-[#244383] font-bold text-base rounded-lg"
-              // onClick={onLoggedIn}
-              onClick={login}
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              className="w-full h-12 bg-[#1b2a4a] hover:bg-[#244383] font-bold text-base rounded-xl mb-4 shadow-sm"
             >
               ĐĂNG NHẬP
             </Button>
 
             <div className="relative my-4 text-center">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
-              <span className="relative bg-white px-3 text-xs text-gray-400 uppercase">Hoặc đăng nhập bằng</span>
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <span className="relative bg-white px-3 text-xs text-gray-400 uppercase font-semibold">Hoặc đăng nhập bằng</span>
             </div>
 
-            <button 
+            {/* Nut Dang nhap Google bang Authorization Code Flow + PKCE */}
+            <button
               type="button"
-              className="w-full flex items-center justify-center gap-3 border border-gray-300 py-2.5 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700 shadow-sm"
+              onClick={loginWithGoogle}
+              className="w-full flex items-center justify-center gap-3 border border-gray-300 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors font-semibold text-gray-700 shadow-sm cursor-pointer mb-2"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
@@ -82,10 +103,22 @@ const LoginPage = ({visible, onClose, onGoToRegister, onLoggedIn}) => {
               Tiếp tục với Google
             </button>
 
+            {/* Nut Keycloak SSO tuy chon */}
+            <button
+              type="button"
+              onClick={loginWithKeycloak}
+              className="w-full flex items-center justify-center gap-2 text-xs text-gray-500 hover:text-[#1b2a4a] py-2 transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Đăng nhập bằng tài khoản Keycloak SSO
+            </button>
+
             <div className="text-center mt-4 text-sm text-gray-600">
-              Chưa có tài khoản?{' '}
-              <span 
-                onClick={onGoToRegister} 
+              Chưa có tài khoản?{" "}
+              <span
+                onClick={onGoToRegister}
                 className="text-blue-600 font-bold hover:underline cursor-pointer"
               >
                 Đăng ký ngay
@@ -93,21 +126,16 @@ const LoginPage = ({visible, onClose, onGoToRegister, onLoggedIn}) => {
             </div>
           </Form>
         ) : (
-          <Form layout="vertical" className="space-y-4">
+          <Form layout="vertical">
             <Form.Item label="Nhập Email hoặc Số điện thoại đã đăng ký" name="resetEmail" className="mb-4">
-              <Input placeholder="Email hoặc SĐT..." size="large" className="rounded-lg" />
+              <Input placeholder="Email hoặc SĐT..." size="large" className="rounded-xl h-11" />
             </Form.Item>
-
-            <Button 
-              type="primary" 
-              className="w-full h-11 bg-[#1b2a4a] hover:bg-[#244383] font-bold text-base rounded-lg"
-            >
+            <Button type="primary" className="w-full h-12 bg-[#1b2a4a] hover:bg-[#244383] font-bold text-base rounded-xl">
               GỬI MÃ XÁC NHẬN
             </Button>
-
-            <div className="text-center mt-3">
-              <span 
-                onClick={() => setIsForgot(false)} 
+            <div className="text-center mt-4">
+              <span
+                onClick={() => setIsForgot(false)}
                 className="text-gray-600 hover:text-blue-600 cursor-pointer text-sm font-medium"
               >
                 ← Quay lại đăng nhập

@@ -1,14 +1,16 @@
+import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./pages/Routes/AppRoutes";
-import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
+import AuthAxiosInjector from "./service/api/AuthAxiosInjector";
 
 function App() {
   return (
     <>
+      <AuthAxiosInjector />
       <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>
     </>
-  )
+  );
 }
 
-export default App; 
+export default App;

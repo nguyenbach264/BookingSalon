@@ -1,6 +1,5 @@
 package demo.bookingsalon.Controller;
 
-import demo.bookingsalon.Payload.Request.Business.CreateUserRequest;
 import demo.bookingsalon.Payload.Request.Keycloak.ResetPasswordRequest;
 import demo.bookingsalon.Payload.Request.Business.UpdateUserRequest;
 import demo.bookingsalon.Payload.Response.Business.UserResponse;
@@ -15,14 +14,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * UserController - quan ly user (danh cho ADMIN).
+ * Luu y: Dang ky moi -> POST /api/auth/register, Dang nhap -> /api/auth/login
+ */
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
+
     private final UserService userService;
     private final RoleService roleService;
 
-    @GetMapping()
+    @GetMapping
     public List<UserResponse> getUsers() {
         return userService.getUsers();
     }
@@ -32,9 +36,9 @@ public class UserController {
         return userService.getUserById(id);
     }
 
-    @GetMapping("/user/{id}")
-    public ResponseEntity<?> getUserInDbByKeycloakId(@PathVariable("id") UUID keycloakId) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getUserInDbById(keycloakId));
+    @GetMapping("/keycloak/{id}")
+    public ResponseEntity<UserResponse> getUserByKeycloakId(@PathVariable("id") UUID keycloakId) {
+        return ResponseEntity.ok(userService.getUserInDbById(keycloakId));
     }
 
     @GetMapping("/{id}/roles")
@@ -42,34 +46,36 @@ public class UserController {
         return roleService.getUserRealmRoles(id);
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<?> createUser(@RequestBody @Valid CreateUserRequest request) {
-        UserResponse userResponse = userService.createUser(request);
-        if (userResponse == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid credential");
-        return ResponseEntity.status(HttpStatus.OK).body(userResponse);
-    }
-
     @PutMapping("/{id}")
-    public void updateUser(@PathVariable UUID id, @Valid UpdateUserRequest request) {
+    public ResponseEntity<Void> updateUser(@PathVariable UUID id,
+                                           @RequestBody @Valid UpdateUserRequest request) {
         userService.updateUser(id, request);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}/reset-password")
-    public void resetPassword(@PathVariable UUID id, @RequestBody @Valid ResetPasswordRequest resetPasswordRequest) {
-        userService.resetPassword(id, resetPasswordRequest.getNewPassword());
+    public ResponseEntity<Void> resetPassword(@PathVariable UUID id,
+                                              @RequestBody @Valid ResetPasswordRequest request) {
+        userService.resetPassword(id, request.getNewPassword());
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
-    public String deleteUser(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
-        return "Xóa thành công!";
+        return ResponseEntity.noContent().build();
     }
 
-    // Hàm chuyển toàn bộ user keycloak sang db
+    @GetMapping("/paginated")
+    public ResponseEntity<List<UserResponse>> getUsersByPagination(
+            @RequestParam(defaultValue = "0") int first,
+            @RequestParam(defaultValue = "20") int max,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(userService.getUsersByPagination(first, max, search));
+    }
+
     @GetMapping("/reverse")
-    public ResponseEntity<?> reverseUser() {
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(userService.reverseUser());
+    public ResponseEntity<String> reverseUser() {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.reverseUser());
     }
-
 }

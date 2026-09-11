@@ -2,7 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --scrollbar-width: 0px;
-  scrollbar-width: var(--scrollbar-width);
+/*
+ * Co dinh thanh cuon va chong layout shift (lech giao dien) khi mo/dong Modal:
+ * 1. scrollbar-gutter: stable dam bao khoang trong thanh cuon luon duoc bao toan.
+ * 2. overflow-y: scroll ep hien thi ranh cuon doc co dinh tren toan he thong.
+ * 3. Cho phep trang nen van cuon binh thuong ngay ca khi Modal dang bat.
+ */
+html {
+  overflow-y: scroll !important;
+  scrollbar-gutter: stable;
+}
+
+body {
+  overflow-y: auto !important;
+  padding-right: 0px !important;
+  margin-right: 0px !important;
+}
+
+/* Ghi de triet de class .ant-scrolling-effect cua Ant Design rc-util scroll locker */
+html body.ant-scrolling-effect,
+body.ant-scrolling-effect {
+  overflow-y: auto !important;
+  padding-right: 0px !important;
+  touch-action: auto !important;
+}
+
+.ant-modal-wrap {
+  overflow-y: auto;
 }

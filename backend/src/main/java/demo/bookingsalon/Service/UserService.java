@@ -1,5 +1,6 @@
 package demo.bookingsalon.Service;
 
+import demo.bookingsalon.Entity.Cart;
 import demo.bookingsalon.Entity.User;
 import demo.bookingsalon.Enum.RoleApp;
 import demo.bookingsalon.Exception.NotFoundException;
@@ -195,6 +196,71 @@ public class UserService {
             e.printStackTrace();
         }
         return "Reverse succesfully";
+    }
+
+    // 9. Đồng bộ hoặc tạo mới user khi đăng nhập qua Google / OAuth2
+    public User syncOrProvisionOAuth2User(UUID keycloakId, String email, String username, String fullName, String avatarUrl) {
+        User user = userRepository.findByKeycloakId(keycloakId);
+        if (user != null) {
+            boolean changed = false;
+            if (fullName != null && !fullName.isBlank() && !fullName.equals(user.getFullName())) {
+                user.setFullName(fullName);
+                changed = true;
+            }
+            if (avatarUrl != null && !avatarUrl.isBlank() && !avatarUrl.equals(user.getAvatarUrl())) {
+                user.setAvatarUrl(avatarUrl);
+                changed = true;
+            }
+            if (changed) {
+                userRepository.save(user);
+            }
+            return user;
+        }
+
+        // Kiểm tra theo email nếu đã tồn tại thì liên kết keycloakId
+        if (email != null && !email.isBlank()) {
+            User existingByEmail = userRepository.findAll().stream()
+                    .filter(u -> email.equalsIgnoreCase(u.getEmail()))
+                    .findFirst()
+                    .orElse(null);
+            if (existingByEmail != null) {
+                existingByEmail.setKeycloakId(keycloakId);
+                return userRepository.save(existingByEmail);
+            }
+        }
+
+        // Tạo user mới trong DB
+        String resolvedUsername = (username != null && !username.isBlank())
+                ? username
+                : (email != null ? email.split("@")[0] : "user_" + UUID.randomUUID().toString().substring(0, 8));
+
+        if (userRepository.findByUsername(resolvedUsername).isPresent()) {
+            resolvedUsername = resolvedUsername + "_" + UUID.randomUUID().toString().substring(0, 4);
+        }
+
+        User newUser = User.builder()
+                .keycloakId(keycloakId)
+                .username(resolvedUsername)
+                .email(email)
+                .fullName(fullName != null && !fullName.isBlank() ? fullName : resolvedUsername)
+                .avatarUrl(avatarUrl)
+                .enabled(true)
+                .build();
+
+        Cart cart = Cart.builder()
+                .user(newUser)
+                .build();
+        newUser.setCart(cart);
+
+        User savedUser = userRepository.save(newUser);
+
+        try {
+            roleService.assignRealmRole(keycloakId, RoleApp.USER.name());
+        } catch (Exception e) {
+            log.warn("Could not assign default role to OAuth2 user {}: {}", keycloakId, e.getMessage());
+        }
+
+        return savedUser;
     }
 
 }
