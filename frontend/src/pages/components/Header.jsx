@@ -47,6 +47,7 @@ const Header = ({ onLoginClick, isLoggedIn }) => {
       content: "Bạn có chắc chắn muốn đăng xuất không?",
       okText: "Đăng xuất",
       cancelText: "Hủy",
+      scrollLock: false,
       okButtonProps: { danger: true },
       onOk: async () => { await logout(); navigate("/"); }
     });

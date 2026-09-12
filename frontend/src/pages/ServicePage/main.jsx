@@ -117,6 +117,7 @@ export default function ServicePage() {
         footer={null}
         centered
         width={480}
+        scrollLock={false}
         className="rounded-xl overflow-hidden"
       >
         {selectedService && (

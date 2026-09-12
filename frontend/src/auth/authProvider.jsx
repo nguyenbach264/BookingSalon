@@ -175,8 +175,8 @@ export function AuthProvider({ children }) {
         console.warn("Could not fetch OAuth2 config, using default", e);
       }
 
-      if (config.googleConfigured === false) {
-        setAuthError("Google Identity Provider chưa được kích hoạt trong Keycloak! Vui lòng cấu hình GOOGLE_CLIENT_ID và GOOGLE_CLIENT_SECRET.");
+      if (config.googleConfigured === false && config.googleEnabled === false) {
+        setAuthError("Google Identity Provider chưa được kích hoạt trong hệ thống! Vui lòng cấu hình GOOGLE_CLIENT_ID và GOOGLE_CLIENT_SECRET.");
         return;
       }
 

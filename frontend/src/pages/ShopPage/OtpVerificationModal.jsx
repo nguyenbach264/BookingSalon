@@ -159,6 +159,7 @@ const OtpVerificationModal = ({
       footer={null}
       centered
       width={520}
+      scrollLock={false}
       className="rounded-2xl overflow-hidden"
       destroyOnClose
     >

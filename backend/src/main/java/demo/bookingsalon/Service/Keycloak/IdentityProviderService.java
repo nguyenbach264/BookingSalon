@@ -1,12 +1,11 @@
 package demo.bookingsalon.Service.Keycloak;
 
-import demo.bookingsalon.Payload.Request.Keycloak.CreateIdentityProviderMapperRequest;
-import demo.bookingsalon.Payload.Request.Keycloak.CreateIdentityProviderRequest;
-import demo.bookingsalon.Payload.Request.Keycloak.UpdateIdentityProviderRequest;
-import demo.bookingsalon.Payload.Response.Keycloak.IdentityProviderMapperResponse;
-import demo.bookingsalon.Payload.Response.Keycloak.IdentityProviderResponse;
-import jakarta.ws.rs.core.Response;
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
@@ -17,11 +16,13 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import demo.bookingsalon.Payload.Request.Keycloak.CreateIdentityProviderMapperRequest;
+import demo.bookingsalon.Payload.Request.Keycloak.CreateIdentityProviderRequest;
+import demo.bookingsalon.Payload.Request.Keycloak.UpdateIdentityProviderRequest;
+import demo.bookingsalon.Payload.Response.Keycloak.IdentityProviderMapperResponse;
+import demo.bookingsalon.Payload.Response.Keycloak.IdentityProviderResponse;
+import jakarta.ws.rs.core.Response;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j

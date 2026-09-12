@@ -23,6 +23,7 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
       footer={null}
       centered
       width={680}
+      scrollLock={false}
       className="rounded-2xl overflow-hidden"
       destroyOnClose
       afterClose={() => {

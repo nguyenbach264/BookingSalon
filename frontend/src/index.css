@@ -3,30 +3,35 @@
 @tailwind utilities;
 
 /*
- * Co dinh thanh cuon va chong layout shift (lech giao dien) khi mo/dong Modal:
- * 1. scrollbar-gutter: stable dam bao khoang trong thanh cuon luon duoc bao toan.
- * 2. overflow-y: scroll ep hien thi ranh cuon doc co dinh tren toan he thong.
- * 3. Cho phep trang nen van cuon binh thuong ngay ca khi Modal dang bat.
+ * Cố định thanh cuộn và chống layout shift (lệch giao diện trái/phải) khi mở/đóng Modal:
+ * 1. scrollbar-gutter: stable đảm bảo khoảng trống thanh cuộn luôn được bảo toàn, không bị biến mất khi bật modal.
+ * 2. overflow-y: scroll ép hiển thị rãnh cuộn dọc cố định trên toàn hệ thống.
+ * 3. Khóa cứng width: 100% trên html và body (ghi đè triệt để width: calc(100% - 17px) do Ant Design scrollLocker chèn vào).
+ * 4. Cho phép trang nền vẫn cuộn mượt mà ngay cả khi Modal đang bật.
  */
 html {
   overflow-y: scroll !important;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: stable !important;
 }
 
-body {
+html body,
+body,
+body.ant-scrolling-effect,
+html body.ant-scrolling-effect {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
   overflow-y: auto !important;
   padding-right: 0px !important;
   margin-right: 0px !important;
-}
-
-/* Ghi de triet de class .ant-scrolling-effect cua Ant Design rc-util scroll locker */
-html body.ant-scrolling-effect,
-body.ant-scrolling-effect {
-  overflow-y: auto !important;
-  padding-right: 0px !important;
   touch-action: auto !important;
 }
 
+/* Đảm bảo khung bọc modal không cướp sự kiện scroll của trang */
 .ant-modal-wrap {
-  overflow-y: auto;
+  overflow-y: auto !important;
+}
+
+.ant-modal-mask {
+  touch-action: auto !important;
 }
