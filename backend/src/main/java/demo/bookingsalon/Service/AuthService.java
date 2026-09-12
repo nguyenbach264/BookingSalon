@@ -57,6 +57,9 @@ public class AuthService {
     @Value("${keycloak.server-url}")
     private String keycloakServerUrl;
 
+    @Value("${keycloak.public-url}")
+    private String keycloakPublicUrl;
+
     @Value("${keycloak.realm}")
     private String realm;
 
@@ -216,12 +219,14 @@ public class AuthService {
     // =====================================================
     public Map<String, Object> getOAuth2Config() {
         Map<String, Object> config = new HashMap<>();
-        config.put("serverUrl", keycloakServerUrl);
+        config.put("serverUrl", keycloakPublicUrl);
         config.put("realm", realm);
         config.put("clientId", frontendClientId);
-        config.put("authUrl", keycloakServerUrl + "/realms/" + realm + "/protocol/openid-connect/auth");
-        config.put("googleConfigured", identityProviderService.isGoogleIdpConfigured());
-        config.put("googleBrokerUrl", keycloakServerUrl + "/realms/" + realm + "/broker/google/endpoint");
+        config.put("authUrl", keycloakPublicUrl + "/realms/" + realm + "/protocol/openid-connect/auth");
+        config.put("googleEnabled", identityProviderService.isGoogleIdpEnabled());
+        config.put("googleConfigured", identityProviderService.isGoogleIdpEnabled()
+                && identityProviderService.isGoogleIdpConfigured());
+        config.put("googleBrokerUrl", keycloakPublicUrl + "/realms/" + realm + "/broker/google/endpoint");
         return config;
     }
 
@@ -230,7 +235,7 @@ public class AuthService {
         return Map.of(
                 "message", "Cấu hình Google Identity Provider trong Keycloak thành công!",
                 "alias", "google",
-                "authorizedRedirectUri", keycloakServerUrl + "/realms/" + realm + "/broker/google/endpoint"
+                "authorizedRedirectUri", keycloakPublicUrl + "/realms/" + realm + "/broker/google/endpoint"
         );
     }
 
@@ -239,7 +244,7 @@ public class AuthService {
         return Map.of(
                 "configured", configured,
                 "alias", "google",
-                "authorizedRedirectUri", keycloakServerUrl + "/realms/" + realm + "/broker/google/endpoint",
+                "authorizedRedirectUri", keycloakPublicUrl + "/realms/" + realm + "/broker/google/endpoint",
                 "message", configured ? "Google IDP đã sẵn sàng" : "Google IDP chưa được cấu hình trong Keycloak"
         );
     }
@@ -413,10 +418,13 @@ public class AuthService {
     // =====================================================
     // 8. LOGOUT — Revoke refresh token & xoá sạch user sessions tại Keycloak
     // =====================================================
+    public void logout(String refreshToken) {
+        logout(refreshToken, null);
+    }
+
     public void logout(String refreshToken, String keycloakId) {
         if (refreshToken != null && !refreshToken.isBlank()) {
             String logoutUrl = keycloakServerUrl + "/realms/" + realm + "/protocol/openid-connect/logout";
-
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
             formData.add("client_id", clientId);
             formData.add("client_secret", clientSecret);

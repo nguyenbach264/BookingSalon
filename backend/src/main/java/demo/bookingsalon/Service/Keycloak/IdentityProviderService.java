@@ -31,6 +31,9 @@ public class IdentityProviderService {
     @Value("${keycloak.realm}")
     private String realm;
 
+    @Value("${keycloak.idp.google.enabled:false}")
+    private boolean googleIdpEnabled;
+
     @Value("${keycloak.idp.google.client-id:}")
     private String configuredGoogleClientId;
 
@@ -43,7 +46,7 @@ public class IdentityProviderService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void autoConfigureGoogleIdpOnStartup() {
-        if (configuredGoogleClientId != null && !configuredGoogleClientId.isBlank() &&
+        if (googleIdpEnabled && configuredGoogleClientId != null && !configuredGoogleClientId.isBlank() &&
             configuredGoogleClientSecret != null && !configuredGoogleClientSecret.isBlank()) {
             try {
                 log.info("Auto-configuring Google Identity Provider in Keycloak on startup...");
@@ -52,6 +55,12 @@ public class IdentityProviderService {
                 log.warn("Failed to auto-configure Google IDP on startup: {}", ex.getMessage());
             }
         }
+    }
+
+    public boolean isGoogleIdpEnabled() {
+        return googleIdpEnabled
+                && configuredGoogleClientId != null && !configuredGoogleClientId.isBlank()
+                && configuredGoogleClientSecret != null && !configuredGoogleClientSecret.isBlank();
     }
 
     // ═══════════════════════════════════════════════════════════════════

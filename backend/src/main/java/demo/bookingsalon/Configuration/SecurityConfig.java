@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/register/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/oauth2/setup-google").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/auth/oauth2/**").permitAll()
                 .requestMatchers(HttpMethod.GET,  "/api/auth/oauth2/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/refresh-token").permitAll()

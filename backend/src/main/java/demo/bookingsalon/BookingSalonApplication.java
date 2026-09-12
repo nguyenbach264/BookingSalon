@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class BookingSalonApplication {
 
     public static void main(String[] args) {
-        // Tự động load file .env vào System Properties trước khi Spring Boot khởi động
+        // Tự động nạp file .env vào System Properties trước khi Spring Boot khởi động
         DotenvLoader.load();
 
         SpringApplication.run(BookingSalonApplication.class, args);
