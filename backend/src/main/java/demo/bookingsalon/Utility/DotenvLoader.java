@@ -49,8 +49,8 @@ public class DotenvLoader {
                     value = value.substring(1, value.length() - 1);
                 }
 
-                // Thiết lập vào System Properties nếu chưa tồn tại
-                if (System.getProperty(key) == null && System.getenv(key) == null) {
+                // Luôn nạp vào System Properties để Spring Boot properties có thể lấy trực tiếp
+                if (System.getProperty(key) == null) {
                     System.setProperty(key, value);
                     count++;
                 }

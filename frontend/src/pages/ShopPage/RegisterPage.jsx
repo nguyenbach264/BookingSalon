@@ -52,7 +52,6 @@ const RegisterPage = ({ visible, onClose, onLogin, onRegistered }) => {
         footer={null}
         width={680}
         centered
-        scrollLock={false}
         className="rounded-2xl overflow-hidden"
         destroyOnClose
         afterClose={() => {

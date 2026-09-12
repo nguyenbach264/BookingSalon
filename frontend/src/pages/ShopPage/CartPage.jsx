@@ -44,7 +44,6 @@ const CartPage = ({ visible, onClose, cartItems, onUpdateQuantity, onRemoveItem,
       footer={modalFooter}
       centered
       width={720}
-      scrollLock={false}
       className="font-sans rounded-xl overflow-hidden"
     >
       <div className="max-h-[50vh] overflow-y-auto py-4 pr-2 -mr-2">

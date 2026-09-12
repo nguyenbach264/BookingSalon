@@ -265,6 +265,8 @@ public class IdentityProviderService {
         Map<String, String> config = new HashMap<>();
         config.put("clientId", clientId);
         config.put("clientSecret", clientSecret);
+        config.put("defaultScope", "email profile");
+        config.put("prompt", "consent");
         config.put("defaultScope", "email profile openid");
         config.put("prompt", "select_account");
         config.put("syncMode", "FORCE");
