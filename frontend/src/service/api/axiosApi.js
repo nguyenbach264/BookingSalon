@@ -3,6 +3,7 @@ import axios from "axios";
 const api = axios.create({
   baseURL: "http://localhost:8080/api",
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 let _authContext = null;
@@ -24,10 +25,10 @@ api.interceptors.request.use(
 let isRefreshing = false;
 let failedQueue = [];
 
-function processQueue(error, token = null) {
+function processQueue(error) {
   failedQueue.forEach((prom) => {
     if (error) prom.reject(error);
-    else prom.resolve(token);
+    else prom.resolve();
   });
   failedQueue = [];
 }
@@ -38,13 +39,14 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (originalRequest.url?.includes("/auth/")) {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({
-            resolve: (token) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              resolve(api(originalRequest));
-            },
+            resolve: () => resolve(api(originalRequest)),
             reject,
           });
         });
@@ -54,12 +56,16 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const newToken = await _authContext?.refreshToken?.();
-        processQueue(null, newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return api(originalRequest);
+        const refreshed = await _authContext?.refreshToken?.();
+        if (refreshed) {
+          processQueue(null);
+          return api(originalRequest);
+        } else {
+          throw new Error("Session expired");
+        }
       } catch (refreshError) {
-        processQueue(refreshError, null);
+        processQueue(refreshError);
+        _authContext?.logout?.();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

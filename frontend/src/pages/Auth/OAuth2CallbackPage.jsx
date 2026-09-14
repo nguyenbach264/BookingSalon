@@ -61,7 +61,7 @@ export default function OAuth2CallbackPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-gray-100">
-        <h2 className="text-2xl font-black text-[#1b2a4a] mb-2 tracking-wide">30SHINE SALON</h2>
+        <h2 className="text-2xl font-black text-[#1b2a4a] mb-2 tracking-wide">BACHBARBER SALON</h2>
         
         {loading ? (
           <div className="py-8">

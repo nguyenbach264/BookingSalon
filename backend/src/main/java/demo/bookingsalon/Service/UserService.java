@@ -1,5 +1,17 @@
 package demo.bookingsalon.Service;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import org.keycloak.admin.client.CreatedResponseUtil;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import demo.bookingsalon.Entity.Cart;
 import demo.bookingsalon.Entity.User;
 import demo.bookingsalon.Enum.RoleApp;
@@ -13,18 +25,6 @@ import demo.bookingsalon.Service.Keycloak.RoleService;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.usertype.UserVersionType;
-import org.keycloak.admin.client.CreatedResponseUtil;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -225,6 +225,12 @@ public class UserService {
                     .orElse(null);
             if (existingByEmail != null) {
                 existingByEmail.setKeycloakId(keycloakId);
+                if (fullName != null && !fullName.isBlank() && (existingByEmail.getFullName() == null || existingByEmail.getFullName().isBlank())) {
+                    existingByEmail.setFullName(fullName);
+                }
+                if (avatarUrl != null && !avatarUrl.isBlank() && (existingByEmail.getAvatarUrl() == null || existingByEmail.getAvatarUrl().isBlank())) {
+                    existingByEmail.setAvatarUrl(avatarUrl);
+                }
                 return userRepository.save(existingByEmail);
             }
         }

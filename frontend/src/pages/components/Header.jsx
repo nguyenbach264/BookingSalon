@@ -55,7 +55,7 @@ const Header = ({ onLoginClick, isLoggedIn }) => {
   const userMenu = [
     {
       key: 'name',
-      label: <div className="font-bold text-[#1b2a4a] text-base py-1 px-1">{userInfo?.username}</div>,
+      label: <div className="font-bold text-[#1b2a4a] text-base py-1 px-1">{userInfo?.fullName}</div>,
       disabled: true,
     },
     { type: 'divider' },
@@ -84,7 +84,8 @@ const Header = ({ onLoginClick, isLoggedIn }) => {
   ];
 
   const handleNotificationClick = (notification) => {
-    setSelectedNotification(notification);
+    console.log("Notification clicked:", userInfo);
+    setSelectedNotification(notification);  
     navigate("/notification_detail")
   };
 
@@ -144,8 +145,12 @@ const Header = ({ onLoginClick, isLoggedIn }) => {
 
                 <Dropdown menu={{ items: userMenu }} placement="bottomRight" trigger={['click']}>
                   <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 md:pr-3 rounded-full transition-colors border border-transparent hover:border-gray-200">
-                    <Avatar src="https://i.pravatar.cc/150?img=11" size="default" className="bg-blue-100 border border-gray-200 shadow-sm" />
-                    <span className="hidden md:block font-medium text-gray-700 text-sm">{userInfo?.username}</span>
+                    <Avatar 
+                      src={userInfo?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.fullName || userInfo?.username || "User")}&background=1b2a4a&color=fff`} 
+                      size="default" 
+                      className="bg-blue-100 border border-gray-200 shadow-sm" 
+                    />
+                    <span className="hidden md:block font-medium text-gray-700 text-sm">{userInfo?.fullName || userInfo?.username}</span>
                   </div>
                 </Dropdown>
               </div>

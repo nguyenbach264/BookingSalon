@@ -1,6 +1,9 @@
 package demo.bookingsalon.Configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,18 +11,23 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import demo.bookingsalon.Service.BffSessionService;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final BffSessionService bffSessionService;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
@@ -31,11 +39,13 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
-                // Endpoint cong khai
+                // Endpoint công khai
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/register/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/oauth2/setup-google").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/auth/oauth2/**").permitAll()
                 .requestMatchers(HttpMethod.GET,  "/api/auth/oauth2/**").permitAll()
@@ -46,7 +56,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/salons/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/service-offerings/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                // Yeu cau dang nhap
+                // Yêu cầu đăng nhập
                 .requestMatchers(HttpMethod.GET,  "/api/auth/me").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/bookings/**").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/bookings/my/**").authenticated()
@@ -85,6 +95,19 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
+                .bearerTokenResolver(request -> {
+                    // 1. Kiểm tra header Authorization trước (cho Swagger, Postman, external clients)
+                    String header = request.getHeader("Authorization");
+                    if (header != null && header.startsWith("Bearer ")) {
+                        return header.substring(7);
+                    }
+                    // 2. BFF Pattern: Trích xuất Access Token hợp lệ từ Server-side HttpSession
+                    String sessionToken = bffSessionService.resolveValidAccessToken(request);
+                    if (sessionToken != null && !sessionToken.isBlank()) {
+                        return sessionToken;
+                    }
+                    return null;
+                })
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 .authenticationEntryPoint((request, response, ex) -> {
                     response.setStatus(401);

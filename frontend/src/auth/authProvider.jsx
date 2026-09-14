@@ -1,28 +1,25 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { generateCodeVerifier, generateCodeChallenge, generateState } from "./pkce";
 
-// ── AUTH STORAGE HELPERS ──────────────────────────────────────────────────────
-const TOKEN_KEY = "bs_access_token";
-const REFRESH_KEY = "bs_refresh_token";
-const USER_KEY = "bs_user";
-
-const storage = {
-  getToken: () => sessionStorage.getItem(TOKEN_KEY),
-  getRefreshToken: () => sessionStorage.getItem(REFRESH_KEY),
-  getUser: () => {
-    try { return JSON.parse(sessionStorage.getItem(USER_KEY)); } catch { return null; }
-  },
-  setSession: (accessToken, refreshToken, user) => {
-    sessionStorage.setItem(TOKEN_KEY, accessToken);
-    sessionStorage.setItem(REFRESH_KEY, refreshToken);
-    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-  },
-  clearSession: () => {
-    sessionStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(REFRESH_KEY);
-    sessionStorage.removeItem(USER_KEY);
-  },
+// Proactively purge any token and user keys from localStorage/sessionStorage
+export const purgeBrowserTokens = () => {
+  try {
+    const keysToRemove = [
+      "refresh_token", "access_token", "token", 
+      "refreshToken", "accessToken",
+      "bs_access_token", "bs_refresh_token",
+      "jwt", "id_token",
+      "bs_user", "user", "userInfo", "role"
+    ];
+    keysToRemove.forEach(k => {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    });
+  } catch (e) {}
 };
+
+// Immediately purge on module load
+purgeBrowserTokens();
 
 // ── CONTEXT ──────────────────────────────────────────────────────────────────
 const AuthContext = createContext(null);
@@ -35,34 +32,127 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
 
-  const refreshingRef = useRef(false);
-  const refreshSubscribersRef = useRef([]);
-
+  // ── KIỂM TRA PHIÊN ĐĂNG NHẬP BAN ĐẦU QUA SERVER SESSION (BFF) ───────────────
   useEffect(() => {
-    const token = storage.getToken();
-    const user = storage.getUser();
-    if (token && user) {
-      setAuthenticated(true);
-      setUserInfo(user);
-    }
-    setInitialized(true);
+    let isMounted = true;
+
+    const checkCurrentSession = async () => {
+      purgeBrowserTokens();
+
+      try {
+        // Gửi cookie JSESSIONID lên BFF để kiểm tra phiên đăng nhập
+        const res = await fetch("http://localhost:8080/api/auth/me", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          const user = await res.json();
+          if (isMounted) {
+            setUserInfo(user);
+            setAuthenticated(true);
+          }
+        } else {
+          if (isMounted) {
+            setUserInfo(null);
+            setAuthenticated(false);
+          }
+        }
+      } catch (err) {
+        console.warn("Session check error or backend offline:", err);
+        if (isMounted) {
+          setUserInfo(null);
+          setAuthenticated(false);
+        }
+      } finally {
+        if (isMounted) {
+          setInitialized(true);
+        }
+      }
+    };
+
+    checkCurrentSession();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // ── 1. ĐĂNG NHẬP TRỰC TIẾP (USERNAME & PASSWORD TẠI MODAL) ─────────────────
-  const login = useCallback(async (username, password) => {
+  // ── 1a. ĐĂNG NHẬP BẰNG AUTHORIZATION CODE FLOW + PKCE ──────────────────────
+  const login = useCallback(async (arg1 = {}, password, rememberMe = false) => {
+    // Nếu truyền username và password (dạng direct form call từ modal), sử dụng loginDirect
+    if (typeof arg1 === "string" && typeof password === "string") {
+      return loginDirect(arg1, password, rememberMe);
+    }
+
+    setLoading(true);
+    setAuthError(null);
+    try {
+      let config = {
+        authUrl: "http://localhost:8081/realms/booking-salon-realm/protocol/openid-connect/auth",
+        clientId: "booking-salon-client",
+      };
+
+      try {
+        const res = await fetch("http://localhost:8080/api/auth/oauth2/config", {
+          credentials: "include",
+        });
+        if (res.ok) {
+          config = await res.json();
+        }
+      } catch (e) {
+        console.warn("Could not fetch OAuth2 config, using default", e);
+      }
+
+      const codeVerifier = generateCodeVerifier();
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
+      const state = generateState();
+      const redirectUri = window.location.origin + "/oauth2/callback";
+
+      sessionStorage.setItem("oauth_code_verifier", codeVerifier);
+      sessionStorage.setItem("oauth_state", state);
+      sessionStorage.setItem("oauth_redirect_after", window.location.pathname + window.location.search);
+
+      const params = new URLSearchParams({
+        client_id: config.clientId || "booking-salon-client",
+        redirect_uri: redirectUri,
+        response_type: "code",
+        scope: "openid profile email",
+        code_challenge: codeChallenge,
+        code_challenge_method: "S256",
+        state: state,
+      });
+
+      const options = typeof arg1 === "object" && arg1 !== null ? arg1 : { loginHint: arg1 };
+      if (options.idpHint) params.append("kc_idp_hint", options.idpHint);
+      if (options.prompt) params.append("prompt", options.prompt);
+      if (options.loginHint) params.append("login_hint", options.loginHint);
+
+      window.location.href = `${config.authUrl}?${params.toString()}`;
+    } catch (error) {
+      console.error("Error initiating Authorization Code Flow with PKCE:", error);
+      setAuthError("Không thể khởi động luồng đăng nhập PKCE lúc này!");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ── 1b. ĐĂNG NHẬP TRỰC TIẾP (DIRECT ACCESS GRANT / MODAL FORM) ──────────────
+  const loginDirect = useCallback(async (username, password, rememberMe = false) => {
     setLoading(true);
     setAuthError(null);
     try {
       const response = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        credentials: "include", // Nhận cookie JSESSIONID từ server BFF
+        body: JSON.stringify({ username, password, rememberMe }),
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!");
       }
-      storage.setSession(data.accessToken, data.refreshToken, data.user);
+
       setUserInfo(data.user);
       setAuthenticated(true);
       return { success: true, user: data.user };
@@ -83,6 +173,7 @@ export function AuthProvider({ children }) {
       const response = await fetch("http://localhost:8080/api/auth/register/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(data),
       });
 
@@ -108,6 +199,7 @@ export function AuthProvider({ children }) {
       const response = await fetch("http://localhost:8080/api/auth/register/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(data),
       });
 
@@ -116,7 +208,6 @@ export function AuthProvider({ children }) {
         throw new Error(resData.message || "Xác thực OTP thất bại. Vui lòng kiểm tra lại mã!");
       }
 
-      storage.setSession(resData.accessToken, resData.refreshToken, resData.user);
       setUserInfo(resData.user);
       setAuthenticated(true);
       return { success: true, user: resData.user };
@@ -129,7 +220,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // ── 4. ĐĂNG KÝ TRỰC TIẾP (FALLBACK KHÔNG QUA OTP NẾU CẦN) ───────────────────
+  // ── 4. ĐĂNG KÝ TRỰC TIẾP (FALLBACK) ─────────────────────────────────────────
   const register = useCallback(async (formData) => {
     setLoading(true);
     setAuthError(null);
@@ -137,13 +228,13 @@ export function AuthProvider({ children }) {
       const response = await fetch("http://localhost:8080/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(formData),
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || "Đăng ký thất bại. Vui lòng thử lại!");
       }
-      storage.setSession(data.accessToken, data.refreshToken, data.user);
       setUserInfo(data.user);
       setAuthenticated(true);
       return { success: true, user: data.user };
@@ -157,101 +248,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ── 5. ĐĂNG NHẬP GOOGLE BẰNG AUTHORIZATION CODE FLOW + PKCE ────────────────
-  const loginWithGoogle = useCallback(async () => {
-    try {
-      // Lấy thông tin cấu hình OAuth2 từ Backend
-      let config = {
-        authUrl: "http://localhost:8081/realms/booking-salon-realm/protocol/openid-connect/auth",
-        clientId: "booking-salon-client",
-        googleConfigured: true,
-      };
+  const loginWithGoogle = useCallback(() => {
+    return login({ idpHint: "google", prompt: "select_account" });
+  }, [login]);
 
-      try {
-        const res = await fetch("http://localhost:8080/api/auth/oauth2/config");
-        if (res.ok) {
-          config = await res.json();
-        }
-      } catch (e) {
-        console.warn("Could not fetch OAuth2 config, using default", e);
-      }
-
-      if (config.googleConfigured === false) {
-        setAuthError("Google Identity Provider chưa được kích hoạt trong Keycloak! Vui lòng cấu hình GOOGLE_CLIENT_ID và GOOGLE_CLIENT_SECRET.");
-        return;
-      }
-
-      const codeVerifier = generateCodeVerifier();
-      const codeChallenge = await generateCodeChallenge(codeVerifier);
-      const state = generateState();
-      const redirectUri = window.location.origin + "/oauth2/callback";
-
-      sessionStorage.setItem("oauth_code_verifier", codeVerifier);
-      sessionStorage.setItem("oauth_state", state);
-      sessionStorage.setItem("oauth_redirect_after", window.location.pathname + window.location.search);
-
-      const params = new URLSearchParams({
-        client_id: config.clientId || "booking-salon-client",
-        redirect_uri: redirectUri,
-        response_type: "code",
-        scope: "openid profile email",
-        code_challenge: codeChallenge,
-        code_challenge_method: "S256",
-        state: state,
-        kc_idp_hint: "google", // Yeu cau Keycloak chuyen tiep thang toi Google Login
-        prompt: "select_account", // Bat buoc Google va Keycloak hien thi hop thoai chon tai khoan
-      });
-
-      window.location.href = `${config.authUrl}?${params.toString()}`;
-    } catch (error) {
-      console.error("Error initiating Google login with PKCE:", error);
-      setAuthError("Không thể khởi động đăng nhập Google lúc này!");
-    }
-  }, []);
-
-  // ── 6. ĐĂNG NHẬP KEYCLOAK SSO BẰNG AUTHORIZATION CODE FLOW + PKCE ──────────
-  const loginWithKeycloak = useCallback(async () => {
-    try {
-      let config = {
-        authUrl: "http://localhost:8081/realms/booking-salon-realm/protocol/openid-connect/auth",
-        clientId: "booking-salon-client",
-      };
-
-      try {
-        const res = await fetch("http://localhost:8080/api/auth/oauth2/config");
-        if (res.ok) {
-          config = await res.json();
-        }
-      } catch (e) {
-        console.warn("Could not fetch OAuth2 config, using default", e);
-      }
-
-      const codeVerifier = generateCodeVerifier();
-      const codeChallenge = await generateCodeChallenge(codeVerifier);
-      const state = generateState();
-      const redirectUri = window.location.origin + "/oauth2/callback";
-
-      sessionStorage.setItem("oauth_code_verifier", codeVerifier);
-      sessionStorage.setItem("oauth_state", state);
-      sessionStorage.setItem("oauth_redirect_after", window.location.pathname + window.location.search);
-
-      const params = new URLSearchParams({
-        client_id: config.clientId || "booking-salon-client",
-        redirect_uri: redirectUri,
-        response_type: "code",
-        scope: "openid profile email",
-        code_challenge: codeChallenge,
-        code_challenge_method: "S256",
-        state: state,
-      });
-
-      window.location.href = `${config.authUrl}?${params.toString()}`;
-    } catch (error) {
-      console.error("Error initiating Keycloak SSO login with PKCE:", error);
-      setAuthError("Không thể khởi động đăng nhập Keycloak SSO!");
-    }
-  }, []);
-
-  // ── 7. XỬ LÝ CALLBACK TỪ OAUTH2 VÀ HOÀN TẤT TOKEN EXCHANGE BẰNG PKCE ────────
+  // ── 6. XỬ LÝ CALLBACK TỪ OAUTH2 VÀ HOÀN TẤT TOKEN EXCHANGE BẰNG PKCE ────────
   const handleOAuth2Callback = useCallback(async (code, codeVerifier, redirectUri) => {
     setLoading(true);
     setAuthError(null);
@@ -259,6 +260,7 @@ export function AuthProvider({ children }) {
       const response = await fetch("http://localhost:8080/api/auth/oauth2/callback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Nhận và gán HttpOnly cookies
         body: JSON.stringify({ code, codeVerifier, redirectUri }),
       });
 
@@ -267,7 +269,6 @@ export function AuthProvider({ children }) {
         throw new Error(data.message || "Xác thực tài khoản Google thất bại!");
       }
 
-      storage.setSession(data.accessToken, data.refreshToken, data.user);
       setUserInfo(data.user);
       setAuthenticated(true);
       return { success: true, user: data.user };
@@ -280,31 +281,21 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // ── 8. LOGOUT ───────────────────────────────────────────────────────────────
+  // ── 7. LOGOUT ───────────────────────────────────────────────────────────────
   const logout = useCallback(async () => {
-    const storedRefreshToken = storage.getRefreshToken();
-    const user = storage.getUser();
-    const token = storage.getToken();
-    const keycloakId = user?.keycloakId || user?.id;
-
-    storage.clearSession();
     setAuthenticated(false);
     setUserInfo(null);
     setAuthError(null);
+    purgeBrowserTokens();
 
-    // 1. Gọi backend để revoke refresh token VÀ kết thúc toàn bộ active sessions của user trên Keycloak DB
-    if (storedRefreshToken || keycloakId) {
-      fetch("http://localhost:8080/api/auth/logout", {
+    // 1. Gọi backend để BFF xoá session server, thu hồi token tại Keycloak và xoá JSESSIONID
+    try {
+      await fetch("http://localhost:8080/api/auth/logout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          refreshToken: storedRefreshToken,
-          keycloakId: keycloakId,
-        }),
-      }).catch((e) => console.warn("Failed to revoke session at server", e));
+        credentials: "include",
+      });
+    } catch (e) {
+      console.warn("Failed to logout at server", e);
     }
 
     // 2. Kích hoạt OIDC front-channel logout để xoá session cookie tại Keycloak (localhost:8081)
@@ -317,44 +308,71 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // ── 9. REFRESH TOKEN TỰ ĐỘNG ───────────────────────────────────────────────
+  // ── 8. REFRESH TOKEN (BFF ĐÃ TỰ ĐỘNG REFRESH SERVER-SIDE) ───────────────────
   const refreshToken = useCallback(async () => {
-    if (refreshingRef.current) {
-      return new Promise((resolve, reject) => {
-        refreshSubscribersRef.current.push({ resolve, reject });
-      });
-    }
-    refreshingRef.current = true;
-    const storedRefreshToken = storage.getRefreshToken();
-    if (!storedRefreshToken) {
-      refreshingRef.current = false;
-      logout();
-      return Promise.reject(new Error("No refresh token"));
-    }
     try {
       const response = await fetch("http://localhost:8080/api/auth/refresh-token", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken: storedRefreshToken }),
+        credentials: "include",
       });
-      if (!response.ok) throw new Error("Refresh token expired");
-      const data = await response.json();
-      storage.setSession(data.accessToken, data.refreshToken, data.user ?? userInfo);
-      if (data.user) setUserInfo(data.user);
-      refreshSubscribersRef.current.forEach(({ resolve }) => resolve(data.accessToken));
-      refreshSubscribersRef.current = [];
-      return data.accessToken;
+      return response.ok;
     } catch (error) {
-      refreshSubscribersRef.current.forEach(({ reject }) => reject(error));
-      refreshSubscribersRef.current = [];
-      logout();
-      return Promise.reject(error);
-    } finally {
-      refreshingRef.current = false;
+      return false;
     }
-  }, [userInfo, logout]);
+  }, []);
 
-  const getToken = useCallback(() => storage.getToken(), []);
+  // ── 9. QUÊN MẬT KHẨU: GỬI OTP ──────────────────────────────────────────────
+  const sendForgotPasswordOtp = useCallback(async (email) => {
+    setLoading(true);
+    setAuthError(null);
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/forgot-password/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Không thể gửi mã xác nhận. Vui lòng kiểm tra lại email!");
+      }
+      return { success: true, data };
+    } catch (error) {
+      const message = error.message || "Có lỗi xảy ra khi gửi mã xác thực!";
+      setAuthError(message);
+      return { success: false, error: message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ── 10. QUÊN MẬT KHẨU: XÁC THỰC OTP & ĐẶT LẠI MẬT KHẨU ──────────────────────
+  const verifyAndResetPassword = useCallback(async ({ email, otp, newPassword }) => {
+    setLoading(true);
+    setAuthError(null);
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/forgot-password/verify-and-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, otp, newPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Đặt lại mật khẩu thất bại. Vui lòng kiểm tra mã OTP!");
+      }
+      return { success: true, data };
+    } catch (error) {
+      const message = error.message || "Có lỗi xảy ra khi đặt lại mật khẩu!";
+      setAuthError(message);
+      return { success: false, error: message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Legacy helper cho axios interceptor (cookie tự động gửi qua withCredentials: true)
+  const getToken = useCallback(() => null, []);
 
   return (
     <AuthContext.Provider
@@ -365,15 +383,17 @@ export function AuthProvider({ children }) {
         loading,
         authError,
         login,
+        loginDirect,
         register,
         sendRegisterOtp,
         verifyOtpAndRegister,
         loginWithGoogle,
-        loginWithKeycloak,
         handleOAuth2Callback,
         logout,
         refreshToken,
         getToken,
+        sendForgotPasswordOtp,
+        verifyAndResetPassword,
       }}
     >
       {initialized ? children : null}

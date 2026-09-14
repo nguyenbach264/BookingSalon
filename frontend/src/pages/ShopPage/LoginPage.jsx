@@ -1,19 +1,164 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Checkbox, Input, Button, Modal, Form, Alert } from "antd";
 import { useAuth } from "../../auth/authProvider";
 
+const REMEMBERED_ACCOUNT_KEY = "bs_remembered_account";
+
+const getRememberedAccount = () => {
+  try {
+    const raw = localStorage.getItem(REMEMBERED_ACCOUNT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const saveRememberedAccount = (identifier, password) => {
+  try {
+    localStorage.setItem(
+      REMEMBERED_ACCOUNT_KEY,
+      JSON.stringify({ identifier, password, rememberMe: true })
+    );
+  } catch {}
+};
+
+const clearRememberedAccount = () => {
+  try {
+    localStorage.removeItem(REMEMBERED_ACCOUNT_KEY);
+  } catch {}
+};
+
 const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
   const [isForgot, setIsForgot] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1: input email, 2: input OTP + new password
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [countdown, setCountdown] = useState(0);
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState(null);
+  const [forgotSuccess, setForgotSuccess] = useState(null);
+
   const [form] = Form.useForm();
-  const { login, loginWithGoogle, loginWithKeycloak, loading, authError } = useAuth();
+  const [forgotEmailForm] = Form.useForm();
+  const [forgotResetForm] = Form.useForm();
+
+  const { login, loginWithGoogle, loading, authError, sendForgotPasswordOtp, verifyAndResetPassword } = useAuth();
+
+  // Khôi phục thông tin đăng nhập đã ghi nhớ khi mở modal
+  useEffect(() => {
+    if (visible) {
+      const saved = getRememberedAccount();
+      if (saved && saved.identifier) {
+        form.setFieldsValue({
+          identifier: saved.identifier,
+          password: saved.password || "",
+          rememberMe: true,
+        });
+      } else {
+        form.resetFields();
+      }
+    }
+  }, [visible, form]);
+
+  // Đếm ngược 60 giây khi gửi OTP quên mật khẩu
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   const handleLogin = async (values) => {
-    const result = await login(values.identifier, values.password);
-    if (result.success) {
-      form.resetFields();
+    const rememberMe = Boolean(values.rememberMe);
+    if (rememberMe) {
+      saveRememberedAccount(values.identifier, values.password);
+    } else {
+      clearRememberedAccount();
+    }
+
+    const result = await login(values.identifier, values.password, rememberMe);
+    if (result && result.success) {
       onClose();
       if (onLoggedIn) onLoggedIn(result.user);
     }
+  };
+
+  const handleSendForgotOtp = async (values) => {
+    setForgotLoading(true);
+    setForgotError(null);
+    setForgotSuccess(null);
+    const result = await sendForgotPasswordOtp(values.email);
+    setForgotLoading(false);
+    if (result.success) {
+      setForgotEmail(values.email);
+      setForgotStep(2);
+      setCountdown(60);
+      setForgotSuccess("Mã OTP đã được gửi đến email của bạn.");
+    } else {
+      setForgotError(result.error || "Không thể gửi mã OTP. Vui lòng kiểm tra lại email!");
+    }
+  };
+
+  const handleResendForgotOtp = async () => {
+    if (countdown > 0 || !forgotEmail) return;
+    setForgotLoading(true);
+    setForgotError(null);
+    const result = await sendForgotPasswordOtp(forgotEmail);
+    setForgotLoading(false);
+    if (result.success) {
+      setCountdown(60);
+      setForgotSuccess("Mã OTP mới đã được gửi thành công!");
+    } else {
+      setForgotError(result.error || "Gửi lại OTP thất bại, vui lòng thử lại!");
+    }
+  };
+
+  const handleResetPassword = async (values) => {
+    setForgotLoading(true);
+    setForgotError(null);
+    setForgotSuccess(null);
+    const result = await verifyAndResetPassword({
+      email: forgotEmail,
+      otp: values.otp,
+      newPassword: values.newPassword,
+    });
+    setForgotLoading(false);
+    if (result.success) {
+      setForgotSuccess("Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay bây giờ.");
+      setTimeout(() => {
+        setIsForgot(false);
+        setForgotStep(1);
+        setForgotEmail("");
+        setForgotSuccess(null);
+        forgotResetForm.resetFields();
+        forgotEmailForm.resetFields();
+      }, 2000);
+    } else {
+      setForgotError(result.error || "Đặt lại mật khẩu thất bại. Vui lòng kiểm tra lại mã OTP!");
+    }
+  };
+
+  const resetAllModals = () => {
+    const saved = getRememberedAccount();
+    if (saved && saved.identifier) {
+      form.setFieldsValue({
+        identifier: saved.identifier,
+        password: saved.password || "",
+        rememberMe: true,
+      });
+    } else {
+      form.resetFields();
+    }
+    forgotEmailForm.resetFields();
+    forgotResetForm.resetFields();
+    setIsForgot(false);
+    setForgotStep(1);
+    setForgotEmail("");
+    setForgotError(null);
+    setForgotSuccess(null);
+    setCountdown(0);
   };
 
   return (
@@ -25,10 +170,7 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
       width={680}
       className="rounded-2xl overflow-hidden"
       destroyOnClose
-      afterClose={() => {
-        form.resetFields();
-        setIsForgot(false);
-      }}
+      afterClose={resetAllModals}
     >
       <div className="p-6 sm:p-8">
         <div className="text-center mb-6">
@@ -42,7 +184,18 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
           <Alert message={authError} type="error" showIcon className="mb-4 rounded-xl" />
         )}
 
+        {forgotError && isForgot && (
+          <Alert message={forgotError} type="error" showIcon className="mb-4 rounded-xl" />
+        )}
+
+        {forgotSuccess && isForgot && (
+          <Alert message={forgotSuccess} type="success" showIcon className="mb-4 rounded-xl" />
+        )}
+
         {!isForgot ? (
+          /* ================================================================ */
+          /* FORM ĐĂNG NHẬP                                                  */
+          /* ================================================================ */
           <Form form={form} layout="vertical" onFinish={handleLogin}>
             <Form.Item
               label={<span className="font-semibold text-gray-700">Tên đăng nhập</span>}
@@ -63,9 +216,16 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
             </Form.Item>
 
             <div className="flex items-center justify-between text-sm mb-5">
-              <Checkbox className="text-gray-600">Ghi nhớ đăng nhập</Checkbox>
+              <Form.Item name="rememberMe" valuePropName="checked" noStyle>
+                <Checkbox className="text-gray-600">Ghi nhớ đăng nhập</Checkbox>
+              </Form.Item>
               <span
-                onClick={() => setIsForgot(true)}
+                onClick={() => {
+                  setIsForgot(true);
+                  setForgotStep(1);
+                  setForgotError(null);
+                  setForgotSuccess(null);
+                }}
                 className="text-blue-600 hover:underline cursor-pointer font-medium"
               >
                 Quên mật khẩu?
@@ -88,7 +248,7 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
               <span className="relative bg-white px-3 text-xs text-gray-400 uppercase font-semibold">Hoặc đăng nhập bằng</span>
             </div>
 
-            {/* Nut Dang nhap Google bang Authorization Code Flow + PKCE */}
+            {/* Nút Đăng nhập Google bằng Authorization Code Flow + PKCE */}
             <button
               type="button"
               onClick={loginWithGoogle}
@@ -103,18 +263,6 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
               Tiếp tục với Google
             </button>
 
-            {/* Nut Keycloak SSO tuy chon */}
-            <button
-              type="button"
-              onClick={loginWithKeycloak}
-              className="w-full flex items-center justify-center gap-2 text-xs text-gray-500 hover:text-[#1b2a4a] py-2 transition-colors cursor-pointer"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Đăng nhập bằng tài khoản Keycloak SSO
-            </button>
-
             <div className="text-center mt-4 text-sm text-gray-600">
               Chưa có tài khoản?{" "}
               <span
@@ -125,20 +273,146 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
               </span>
             </div>
           </Form>
-        ) : (
-          <Form layout="vertical">
-            <Form.Item label="Nhập Email hoặc Số điện thoại đã đăng ký" name="resetEmail" className="mb-4">
-              <Input placeholder="Email hoặc SĐT..." size="large" className="rounded-xl h-11" />
+        ) : forgotStep === 1 ? (
+          /* ================================================================ */
+          /* FORM QUÊN MẬT KHẨU - BƯỚC 1: NHẬP EMAIL                           */
+          /* ================================================================ */
+          <Form form={forgotEmailForm} layout="vertical" onFinish={handleSendForgotOtp}>
+            <Form.Item
+              label={<span className="font-semibold text-gray-700">Email đã đăng ký</span>}
+              name="email"
+              rules={[
+                { required: true, message: "Vui lòng nhập địa chỉ email!" },
+                { type: "email", message: "Địa chỉ email không đúng định dạng!" }
+              ]}
+              className="mb-4"
+            >
+              <Input placeholder="Nhập địa chỉ email của bạn..." size="large" className="rounded-xl h-11" />
             </Form.Item>
-            <Button type="primary" className="w-full h-12 bg-[#1b2a4a] hover:bg-[#244383] font-bold text-base rounded-xl">
-              GỬI MÃ XÁC NHẬN
+
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={forgotLoading}
+              disabled={countdown > 0}
+              className="w-full h-12 bg-[#1b2a4a] hover:bg-[#244383] font-bold text-base rounded-xl mb-4 shadow-sm"
+            >
+              {countdown > 0 ? `GỬI LẠI SAU ${countdown}s` : "GỬI MÃ XÁC THỰC OTP"}
             </Button>
-            <div className="text-center mt-4">
+
+            <div className="text-center mt-2">
               <span
-                onClick={() => setIsForgot(false)}
+                onClick={() => {
+                  setIsForgot(false);
+                  setForgotError(null);
+                  setForgotSuccess(null);
+                }}
                 className="text-gray-600 hover:text-blue-600 cursor-pointer text-sm font-medium"
               >
                 ← Quay lại đăng nhập
+              </span>
+            </div>
+          </Form>
+        ) : (
+          /* ================================================================ */
+          /* FORM QUÊN MẬT KHẨU - BƯỚC 2: NHẬP OTP & MẬT KHẨU MỚI             */
+          /* ================================================================ */
+          <Form form={forgotResetForm} layout="vertical" onFinish={handleResetPassword}>
+            <div className="bg-blue-50 border border-blue-200 text-blue-800 text-xs p-3 rounded-xl mb-4 text-center">
+              Mã xác thực OTP gồm 6 số đã được gửi tới <b>{forgotEmail}</b>. Vui lòng kiểm tra email của bạn.
+            </div>
+
+            <Form.Item
+              label={<span className="font-semibold text-gray-700">Mã xác thực OTP (6 chữ số)</span>}
+              name="otp"
+              rules={[
+                { required: true, message: "Vui lòng nhập mã OTP!" },
+                { len: 6, message: "Mã OTP phải đúng 6 chữ số!" }
+              ]}
+              className="mb-3"
+            >
+              <Input
+                placeholder="123456"
+                maxLength={6}
+                size="large"
+                className="rounded-xl h-11 text-center tracking-widest font-mono text-lg font-bold"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={<span className="font-semibold text-gray-700">Mật khẩu mới</span>}
+              name="newPassword"
+              rules={[
+                { required: true, message: "Vui lòng nhập mật khẩu mới!" },
+                { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự!" }
+              ]}
+              className="mb-3"
+            >
+              <Input.Password placeholder="Nhập mật khẩu mới..." size="large" className="rounded-xl h-11" />
+            </Form.Item>
+
+            <Form.Item
+              label={<span className="font-semibold text-gray-700">Xác nhận mật khẩu mới</span>}
+              name="confirmPassword"
+              dependencies={["newPassword"]}
+              rules={[
+                { required: true, message: "Vui lòng xác nhận lại mật khẩu mới!" },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue("newPassword") === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error("Mật khẩu xác nhận không khớp!"));
+                  },
+                }),
+              ]}
+              className="mb-4"
+            >
+              <Input.Password placeholder="Nhập lại mật khẩu mới..." size="large" className="rounded-xl h-11" />
+            </Form.Item>
+
+            <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+              <span>Chưa nhận được mã?</span>
+              <button
+                type="button"
+                onClick={handleResendForgotOtp}
+                disabled={countdown > 0 || forgotLoading}
+                className="text-blue-600 font-semibold hover:underline disabled:text-gray-400 cursor-pointer disabled:cursor-not-allowed"
+              >
+                {countdown > 0 ? `Gửi lại sau (${countdown}s)` : "Gửi lại mã OTP"}
+              </button>
+            </div>
+
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={forgotLoading}
+              className="w-full h-12 bg-[#1b2a4a] hover:bg-[#244383] font-bold text-base rounded-xl mb-4 shadow-sm"
+            >
+              ĐẶT LẠI MẬT KHẨU
+            </Button>
+
+            <div className="flex items-center justify-between text-sm">
+              <span
+                onClick={() => {
+                  setForgotStep(1);
+                  setForgotError(null);
+                  setForgotSuccess(null);
+                }}
+                className="text-gray-600 hover:text-blue-600 cursor-pointer font-medium"
+              >
+                ← Đổi email khác
+              </span>
+              <span
+                onClick={() => {
+                  setIsForgot(false);
+                  setForgotStep(1);
+                  setForgotError(null);
+                  setForgotSuccess(null);
+                }}
+                className="text-gray-600 hover:text-blue-600 cursor-pointer font-medium"
+              >
+                Đăng nhập
               </span>
             </div>
           </Form>

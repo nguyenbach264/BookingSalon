@@ -7,15 +7,18 @@ import demo.bookingsalon.Entity.User;
 import demo.bookingsalon.Enum.RoleApp;
 import demo.bookingsalon.Exception.NotFoundException;
 import demo.bookingsalon.Mapper.UserMapper;
+import demo.bookingsalon.Payload.Request.Business.ForgotPasswordRequest;
 import demo.bookingsalon.Payload.Request.Business.LoginRequest;
 import demo.bookingsalon.Payload.Request.Business.OAuth2TokenRequest;
 import demo.bookingsalon.Payload.Request.Business.RegisterRequest;
+import demo.bookingsalon.Payload.Request.Business.ResetPasswordWithOtpRequest;
 import demo.bookingsalon.Payload.Request.Business.SendOtpRequest;
 import demo.bookingsalon.Payload.Request.Business.VerifyOtpRequest;
 import demo.bookingsalon.Payload.Response.Business.AuthResponse;
 import demo.bookingsalon.Repository.UserRepository;
 import demo.bookingsalon.Service.Keycloak.IdentityProviderService;
 import demo.bookingsalon.Service.Keycloak.RoleService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +27,9 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -32,6 +37,8 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -76,13 +83,11 @@ public class AuthService {
     // 1. GỬI MÃ OTP ĐĂNG KÝ QUA EMAIL (RATE-LIMITED 60s)
     // =====================================================
     public void sendRegistrationOtp(SendOtpRequest request) {
-        // Kiểm tra username đã tồn tại trong Keycloak hoặc DB chưa
         List<UserRepresentation> existingUser = keycloak.realm(realm).users().search(request.getUsername(), true);
         if (!existingUser.isEmpty() || userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Tên đăng nhập đã được sử dụng!");
         }
 
-        // Kiểm tra email đã tồn tại chưa
         List<UserRepresentation> existingEmail = keycloak.realm(realm).users().search(null, null, null, request.getEmail(), 0, 1);
         boolean emailExistsInDb = userRepository.findAll().stream()
                 .anyMatch(u -> request.getEmail().equalsIgnoreCase(u.getEmail()));
@@ -90,7 +95,6 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email này đã được đăng ký tài khoản!");
         }
 
-        // Gửi OTP qua email với rate-limit trong Redis
         emailOtpService.generateAndSendOtp(request.getEmail(), request.getUsername());
     }
 
@@ -98,13 +102,11 @@ public class AuthService {
     // 2. XÁC THỰC OTP VÀ TẠO TÀI KHOẢN MỚI
     // =====================================================
     public AuthResponse verifyOtpAndRegister(VerifyOtpRequest request) {
-        // Kiểm tra mã OTP
         boolean valid = emailOtpService.verifyOtp(request.getEmail(), request.getOtp());
         if (!valid) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã OTP không chính xác hoặc đã hết hiệu lực!");
         }
 
-        // Đã xác thực OTP hợp lệ -> Tạo tài khoản Keycloak và DB
         RegisterRequest registerRequest = new RegisterRequest();
         registerRequest.setUsername(request.getUsername());
         registerRequest.setPassword(request.getPassword());
@@ -112,7 +114,7 @@ public class AuthService {
         registerRequest.setFullName(request.getFullName());
         registerRequest.setPhoneNumber(request.getPhoneNumber());
         registerRequest.setAddress(request.getAddress());
-        registerRequest.setAvatarUrl(request.getAvatarUrl());
+        registerRequest.setAvatarUrl(resolveAvatar(request.getAvatarUrl(), request.getFullName(), request.getUsername()));
 
         return register(registerRequest);
     }
@@ -159,7 +161,6 @@ public class AuthService {
             long expiresIn = root.path("expires_in").asLong(300);
             long refreshExpiresIn = root.path("refresh_expires_in").asLong(1800);
 
-            // Parse payload claims tu Access Token
             String[] parts = accessToken.split("\\.");
             if (parts.length < 2) throw new IllegalStateException("Invalid JWT token format");
             String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
@@ -170,8 +171,10 @@ public class AuthService {
             String email = claims.path("email").asText(null);
             String name = claims.path("name").asText(null);
             String picture = claims.path("picture").asText(null);
+            if (picture == null || picture.isBlank()) {
+                picture = claims.path("avatar_url").asText(null);
+            }
 
-            // Đồng bộ hoặc tạo User trong MySQL DB cho tài khoản Google / Keycloak SSO
             User user = userService.syncOrProvisionOAuth2User(
                     UUID.fromString(keycloakId),
                     email,
@@ -180,7 +183,6 @@ public class AuthService {
                     picture
             );
 
-            // Lấy role từ Keycloak
             List<String> roles = roleService.getUserRealmRoles(user.getKeycloakId());
             String role = roles.stream()
                     .filter(r -> r.equals("ADMIN") || r.equals("STYLIST") || r.equals("USER"))
@@ -194,7 +196,7 @@ public class AuthService {
                     .fullName(user.getFullName())
                     .email(user.getEmail())
                     .phoneNumber(user.getPhoneNumber())
-                    .avatarUrl(user.getAvatarUrl())
+                    .avatarUrl(resolveAvatar(user.getAvatarUrl(), user.getFullName(), user.getUsername()))
                     .role(role)
                     .build();
 
@@ -334,6 +336,7 @@ public class AuthService {
 
         User newUser;
         try {
+            String resolvedAvatar = resolveAvatar(request.getAvatarUrl(), request.getFullName(), request.getUsername());
             newUser = User.builder()
                     .keycloakId(UUID.fromString(keycloakId))
                     .username(request.getUsername())
@@ -341,7 +344,7 @@ public class AuthService {
                     .fullName(request.getFullName())
                     .phoneNumber(request.getPhoneNumber())
                     .address(request.getAddress())
-                    .avatarUrl(request.getAvatarUrl())
+                    .avatarUrl(resolvedAvatar)
                     .enabled(true)
                     .build();
 
@@ -357,7 +360,6 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể lưu thông tin người dùng vào cơ sở dữ liệu");
         }
 
-        // Tự động đăng nhập ngay sau khi đăng ký
         return login(new LoginRequest() {{
             setUsername(request.getUsername());
             setPassword(request.getPassword());
@@ -445,7 +447,6 @@ public class AuthService {
             }
         }
 
-        // Xóa sạch toàn bộ active sessions của user trên Keycloak để lần đăng nhập sau không bị tự động login
         if (keycloakId != null && !keycloakId.isBlank()) {
             try {
                 keycloak.realm(realm).users().get(keycloakId).logout();
@@ -476,14 +477,134 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .avatarUrl(user.getAvatarUrl())
+                .avatarUrl(resolveAvatar(user.getAvatarUrl(), user.getFullName(), user.getUsername()))
                 .role(role)
                 .build();
     }
 
     // =====================================================
+    // 10. QUÊN MẬT KHẨU (GỬI OTP & ĐẶT LẠI MẬT KHẨU)
+    // =====================================================
+    public void sendForgotPasswordOtp(ForgotPasswordRequest request) {
+        List<UserRepresentation> users = keycloak.realm(realm).users().search(null, null, null, request.getEmail(), 0, 1);
+        User dbUser = userRepository.findAll().stream()
+                .filter(u -> request.getEmail().equalsIgnoreCase(u.getEmail()))
+                .findFirst()
+                .orElse(null);
+
+        if (users.isEmpty() && dbUser == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản với email này!");
+        }
+
+        String username = !users.isEmpty() ? users.get(0).getUsername() : (dbUser != null ? dbUser.getUsername() : request.getEmail());
+        emailOtpService.generateAndSendForgotPasswordOtp(request.getEmail(), username);
+    }
+
+    public void verifyAndResetPassword(ResetPasswordWithOtpRequest request) {
+        boolean valid = emailOtpService.verifyForgotPasswordOtp(request.getEmail(), request.getOtp());
+        if (!valid) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã OTP không chính xác hoặc đã hết hiệu lực!");
+        }
+
+        List<UserRepresentation> users = keycloak.realm(realm).users().search(null, null, null, request.getEmail(), 0, 1);
+        String keycloakId = null;
+        if (!users.isEmpty()) {
+            keycloakId = users.get(0).getId();
+        } else {
+            User dbUser = userRepository.findAll().stream()
+                    .filter(u -> request.getEmail().equalsIgnoreCase(u.getEmail()))
+                    .findFirst()
+                    .orElse(null);
+            if (dbUser != null && dbUser.getKeycloakId() != null) {
+                keycloakId = dbUser.getKeycloakId().toString();
+            }
+        }
+
+        if (keycloakId == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản để đặt lại mật khẩu!");
+        }
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue(request.getNewPassword());
+        credential.setTemporary(false);
+
+        try {
+            keycloak.realm(realm).users().get(keycloakId).resetPassword(credential);
+            log.info("Password reset successfully in Keycloak for user ID: {}", keycloakId);
+        } catch (Exception ex) {
+            log.error("Failed to reset password in Keycloak for user ID {}: {}", keycloakId, ex.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể đặt lại mật khẩu trên hệ thống");
+        }
+
+        try {
+            keycloak.realm(realm).users().get(keycloakId).logout();
+        } catch (Exception ignored) {}
+    }
+
+    // =====================================================
+    // 11. COOKIE ATTACHMENT & CLEARING (HTTPONLY COOKIES)
+    // =====================================================
+    public void attachAuthCookies(HttpServletResponse response, String accessToken, String refreshToken, long expiresIn, long refreshExpiresIn, Boolean rememberMe) {
+        boolean isRemember = Boolean.TRUE.equals(rememberMe);
+        long maxAge = isRemember ? (30L * 24 * 3600) : -1;
+
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken != null ? accessToken : "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(maxAge)
+                .sameSite("Lax")
+                .build();
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken != null ? refreshToken : "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(maxAge)
+                .sameSite("Lax")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+    }
+
+    public void clearAuthCookies(HttpServletResponse response) {
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+    }
+
+    // =====================================================
     // PRIVATE HELPERS
     // =====================================================
+    private String resolveAvatar(String avatarUrl, String fullName, String username) {
+        if (avatarUrl != null && !avatarUrl.isBlank()) {
+            return avatarUrl;
+        }
+        String displayName = (fullName != null && !fullName.isBlank()) ? fullName : (username != null ? username : "User");
+        try {
+            return "https://ui-avatars.com/api/?name=" + URLEncoder.encode(displayName, StandardCharsets.UTF_8.toString()) + "&background=1b2a4a&color=fff";
+        } catch (Exception e) {
+            return "https://ui-avatars.com/api/?name=User&background=1b2a4a&color=fff";
+        }
+    }
+
     private AuthResponse buildAuthResponse(String keycloakTokenJson, String username) {
         try {
             JsonNode root = objectMapper.readTree(keycloakTokenJson);
@@ -508,7 +629,7 @@ public class AuthService {
                         .fullName(user.getFullName())
                         .email(user.getEmail())
                         .phoneNumber(user.getPhoneNumber())
-                        .avatarUrl(user.getAvatarUrl())
+                        .avatarUrl(resolveAvatar(user.getAvatarUrl(), user.getFullName(), user.getUsername()))
                         .role(role)
                         .build();
             }

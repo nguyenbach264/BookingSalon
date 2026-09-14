@@ -28,11 +28,13 @@ public class EmailOtpService {
 
     private static final String OTP_PREFIX = "auth:otp:code:";
     private static final String COOLDOWN_PREFIX = "auth:otp:cooldown:";
-    private static final long OTP_TTL_SECONDS = 300; // 5 phut
+    private static final String FORGOT_PREFIX = "auth:otp:forgot:";
+    private static final String FORGOT_COOLDOWN_PREFIX = "auth:otp:forgot:cooldown:";
+    private static final long OTP_TTL_SECONDS = 300; // 5 phút
     private static final long COOLDOWN_SECONDS = 60; // 60s cooldown
 
     /**
-     * Tao va gui ma OTP toi email nguoi dung kem rate-limiting 60s
+     * Tạo và gửi mã OTP đăng ký tới email kèm rate-limiting 60s
      */
     public void generateAndSendOtp(String email, String username) {
         String cooldownKey = COOLDOWN_PREFIX + email.toLowerCase();
@@ -45,21 +47,18 @@ public class EmailOtpService {
             );
         }
 
-        // Sinh ma 6 chu so
         String otp = String.format("%06d", new SecureRandom().nextInt(1_000_000));
-
-        // Luu vao Redis
         String codeKey = OTP_PREFIX + email.toLowerCase();
         redisTemplate.opsForValue().set(codeKey, otp, Duration.ofSeconds(OTP_TTL_SECONDS));
         redisTemplate.opsForValue().set(cooldownKey, "1", Duration.ofSeconds(COOLDOWN_SECONDS));
 
-        // Gui email HTML
-        sendHtmlEmail(email, username, otp);
-        log.info("OTP sent to {} successfully", email);
+        sendHtmlEmail(email, username, otp, "Mã xác thực đăng ký tài khoản 30Shine",
+                "Cảm ơn bạn đã đăng ký tài khoản tại <strong>30Shine Salon</strong>. Vui lòng sử dụng mã OTP dưới đây để xác thực địa chỉ email của bạn:");
+        log.info("Registration OTP sent to {} successfully", email);
     }
 
     /**
-     * Kiem tra ma OTP
+     * Kiểm tra mã OTP đăng ký
      */
     public boolean verifyOtp(String email, String inputOtp) {
         String codeKey = OTP_PREFIX + email.toLowerCase();
@@ -69,22 +68,60 @@ public class EmailOtpService {
             return false;
         }
 
-        // Xoa ma da su dung
         redisTemplate.delete(codeKey);
         return true;
     }
 
     /**
-     * Gui email chua ma OTP dinh dang HTML sang trong
+     * Tạo và gửi mã OTP quên mật khẩu tới email kèm rate-limiting 60s
      */
-    private void sendHtmlEmail(String toEmail, String username, String otp) {
+    public void generateAndSendForgotPasswordOtp(String email, String username) {
+        String cooldownKey = FORGOT_COOLDOWN_PREFIX + email.toLowerCase();
+        Long remainingCooldown = redisTemplate.getExpire(cooldownKey);
+
+        if (remainingCooldown != null && remainingCooldown > 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Vui lòng đợi " + remainingCooldown + " giây trước khi gửi lại mã xác thực!"
+            );
+        }
+
+        String otp = String.format("%06d", new SecureRandom().nextInt(1_000_000));
+        String codeKey = FORGOT_PREFIX + email.toLowerCase();
+        redisTemplate.opsForValue().set(codeKey, otp, Duration.ofSeconds(OTP_TTL_SECONDS));
+        redisTemplate.opsForValue().set(cooldownKey, "1", Duration.ofSeconds(COOLDOWN_SECONDS));
+
+        sendHtmlEmail(email, username, otp, "Mã xác thực khôi phục mật khẩu 30Shine",
+                "Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản <strong>30Shine Salon</strong> của bạn. Vui lòng sử dụng mã OTP dưới đây để hoàn tất việc thiết lập mật khẩu mới:");
+        log.info("Forgot password OTP sent to {} successfully", email);
+    }
+
+    /**
+     * Kiểm tra mã OTP quên mật khẩu
+     */
+    public boolean verifyForgotPasswordOtp(String email, String inputOtp) {
+        String codeKey = FORGOT_PREFIX + email.toLowerCase();
+        String storedOtp = redisTemplate.opsForValue().get(codeKey);
+
+        if (storedOtp == null || !storedOtp.equals(inputOtp.trim())) {
+            return false;
+        }
+
+        redisTemplate.delete(codeKey);
+        return true;
+    }
+
+    /**
+     * Gửi email HTML sang trọng
+     */
+    private void sendHtmlEmail(String toEmail, String username, String otp, String subject, String messageBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(fromEmail, "30Shine Salon");
             helper.setTo(toEmail);
-            helper.setSubject("Mã xác thực đăng ký tài khoản 30Shine");
+            helper.setSubject(subject);
 
             String htmlContent = """
                 <!DOCTYPE html>
@@ -111,12 +148,12 @@ public class EmailOtpService {
                         </div>
                         <div class="content">
                             <div class="greeting">Xin chào %s,</div>
-                            <p>Cảm ơn bạn đã đăng ký tài khoản tại <strong>30Shine Salon</strong>. Vui lòng sử dụng mã OTP dưới đây để xác thực địa chỉ email của bạn:</p>
+                            <p>%s</p>
                             <div class="otp-box">
                                 <div class="otp-code">%s</div>
                                 <div class="expire-note">Mã xác thực có hiệu lực trong 5 phút</div>
                             </div>
-                            <p style="font-size: 13px; color: #666666;">Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email. Tuyệt đối không chia sẻ mã OTP này cho bất kỳ ai khác vì lý do bảo mật.</p>
+                            <p style="font-size: 13px; color: #666666;">Nếu bạn không thực hiện yêu cầu này, tài khoản của bạn vẫn an toàn, vui lòng bỏ qua email. Tuyệt đối không chia sẻ mã OTP này cho bất kỳ ai vì lý do bảo mật.</p>
                         </div>
                         <div class="footer">
                             &copy; 2026 30Shine Salon. All rights reserved.
@@ -124,7 +161,7 @@ public class EmailOtpService {
                     </div>
                 </body>
                 </html>
-                """.formatted(username != null ? username : "Quý khách", otp);
+                """.formatted(username != null && !username.isBlank() ? username : "Quý khách", messageBody, otp);
 
             helper.setText(htmlContent, true);
             mailSender.send(message);

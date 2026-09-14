@@ -20,7 +20,7 @@ const userMenu = [
   {
     key: 'profile',
     icon: <UserCircle className="w-4 h-4" />,
-    label: 'Thông tin tài khoản',
+    label: 'Thông tin tài khoản nhé',
   },
   {
     key: 'services',
@@ -70,8 +70,8 @@ const LoggedInHeader = (isLoggedIn) => {
 
             <Dropdown menu={{ items: userMenu }} placement="bottomRight" trigger={['click']}>
               <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 md:pr-3 rounded-full transition-colors border border-transparent hover:border-gray-200">
-                <Avatar src="https://i.pravatar.cc/150?img=11" size="default" className="bg-blue-100 border border-gray-200 shadow-sm" />
-                <span className="hidden md:block font-medium text-gray-700 text-sm">Nguyễn Văn A</span>
+                <Avatar src="https://ui-avatars.com/api/?name=User&background=1b2a4a&color=fff" size="default" className="bg-blue-100 border border-gray-200 shadow-sm" />
+                <span className="hidden md:block font-medium text-gray-700 text-sm">Tài khoản</span>
               </div>
             </Dropdown>
           </div>
