@@ -9,7 +9,8 @@ export const purgeBrowserTokens = () => {
       "refreshToken", "accessToken",
       "bs_access_token", "bs_refresh_token",
       "jwt", "id_token",
-      "bs_user", "user", "userInfo", "role"
+      "bs_user", "user", "userInfo", "role",
+      "bs_remembered_account"
     ];
     keysToRemove.forEach(k => {
       localStorage.removeItem(k);

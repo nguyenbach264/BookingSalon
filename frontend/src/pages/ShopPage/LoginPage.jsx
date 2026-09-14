@@ -2,32 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Checkbox, Input, Button, Modal, Form, Alert } from "antd";
 import { useAuth } from "../../auth/authProvider";
 
-const REMEMBERED_ACCOUNT_KEY = "bs_remembered_account";
-
-const getRememberedAccount = () => {
-  try {
-    const raw = localStorage.getItem(REMEMBERED_ACCOUNT_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
-const saveRememberedAccount = (identifier, password) => {
-  try {
-    localStorage.setItem(
-      REMEMBERED_ACCOUNT_KEY,
-      JSON.stringify({ identifier, password, rememberMe: true })
-    );
-  } catch {}
-};
-
-const clearRememberedAccount = () => {
-  try {
-    localStorage.removeItem(REMEMBERED_ACCOUNT_KEY);
-  } catch {}
-};
-
 const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
   const [isForgot, setIsForgot] = useState(false);
   const [forgotStep, setForgotStep] = useState(1); // 1: input email, 2: input OTP + new password
@@ -43,22 +17,6 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
 
   const { login, loginWithGoogle, loading, authError, sendForgotPasswordOtp, verifyAndResetPassword } = useAuth();
 
-  // Khôi phục thông tin đăng nhập đã ghi nhớ khi mở modal
-  useEffect(() => {
-    if (visible) {
-      const saved = getRememberedAccount();
-      if (saved && saved.identifier) {
-        form.setFieldsValue({
-          identifier: saved.identifier,
-          password: saved.password || "",
-          rememberMe: true,
-        });
-      } else {
-        form.resetFields();
-      }
-    }
-  }, [visible, form]);
-
   // Đếm ngược 60 giây khi gửi OTP quên mật khẩu
   useEffect(() => {
     let timer;
@@ -71,14 +29,7 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
   }, [countdown]);
 
   const handleLogin = async (values) => {
-    const rememberMe = Boolean(values.rememberMe);
-    if (rememberMe) {
-      saveRememberedAccount(values.identifier, values.password);
-    } else {
-      clearRememberedAccount();
-    }
-
-    const result = await login(values.identifier, values.password, rememberMe);
+    const result = await login(values.identifier, values.password, values.rememberMe || false);
     if (result && result.success) {
       onClose();
       if (onLoggedIn) onLoggedIn(result.user);
@@ -141,16 +92,6 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
   };
 
   const resetAllModals = () => {
-    const saved = getRememberedAccount();
-    if (saved && saved.identifier) {
-      form.setFieldsValue({
-        identifier: saved.identifier,
-        password: saved.password || "",
-        rememberMe: true,
-      });
-    } else {
-      form.resetFields();
-    }
     forgotEmailForm.resetFields();
     forgotResetForm.resetFields();
     setIsForgot(false);
@@ -169,7 +110,6 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
       centered
       width={680}
       className="rounded-2xl overflow-hidden"
-      destroyOnClose
       afterClose={resetAllModals}
     >
       <div className="p-6 sm:p-8">
@@ -194,16 +134,30 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
 
         {!isForgot ? (
           /* ================================================================ */
-          /* FORM ĐĂNG NHẬP                                                  */
+          /* FORM ĐĂNG NHẬP (CHUẨN AUTOFILL TRÌNH QUẢN LÝ MẬT KHẨU BROWSER)   */
           /* ================================================================ */
-          <Form form={form} layout="vertical" onFinish={handleLogin}>
+          <Form
+            form={form}
+            name="login"
+            id="loginForm"
+            layout="vertical"
+            onFinish={handleLogin}
+            autoComplete="on"
+          >
             <Form.Item
               label={<span className="font-semibold text-gray-700">Tên đăng nhập</span>}
               name="identifier"
               rules={[{ required: true, message: "Vui lòng nhập tên đăng nhập!" }]}
               className="mb-3"
             >
-              <Input placeholder="Nhập tên đăng nhập..." size="large" className="rounded-xl h-11" />
+              <Input
+                id="username"
+                name="username"
+                autoComplete="username"
+                placeholder="Nhập tên đăng nhập..."
+                size="large"
+                className="rounded-xl h-11"
+              />
             </Form.Item>
 
             <Form.Item
@@ -212,11 +166,18 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
               rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
               className="mb-2"
             >
-              <Input.Password placeholder="Nhập mật khẩu..." size="large" className="rounded-xl h-11" />
+              <Input.Password
+                id="password"
+                name="password"
+                autoComplete="current-password"
+                placeholder="Nhập mật khẩu..."
+                size="large"
+                className="rounded-xl h-11"
+              />
             </Form.Item>
 
             <div className="flex items-center justify-between text-sm mb-5">
-              <Form.Item name="rememberMe" valuePropName="checked" noStyle>
+              <Form.Item name="rememberMe" valuePropName="checked" noStyle initialValue={true}>
                 <Checkbox className="text-gray-600">Ghi nhớ đăng nhập</Checkbox>
               </Form.Item>
               <span
