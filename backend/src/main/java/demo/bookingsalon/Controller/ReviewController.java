@@ -19,6 +19,11 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAllReviews());
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getReviewsByUserId(@PathVariable("userId") java.util.UUID userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUserId(userId));
+    }
+
     @PostMapping
     public ResponseEntity<?> createReview(@RequestBody ReviewDTO reviewDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(reviewService.createReview(reviewDTO));

@@ -55,6 +55,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
+      // Nếu người dùng chưa từng đăng nhập hoặc session chưa khởi tạo, thử refresh token 1 lần ngầm
       try {
         const refreshed = await _authContext?.refreshToken?.();
         if (refreshed) {
@@ -65,7 +66,8 @@ api.interceptors.response.use(
         }
       } catch (refreshError) {
         processQueue(refreshError);
-        _authContext?.logout?.();
+        // Mở modal đăng nhập kèm thông báo giống như ServicePage
+        _authContext?.openLoginModal?.("Quý khách cần đăng nhập tài khoản để tiếp tục!");
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

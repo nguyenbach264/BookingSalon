@@ -33,6 +33,34 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
 
+  // Global Auth Modals state
+  const [loginModalVisible, setLoginModalVisible] = useState(false);
+  const [registerModalVisible, setRegisterModalVisible] = useState(false);
+  const [authNotice, setAuthNotice] = useState(null);
+  const [targetRedirect, setTargetRedirect] = useState(null);
+
+  const openLoginModal = useCallback((notice = null, redirect = null) => {
+    setAuthNotice(notice);
+    setTargetRedirect(redirect);
+    setRegisterModalVisible(false);
+    setLoginModalVisible(true);
+  }, []);
+
+  const closeLoginModal = useCallback(() => {
+    setLoginModalVisible(false);
+    setAuthNotice(null);
+    setTargetRedirect(null);
+  }, []);
+
+  const openRegisterModal = useCallback(() => {
+    setLoginModalVisible(false);
+    setRegisterModalVisible(true);
+  }, []);
+
+  const closeRegisterModal = useCallback(() => {
+    setRegisterModalVisible(false);
+  }, []);
+
   // ── KIỂM TRA PHIÊN ĐĂNG NHẬP BAN ĐẦU QUA SERVER SESSION (BFF) ───────────────
   useEffect(() => {
     let isMounted = true;
@@ -309,18 +337,50 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // ── 8. REFRESH TOKEN (BFF ĐÃ TỰ ĐỘNG REFRESH SERVER-SIDE) ───────────────────
+  // ── 8. REFRESH TOKEN (BFF ĐÃ TỰ ĐỘNG REFRESH SERVER-SIDE VÀ DUY TRÌ 30 NGÀY) ──
   const refreshToken = useCallback(async () => {
     try {
       const response = await fetch("http://localhost:8080/api/auth/refresh-token", {
         method: "POST",
         credentials: "include",
       });
-      return response.ok;
+      if (response.ok) {
+        try {
+          const meRes = await fetch("http://localhost:8080/api/auth/me", {
+            method: "GET",
+            credentials: "include",
+          });
+          if (meRes.ok) {
+            const user = await meRes.json();
+            setUserInfo(user);
+            setAuthenticated(true);
+          }
+        } catch (e) {}
+        return true;
+      }
+      return false;
     } catch (error) {
       return false;
     }
   }, []);
+
+  // Tự động kiểm tra và refresh token khi người dùng quay lại tab sau một thời gian
+  useEffect(() => {
+    if (!authenticated) return;
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === "visible") {
+        try {
+          await refreshToken();
+        } catch (e) {}
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [authenticated, refreshToken]);
 
   // ── 9. QUÊN MẬT KHẨU: GỬI OTP ──────────────────────────────────────────────
   const sendForgotPasswordOtp = useCallback(async (email) => {
@@ -395,6 +455,14 @@ export function AuthProvider({ children }) {
         getToken,
         sendForgotPasswordOtp,
         verifyAndResetPassword,
+        loginModalVisible,
+        registerModalVisible,
+        authNotice,
+        targetRedirect,
+        openLoginModal,
+        openRegisterModal,
+        closeLoginModal,
+        closeRegisterModal,
       }}
     >
       {initialized ? children : null}

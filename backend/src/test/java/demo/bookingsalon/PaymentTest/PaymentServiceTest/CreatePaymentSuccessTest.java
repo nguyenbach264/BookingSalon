@@ -103,7 +103,7 @@ public class CreatePaymentSuccessTest {
                 .salonId(salonId)
                 .userId(userId)
                 .stylistId(stylistId)
-                .paymentMethod(createPaymentRequest.getPaymentMethod())
+                .paymentMethod(createPaymentRequest.getPaymentMethod().name())
                 .serviceIds(serviceIds)
                 .status(BookingStatus.PENDING)
                 .totalServices(3)

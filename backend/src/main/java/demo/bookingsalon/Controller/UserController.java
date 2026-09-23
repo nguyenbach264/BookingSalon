@@ -26,6 +26,45 @@ public class UserController {
     private final UserService userService;
     private final RoleService roleService;
 
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getMyProfile(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt) {
+        if (jwt == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        UUID keycloakId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(userService.getCurrentUserProfile(keycloakId));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UserResponse> updateMyProfile(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt,
+                                                        @RequestBody UpdateUserRequest request) {
+        if (jwt == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        UUID keycloakId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(userService.updateCurrentUserProfile(keycloakId, request));
+    }
+
+    @PostMapping("/me/send-verify-email")
+    public ResponseEntity<?> sendVerifyEmailOtp(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt) {
+        if (jwt == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        UUID keycloakId = UUID.fromString(jwt.getSubject());
+        userService.sendEmailVerificationOtp(keycloakId);
+        return ResponseEntity.ok(java.util.Map.of("message", "Mã xác thực OTP đã được gửi tới email của bạn!"));
+    }
+
+    @PostMapping("/me/verify-email")
+    public ResponseEntity<?> verifyEmailOtp(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt,
+                                            @RequestBody java.util.Map<String, String> body) {
+        if (jwt == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        UUID keycloakId = UUID.fromString(jwt.getSubject());
+        String otp = body.get("otp");
+        if (otp == null || otp.isBlank()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Vui lòng nhập mã OTP!"));
+        }
+        boolean success = userService.verifyUserEmail(keycloakId, otp);
+        if (!success) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Mã OTP không chính xác hoặc đã hết hạn!"));
+        }
+        return ResponseEntity.ok(java.util.Map.of("message", "Xác thực email thành công!"));
+    }
+
     @GetMapping
     public List<UserResponse> getUsers() {
         return userService.getUsers();

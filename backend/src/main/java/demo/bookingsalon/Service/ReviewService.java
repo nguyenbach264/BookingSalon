@@ -25,6 +25,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final demo.bookingsalon.Repository.BookingRepository bookingRepository;
     private final NotificationWebSocketHandler webSocketHandler;
     private final ObjectMapper objectMapper;
     private final ReviewMapper reviewMapper;
@@ -37,6 +38,13 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public List<ReviewDTO> getReviewsByProductId(UUID productId) {
         return reviewRepository.findByProductIdOrderByCreatedAtDesc(productId).stream()
+                .map(reviewMapper::toReviewDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewDTO> getReviewsByUserId(UUID userId) {
+        return reviewRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(reviewMapper::toReviewDTO)
                 .toList();
     }
@@ -55,11 +63,21 @@ public class ReviewService {
                     .orElse(null);
         }
 
+        if (reviewDTO.getBookingId() != null) {
+            bookingRepository.findById(reviewDTO.getBookingId()).ifPresent(b -> {
+                b.setReviewed(true);
+                bookingRepository.save(b);
+            });
+        }
+
         Review review = Review.builder()
                 .user(user)
                 .product(product)
+                .bookingId(reviewDTO.getBookingId())
+                .stylistId(reviewDTO.getStylistId())
+                .salonId(reviewDTO.getSalonId())
                 .rating(reviewDTO.getRating() != null ? reviewDTO.getRating() : 5)
-                .type(reviewDTO.getType())
+                .type(reviewDTO.getType() != null ? reviewDTO.getType() : "SERVICE")
                 .reviewContent(reviewDTO.getReviewContent())
                 .build();
 

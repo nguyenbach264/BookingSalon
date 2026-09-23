@@ -22,9 +22,15 @@ public class NotificationDTO {
 
     private UUID bookingId;
 
+    private String title;
+
+    private String message;
+
     private boolean isRead = false;
 
     private String type;
+
+    private Object data;
 
     private LocalDateTime createdAt;
 

@@ -1,27 +1,14 @@
 package demo.bookingsalon.Service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.bookingsalon.Entity.Cart;
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Enum.RoleApp;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Mapper.UserMapper;
-import demo.bookingsalon.Payload.Request.Business.ForgotPasswordRequest;
-import demo.bookingsalon.Payload.Request.Business.LoginRequest;
-import demo.bookingsalon.Payload.Request.Business.OAuth2TokenRequest;
-import demo.bookingsalon.Payload.Request.Business.RegisterRequest;
-import demo.bookingsalon.Payload.Request.Business.ResetPasswordWithOtpRequest;
-import demo.bookingsalon.Payload.Request.Business.SendOtpRequest;
-import demo.bookingsalon.Payload.Request.Business.VerifyOtpRequest;
-import demo.bookingsalon.Payload.Response.Business.AuthResponse;
-import demo.bookingsalon.Repository.UserRepository;
-import demo.bookingsalon.Service.Keycloak.IdentityProviderService;
-import demo.bookingsalon.Service.Keycloak.RoleService;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.Response;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -37,14 +24,33 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import demo.bookingsalon.Entity.Admin;
+import demo.bookingsalon.Entity.Cart;
+import demo.bookingsalon.Entity.Stylist;
+import demo.bookingsalon.Entity.User;
+import demo.bookingsalon.Enum.RoleApp;
+import demo.bookingsalon.Exception.NotFoundException;
+import demo.bookingsalon.Mapper.UserMapper;
+import demo.bookingsalon.Payload.Request.Business.ForgotPasswordRequest;
+import demo.bookingsalon.Payload.Request.Business.LoginRequest;
+import demo.bookingsalon.Payload.Request.Business.OAuth2TokenRequest;
+import demo.bookingsalon.Payload.Request.Business.RegisterRequest;
+import demo.bookingsalon.Payload.Request.Business.ResetPasswordWithOtpRequest;
+import demo.bookingsalon.Payload.Request.Business.SendOtpRequest;
+import demo.bookingsalon.Payload.Request.Business.VerifyOtpRequest;
+import demo.bookingsalon.Payload.Response.Business.AuthResponse;
+import demo.bookingsalon.Repository.AdminRepository;
+import demo.bookingsalon.Repository.StylistRepository;
+import demo.bookingsalon.Repository.UserRepository;
+import demo.bookingsalon.Service.Keycloak.IdentityProviderService;
+import demo.bookingsalon.Service.Keycloak.RoleService;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.Response;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -60,6 +66,8 @@ public class AuthService {
     private final EmailOtpService emailOtpService;
     private final UserService userService;
     private final IdentityProviderService identityProviderService;
+    private final StylistRepository stylistRepository;
+    private final AdminRepository adminRepository;
 
     @Value("${keycloak.server-url}")
     private String keycloakServerUrl;
@@ -458,28 +466,15 @@ public class AuthService {
     }
 
     // =====================================================
-    // 9. GET ME — Lấy thông tin user hiện tại từ DB
+    // 9. GET ME — Lấy thông tin user/stylist/admin hiện tại từ DB
     // =====================================================
     public AuthResponse.UserInfo getMe(String keycloakId) {
-        User user = userRepository.findByKeycloakId(UUID.fromString(keycloakId));
-        if (user == null) throw new NotFoundException("Không tìm thấy thông tin người dùng");
-
-        List<String> roles = roleService.getUserRealmRoles(user.getKeycloakId());
-        String role = roles.stream()
-                .filter(r -> r.equals("ADMIN") || r.equals("STYLIST") || r.equals("USER"))
-                .findFirst()
-                .orElse("USER");
-
-        return AuthResponse.UserInfo.builder()
-                .id(user.getId())
-                .keycloakId(user.getKeycloakId())
-                .username(user.getUsername())
-                .fullName(user.getFullName())
-                .email(user.getEmail())
-                .phoneNumber(user.getPhoneNumber())
-                .avatarUrl(resolveAvatar(user.getAvatarUrl(), user.getFullName(), user.getUsername()))
-                .role(role)
-                .build();
+        UUID kcUuid = UUID.fromString(keycloakId);
+        AuthResponse.UserInfo userInfo = resolveUserInfo(kcUuid, null);
+        if (userInfo == null) {
+            throw new NotFoundException("Không tìm thấy thông tin người dùng");
+        }
+        return userInfo;
     }
 
     // =====================================================
@@ -613,26 +608,21 @@ public class AuthService {
             long expiresIn = root.path("expires_in").asLong(300);
             long refreshExpiresIn = root.path("refresh_expires_in").asLong(1800);
 
-            User user = userRepository.findByUsername(username).orElse(null);
-            AuthResponse.UserInfo userInfo = null;
-            if (user != null) {
-                List<String> roles = roleService.getUserRealmRoles(user.getKeycloakId());
-                String role = roles.stream()
-                        .filter(r -> r.equals("ADMIN") || r.equals("STYLIST") || r.equals("USER"))
-                        .findFirst()
-                        .orElse("USER");
+            // Extract keycloakId from JWT sub claim if present
+            UUID keycloakId = null;
+            try {
+                String[] parts = accessToken.split("\\.");
+                if (parts.length >= 2) {
+                    String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+                    JsonNode claims = objectMapper.readTree(payload);
+                    String sub = claims.path("sub").asText(null);
+                    if (sub != null && !sub.isBlank()) {
+                        keycloakId = UUID.fromString(sub);
+                    }
+                }
+            } catch (Exception ignored) {}
 
-                userInfo = AuthResponse.UserInfo.builder()
-                        .id(user.getId())
-                        .keycloakId(user.getKeycloakId())
-                        .username(user.getUsername())
-                        .fullName(user.getFullName())
-                        .email(user.getEmail())
-                        .phoneNumber(user.getPhoneNumber())
-                        .avatarUrl(resolveAvatar(user.getAvatarUrl(), user.getFullName(), user.getUsername()))
-                        .role(role)
-                        .build();
-            }
+            AuthResponse.UserInfo userInfo = resolveUserInfo(keycloakId, username);
 
             return AuthResponse.builder()
                     .accessToken(accessToken)
@@ -645,5 +635,101 @@ public class AuthService {
             log.error("Failed to parse Keycloak token response", ex);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể xử lý phản hồi xác thực");
         }
+    }
+
+    private AuthResponse.UserInfo resolveUserInfo(UUID keycloakId, String username) {
+        // 1. Try finding in Users (Customers)
+        User user = null;
+        if (keycloakId != null) {
+            user = userRepository.findByKeycloakId(keycloakId);
+        }
+        if (user == null && username != null) {
+            user = userRepository.findByUsername(username).orElse(null);
+        }
+        if (user != null) {
+            UUID actualKcId = user.getKeycloakId() != null ? user.getKeycloakId() : keycloakId;
+            String role = determineRole(actualKcId, "USER");
+            return AuthResponse.UserInfo.builder()
+                    .id(user.getId())
+                    .keycloakId(actualKcId)
+                    .username(user.getUsername())
+                    .fullName(user.getFullName())
+                    .email(user.getEmail())
+                    .phoneNumber(user.getPhoneNumber())
+                    .avatarUrl(resolveAvatar(user.getAvatarUrl(), user.getFullName(), user.getUsername()))
+                    .role(role)
+                    .gender(user.getGender())
+                    .address(user.getAddress())
+                    .city(user.getCity())
+                    .district(user.getDistrict())
+                    .ward(user.getWard())
+                    .membershipTier(user.getMembershipTier())
+                    .emailVerified(user.isEmailVerified())
+                    .phoneVerified(user.isPhoneVerified())
+                    .voucherCode(user.getVoucherCode())
+                    .createdAt(user.getCreatedAt())
+                    .build();
+        }
+
+        // 2. Try finding in Stylists
+        Stylist stylist = null;
+        if (keycloakId != null) {
+            stylist = stylistRepository.findByKeycloakId(keycloakId).orElse(null);
+        }
+        if (stylist == null && username != null) {
+            stylist = stylistRepository.findByUsername(username).orElse(null);
+        }
+        if (stylist != null) {
+            UUID actualKcId = stylist.getKeycloakId() != null ? stylist.getKeycloakId() : keycloakId;
+            String role = determineRole(actualKcId, "STYLIST");
+            return AuthResponse.UserInfo.builder()
+                    .id(stylist.getId())
+                    .keycloakId(actualKcId)
+                    .username(stylist.getUsername())
+                    .fullName(stylist.getFullName())
+                    .email(stylist.getEmail())
+                    .phoneNumber(stylist.getPhoneNumber())
+                    .avatarUrl(resolveAvatar(stylist.getAvatarUrl(), stylist.getFullName(), stylist.getUsername()))
+                    .role(role)
+                    .build();
+        }
+
+        // 3. Try finding in Admins
+        Admin admin = null;
+        if (keycloakId != null) {
+            admin = adminRepository.findByKeycloakId(keycloakId).orElse(null);
+        }
+        if (admin == null && username != null) {
+            admin = adminRepository.findByUsername(username).orElse(null);
+        }
+        if (admin != null) {
+            UUID actualKcId = admin.getKeycloakId() != null ? admin.getKeycloakId() : keycloakId;
+            String role = determineRole(actualKcId, "ADMIN");
+            return AuthResponse.UserInfo.builder()
+                    .id(admin.getId())
+                    .keycloakId(actualKcId)
+                    .username(admin.getUsername())
+                    .fullName(admin.getFullName())
+                    .email(admin.getEmail())
+                    .phoneNumber(admin.getPhoneNumber())
+                    .avatarUrl(resolveAvatar(admin.getAvatarUrl(), admin.getFullName(), admin.getUsername()))
+                    .role(role)
+                    .build();
+        }
+
+        return null;
+    }
+
+    private String determineRole(UUID keycloakId, String defaultRole) {
+        if (keycloakId == null) return defaultRole;
+        try {
+            List<String> roles = roleService.getUserRealmRoles(keycloakId);
+            if (roles.contains("ADMIN")) return "ADMIN";
+            if (roles.contains("STYLIST")) return "STYLIST";
+            if (roles.contains("USER")) return "USER";
+        } catch (Exception e) {
+            log.warn("Could not fetch Keycloak roles for {}: {}", keycloakId, e.getMessage());
+        }
+        return defaultRole;
     }
 }

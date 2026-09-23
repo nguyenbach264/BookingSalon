@@ -16,7 +16,13 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     List<Booking> getBookingByUserId(UUID userId);
 
+    List<Booking> findByUserIdAndStatus(UUID userId, BookingStatus status);
+
     List<Booking> getBookingBySalonId(UUID salonId);
+
+    List<Booking> findByStylistId(UUID stylistId);
+
+    List<Booking> findByStylistIdAndStatus(UUID stylistId, BookingStatus status);
 
     // Thống kê booking theo status
     long countByStatus(BookingStatus status);
@@ -24,6 +30,8 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     long countByStatusAndSalonId(BookingStatus status, UUID salonId);
 
     long countByStatusAndUserId(BookingStatus status, UUID userId);
+
+    long countByStatusAndStylistId(BookingStatus status, UUID stylistId);
 
     // Query để kiểm tra booking trùng time slot với PESSIMISTIC WRITE lock
     @Query("SELECT b FROM Booking b WHERE b.salon.id = :salonId " +
@@ -33,6 +41,23 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findConflictingBookings(@Param("salonId") UUID salonId,
                                           @Param("startTime") LocalDateTime startTime,
                                           @Param("endTime") LocalDateTime endTime);
+
+    // Query để kiểm tra stylist trùng time slot với PESSIMISTIC WRITE lock
+    @Query("SELECT b FROM Booking b WHERE b.stylist.id = :stylistId " +
+           "AND b.status != 'CANCELLED' " +
+           "AND ((b.startTime < :endTime AND b.endTime > :startTime))")
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<Booking> findConflictingBookingsByStylist(@Param("stylistId") UUID stylistId,
+                                                   @Param("startTime") LocalDateTime startTime,
+                                                   @Param("endTime") LocalDateTime endTime);
+
+    // Query lấy danh sách booking của stylist trong ngày để lọc time slot bận
+    @Query("SELECT b FROM Booking b WHERE b.stylist.id = :stylistId " +
+           "AND b.status != 'CANCELLED' " +
+           "AND b.startTime >= :dayStart AND b.startTime < :dayEnd")
+    List<Booking> findActiveBookingsByStylistAndDate(@Param("stylistId") UUID stylistId,
+                                                    @Param("dayStart") LocalDateTime dayStart,
+                                                    @Param("dayEnd") LocalDateTime dayEnd);
 
     // Query để lấy booking với lock để update
     @Query("SELECT b FROM Booking b WHERE b.id = :id")

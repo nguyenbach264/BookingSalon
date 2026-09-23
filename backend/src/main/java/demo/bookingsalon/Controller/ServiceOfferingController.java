@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/service-offering")
+@RequestMapping({"/api/service-offering", "/api/service-offerings"})
 @RequiredArgsConstructor
 public class ServiceOfferingController {
     private final ServiceOfferingService serviceOfferingService;

@@ -3,8 +3,7 @@ import { Breadcrumb, Select, Rate, message } from 'antd';
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom"; 
 import { addToCart, updateQuantity, removeItem, } from "../../redux/cartSlice";
-import LoginPage from './LoginPage';
-import RegisterPage from './RegisterPage';
+import { useAuth } from '../../auth/authProvider';
 import FilterSidebar from './FilterSidebar';
 import Footer from '../components/Footer';
 import CartPage from './CartPage';
@@ -176,19 +175,8 @@ export default function ShopPage() {
 
   const cartItems = useSelector((state) => state.cart.items);
 
-  const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
-  const [isRegisterModalVisible, setIsRegisterModalVisible] = useState(false);
+  const { authenticated, openLoginModal, openRegisterModal } = useAuth();
   const [isCartVisible, setIsCartVisible] = useState(false);
-
-  const openLogin = () => {
-    setIsRegisterModalVisible(false);
-    setIsLoginModalVisible(true);
-  };
-
-  const openRegister = () => {
-    setIsLoginModalVisible(false);
-    setIsRegisterModalVisible(true);
-  };
 
   const handleUpdateQuantity = (id, delta) => {
     dispatch(
@@ -231,8 +219,8 @@ export default function ShopPage() {
       {contextHolder}
 
       <ShopLayoutHeader
-        onLoginClick={openLogin}
-        onRegisterClick={openRegister}
+        onLoginClick={() => openLoginModal()}
+        onRegisterClick={() => openRegisterModal()}
         onCartClick={() => setIsCartVisible(true)}
         cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
       ></ShopLayoutHeader>
@@ -244,27 +232,21 @@ export default function ShopPage() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckout={() => {
-          setIsCartVisible(false); 
-          navigate("/checkout")
+          setIsCartVisible(false);
+          if (!authenticated) {
+            openLoginModal('Quý khách cần đăng nhập tài khoản để tiến hành thanh toán đơn hàng!', '/checkout');
+            return;
+          }
+          navigate("/checkout");
         }}
       />
 
-      <LoginPage
-        visible={isLoginModalVisible}
-        onClose={() => setIsLoginModalVisible(false)}
-        onGoToRegister={openRegister}
-      />
-
-      <RegisterPage
-        visible={isRegisterModalVisible}
-        onClose={() => setIsRegisterModalVisible(false)}
-        onLogin={openLogin}
-      />
-
-      <Shop
-        onAddToCart={handleAddToCart}
-        onBuyNow={handleBuyNow}
-      />
+      <div className="pt-[108px] flex-1 flex flex-col">
+        <Shop
+          onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
+        />
+      </div>
 
       <Footer />
     </div>

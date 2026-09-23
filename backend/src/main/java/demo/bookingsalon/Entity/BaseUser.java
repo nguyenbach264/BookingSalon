@@ -24,8 +24,7 @@ public abstract class BaseUser extends BaseEntity {
     @Column(name = "keycloak_id")
     private UUID keycloakId;
 
-    @Column(name = "username", unique = true, nullable = false)
-    @NotBlank(message = "Username mustn't be blank!")
+    @Column(name = "username", unique = true)
     private String username;
 
     @Column(name = "full_name")
@@ -47,5 +46,9 @@ public abstract class BaseUser extends BaseEntity {
     @Builder.Default
     @Column(name = "enabled", nullable = false)
     private boolean enabled = true;
+
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
 }
 

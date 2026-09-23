@@ -25,6 +25,7 @@ import demo.bookingsalon.Service.Keycloak.RoleService;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -34,6 +35,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final RoleService roleService;
+    private final EmailOtpService emailOtpService;
 
     @Value("${keycloak.realm}")
     private String realm;
@@ -269,6 +271,99 @@ public class UserService {
         return savedUser;
     }
 
+    // 10. Lấy thông tin cá nhân của người dùng hiện tại
+    public UserResponse getCurrentUserProfile(UUID keycloakId) {
+        User user = userRepository.findByKeycloakId(keycloakId);
+        if (user == null) {
+            throw new NotFoundException("Không tìm thấy thông tin tài khoản!");
+        }
+        return userMapper.toUserResponseByUser(user);
+    }
+
+    // 11. Cập nhật hồ sơ cá nhân
+    public UserResponse updateCurrentUserProfile(UUID keycloakId, UpdateUserRequest request) {
+        User user = userRepository.findByKeycloakId(keycloakId);
+        if (user == null) {
+            throw new NotFoundException("Không tìm thấy thông tin tài khoản!");
+        }
+
+        if (request.getFullName() != null && !request.getFullName().isBlank()) {
+            user.setFullName(request.getFullName().trim());
+            // Đồng bộ tên lên Keycloak
+            try {
+                UserRepresentation userRep = keycloak.realm(realm).users().get(keycloakId.toString()).toRepresentation();
+                if (userRep != null) {
+                    String[] name = request.getFullName().trim().split("\\s+");
+                    userRep.setFirstName(name[name.length - 1]);
+                    if (name.length > 1) {
+                        userRep.setLastName(String.join(" ", Arrays.copyOf(name, name.length - 1)));
+                    }
+                    keycloak.realm(realm).users().get(keycloakId.toString()).update(userRep);
+                }
+            } catch (Exception ex) {
+                log.warn("Could not sync name to Keycloak: {}", ex.getMessage());
+            }
+        }
+
+        if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber().trim());
+        if (request.getAddress() != null) user.setAddress(request.getAddress().trim());
+        if (request.getGender() != null) user.setGender(request.getGender().trim());
+        if (request.getCity() != null) user.setCity(request.getCity().trim());
+        if (request.getDistrict() != null) user.setDistrict(request.getDistrict().trim());
+        if (request.getWard() != null) user.setWard(request.getWard().trim());
+        if (request.getAvatarUrl() != null) user.setAvatarUrl(request.getAvatarUrl().trim());
+
+        User saved = userRepository.save(user);
+        return userMapper.toUserResponseByUser(saved);
+    }
+
+    // 12. Gửi mã OTP xác thực Email
+    public void sendEmailVerificationOtp(UUID keycloakId) {
+        User user = userRepository.findByKeycloakId(keycloakId);
+        if (user == null) {
+            throw new NotFoundException("Không tìm thấy tài khoản người dùng!");
+        }
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Tài khoản chưa có địa chỉ email!");
+        }
+        if (user.isEmailVerified()) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Email của bạn đã được xác thực trước đó!");
+        }
+
+        emailOtpService.generateAndSendOtp(user.getEmail(), user.getUsername() != null ? user.getUsername() : user.getFullName());
+    }
+
+    // 13. Xác thực mã OTP Email
+    public boolean verifyUserEmail(UUID keycloakId, String otp) {
+        User user = userRepository.findByKeycloakId(keycloakId);
+        if (user == null) {
+            throw new NotFoundException("Không tìm thấy tài khoản người dùng!");
+        }
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Tài khoản chưa có địa chỉ email!");
+        }
+
+        boolean valid = emailOtpService.verifyOtp(user.getEmail(), otp);
+        if (!valid) {
+            return false;
+        }
+
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        // Đồng bộ trạng thái emailVerified lên Keycloak
+        try {
+            UserRepresentation userRep = keycloak.realm(realm).users().get(keycloakId.toString()).toRepresentation();
+            if (userRep != null) {
+                userRep.setEmailVerified(true);
+                keycloak.realm(realm).users().get(keycloakId.toString()).update(userRep);
+            }
+        } catch (Exception ex) {
+            log.warn("Could not sync emailVerified status to Keycloak: {}", ex.getMessage());
+        }
+
+        return true;
+    }
 }
 
 
