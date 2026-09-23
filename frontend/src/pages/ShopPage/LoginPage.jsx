@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Checkbox, Input, Button, Modal, Form, Alert } from "antd";
 import { useAuth } from "../../auth/authProvider";
+import { useRoleRedirect } from "../../hooks/useRoleRedirect";
 
-const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
+const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn, notice, targetRedirect }) => {
   const [isForgot, setIsForgot] = useState(false);
   const [forgotStep, setForgotStep] = useState(1); // 1: input email, 2: input OTP + new password
   const [forgotEmail, setForgotEmail] = useState("");
@@ -16,6 +17,7 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
   const [forgotResetForm] = Form.useForm();
 
   const { login, loginWithGoogle, loading, authError, sendForgotPasswordOtp, verifyAndResetPassword } = useAuth();
+  const redirectByRole = useRoleRedirect();
 
   // Đếm ngược 60 giây khi gửi OTP quên mật khẩu
   useEffect(() => {
@@ -33,6 +35,7 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
     if (result && result.success) {
       onClose();
       if (onLoggedIn) onLoggedIn(result.user);
+      redirectByRole(result.user, targetRedirect);
     }
   };
 
@@ -114,11 +117,15 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn }) => {
     >
       <div className="p-6 sm:p-8">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-black text-[#1b2a4a] tracking-wider">30SHINE SHOP</h2>
+          <h2 className="text-2xl font-black text-[#1b2a4a] tracking-wider">ĐĂNG NHẬP</h2>
           <p className="text-sm text-gray-500 mt-1">
             {isForgot ? "Khôi phục mật khẩu tài khoản của bạn" : "Đăng nhập để trải nghiệm dịch vụ tốt nhất"}
           </p>
         </div>
+
+        {notice && !isForgot && (
+          <Alert message={notice} type="warning" showIcon className="mb-4 rounded-xl font-medium" />
+        )}
 
         {authError && !isForgot && (
           <Alert message={authError} type="error" showIcon className="mb-4 rounded-xl" />

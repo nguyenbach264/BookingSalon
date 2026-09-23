@@ -1,74 +1,278 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Select, } from 'antd';
-import { Search, X, User, Trash2, CalendarCheck, MapPin, Check, ArrowLeft, ChevronUp, ChevronDown, Calendar } from 'lucide-react';
+import { Input, Spin, Empty, Tag } from 'antd';
+import { Search, MapPin, Clock, Phone, Check, ChevronRight, Sparkles, Building2 } from 'lucide-react';
 import { useBooking } from '../../service/context/BookingContext';
-import { useNavigate } from 'react-router';
+import { getSalons } from '../../service/api/salonApi';
 
-const MOCK_SALONS = [
-  { id: 1, name: '30Shine - Vinsmart City Parking Zone 4', address: 'Tây Mỗ, Nam Từ Liêm, Hà Nội', features: ['Đậu ô tô', 'Gần anh'], image: 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=400&q=80', city: 'hn' },
-  { id: 2, name: '30Shine - 65 Cầu Diễn', address: 'Phúc Diễn, Bắc Từ Liêm, Hà Nội', features: ['Đậu ô tô', 'Studio gội riêng'], image: 'https://images.unsplash.com/photo-1588772097746-86c879dc6eb9?w=400&q=80', city: 'hn' },
-  { id: 6, name: '30Shine - 104 Thái Hà', address: 'Trung Liệt, Đống Đa, Hà Nội', features: ['Massage VIP', 'Trung tâm'], image: 'https://images.unsplash.com/photo-1598524374912-628cbcddbc1f?w=400&q=80', city: 'hn' },
-  { id: 3, name: '30Shine - 136 Hùng Vương', address: 'Phường 4, Quận 10, TP. Hồ Chí Minh', features: ['Đậu ô tô', 'Gội VIP'], image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&q=80', city: 'hcm' },
-  { id: 4, name: '30Shine - 2 Nguyễn Trãi', address: 'Phường 3, Quận 5, TP. Hồ Chí Minh', features: ['Gần anh', 'Đậu ô tô'], image: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=400&q=80', city: 'hcm' },
-  { id: 7, name: '30Shine - 82 Lê Trọng Tấn', address: 'Tây Thạnh, Tân Phú, TP. Hồ Chí Minh', features: ['Không gian rộng'], image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&q=80', city: 'hcm' },
-  { id: 5, name: '30Shine - 345 Lê Duẩn', address: 'Hải Châu, Đà Nẵng', features: ['Đậu ô tô'], image: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&q=80', city: 'dn' },
-  { id: 8, name: '30Shine - 71 Nguyễn Văn Linh', address: 'Thạc Gián, Thanh Khê, Đà Nẵng', features: ['Mặt tiền lớn'], image: 'https://images.unsplash.com/photo-1516975080661-46bfa33f93a1?w=400&q=80', city: 'dn' },
-  { id: 9, name: '30Shine - 163 Hàng Bông', province: 'Hà Nội', address: '163 Hàng Bông, Hoàn Kiếm, Hà Nội', features: ['Gần bạn', 'Đậu ô tô'], image: 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=400&q=80' },
-  { id: 10, name: '30Shine - 346 Khâm Thiên', province: 'Hà Nội', address: '346 Khâm Thiên, Đống Đa, Hà Nội', features: ['Studio gội riêng'], image: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=400&q=80' },
-  { id: 12, name: '30Shine - 82 Trần Não', province: 'Hồ Chí Minh', address: '82 Trần Não, Quận 2, TP. HCM', features: ['Đậu ô tô'], image: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=400&q=80' },
+const DEFAULT_SALON_IMAGES = [
+  'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=600&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=600&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&auto=format&fit=crop&q=80',
 ];
 
 const SelectSalon = () => {
-  const [cityFilter, setCityFilter] = useState('all');
+  const { selectedSalon, setSelectedSalon, setStep } = useBooking();
+  const [salons, setSalons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [cityFilter, setCityFilter] = useState('ALL');
 
-  const { step, setStep, setSelectedSalon } = useBooking();
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    getSalons()
+      .then((data) => {
+        if (isMounted) {
+          setSalons(Array.isArray(data) ? data : []);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching salons:', err);
+        if (isMounted) {
+          setError('Không thể tải danh sách chi nhánh salon. Vui lòng thử lại!');
+          setLoading(false);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-  const filteredSalons = cityFilter === 'all' ? MOCK_SALONS : MOCK_SALONS.filter(s => s.city === cityFilter);
+  // Filter logic
+  const filteredSalons = salons.filter((salon) => {
+    const matchesSearch =
+      (salon.salonName || salon.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (salon.address || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-  const navigate = useNavigate();
+    if (!matchesSearch) return false;
+    if (cityFilter === 'ALL') return true;
+
+    const salonCity = (salon.city || '').toLowerCase();
+    const filterKey = cityFilter.toLowerCase();
+    return salonCity.includes(filterKey) || (filterKey === 'hn' && (salonCity.includes('hà nội') || salonCity.includes('ha noi'))) ||
+           (filterKey === 'hcm' && (salonCity.includes('hồ chí minh') || salonCity.includes('ho chi minh') || salonCity.includes('sài gòn'))) ||
+           (filterKey === 'dn' && (salonCity.includes('đà nẵng') || salonCity.includes('da nang')));
+  });
+
+  const getSalonImage = (salon, index) => {
+    if (salon.images && salon.images.length > 0 && salon.images[0]) {
+      return salon.images[0];
+    }
+    return DEFAULT_SALON_IMAGES[index % DEFAULT_SALON_IMAGES.length];
+  };
+
+  const handleSelect = (salon) => {
+    setSelectedSalon(salon);
+  };
+
+  const handleConfirmAndNext = (salon) => {
+    setSelectedSalon(salon);
+    setStep(2);
+  };
 
   return (
-    <div className={`mx-auto w-full p-4 mt-4 ${step === 4 || step === 5 ? 'max-w-[1000px]' : 'max-w-[800px]'}`}>
-
-      {/* STEP 1: CHỌN SALON */}
-      <div className="animate-fade-in">
-        <h2 className="text-2xl font-bold mb-6 text-center text-[#1b2a4a]">Chọn Salon</h2>
-        <Input prefix={<Search className="text-gray-400" />} placeholder="Tìm kiếm salon..." size="large" className="mb-4 rounded-xl" />
-
-        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide mb-2 border-b">
-          {[{ id: 'all', name: 'Tất cả' }, { id: 'hn', name: 'Hà Nội' }, { id: 'hcm', name: 'Hồ Chí Minh' }, { id: 'dn', name: 'Đà Nẵng' }].map(city => (
-            <div key={city.id} onClick={() => setCityFilter(city.id)}
-              className={`px-4 py-2 border rounded-full text-sm font-medium whitespace-nowrap cursor-pointer transition-colors select-none
-                     ${cityFilter === city.id ? 'bg-[#1b2a4a] text-white border-[#1b2a4a]' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'}`}>
-              {city.name}
-            </div>
-          ))}
+    <div className="max-w-[920px] mx-auto px-4 py-6 animate-fade-in">
+      {/* Header Banner */}
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold mb-3">
+          <Sparkles className="w-3.5 h-3.5" /> Hệ thống Salon chuẩn quốc tế
         </div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1b2a4a] tracking-tight">
+          Chọn chi nhánh Salon
+        </h1>
+        <p className="text-gray-500 text-sm mt-1.5">
+          Vui lòng chọn salon thuận tiện nhất để tiếp tục đặt lịch hẹn
+        </p>
+      </div>
 
-        <div className="space-y-4">
-          {filteredSalons.map(salon => (
-            <div key={salon.id} className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col sm:flex-row gap-4 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group">
-              <div className="w-full sm:w-40 h-40 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
-                <img src={salon.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="salon" />
-              </div>
-              <div className="flex-1 flex flex-col">
-                <h3 className="font-bold text-gray-900 text-lg mb-1">{salon.name}</h3>
-                <p className="text-sm text-gray-500 mb-2 flex items-start gap-1"><MapPin className="w-4 h-4 shrink-0 mt-0.5 text-red-500" /> {salon.address}</p>
-                <div className="flex gap-2 mb-4">
-                  {salon.features.map((f, i) => <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{f}</span>)}
+      {/* Search & City Filter */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-200/80 mb-6">
+        <Input
+          prefix={<Search className="text-gray-400 w-4 h-4 mr-1" />}
+          placeholder="Tìm theo tên salon, đường, quận..."
+          size="large"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          allowClear
+          className="rounded-xl mb-4 font-normal"
+        />
+
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {[
+            { id: 'ALL', name: 'Tất cả khu vực' },
+            { id: 'HN', name: 'Hà Nội' },
+            { id: 'HCM', name: 'TP. Hồ Chí Minh' },
+            { id: 'DN', name: 'Đà Nẵng' },
+          ].map((city) => {
+            const isActive = cityFilter === city.id;
+            return (
+              <button
+                key={city.id}
+                type="button"
+                onClick={() => setCityFilter(city.id)}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
+                  isActive
+                    ? 'bg-[#1b2a4a] text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200/70 hover:text-gray-900'
+                }`}
+              >
+                {city.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Salons List */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Spin size="large" />
+          <p className="mt-4 text-gray-500 text-sm font-medium">Đang tải danh sách salon...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center text-red-600 font-medium">
+          {error}
+          <button
+            onClick={() => window.location.reload()}
+            className="block mx-auto mt-3 px-4 py-1.5 bg-red-600 text-white rounded-lg text-sm"
+          >
+            Tải lại
+          </button>
+        </div>
+      ) : filteredSalons.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+          <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-600 font-medium">Không tìm thấy chi nhánh salon nào phù hợp</p>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setCityFilter('ALL');
+            }}
+            className="mt-3 text-sm text-blue-600 hover:underline font-semibold"
+          >
+            Xóa bộ lọc tìm kiếm
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredSalons.map((salon, idx) => {
+            const isSelected = selectedSalon?.id === salon.id;
+            const salonName = salon.salonName || salon.name || 'Salon 30Shine';
+            const salonAddress = salon.address || 'Đang cập nhật địa chỉ';
+            const openHour = salon.openTime ? String(salon.openTime).slice(0, 5) : '08:30';
+            const closeHour = salon.closeTime ? String(salon.closeTime).slice(0, 5) : '21:30';
+            const imgUrl = getSalonImage(salon, idx);
+
+            return (
+              <div
+                key={salon.id || idx}
+                onClick={() => handleSelect(salon)}
+                className={`group bg-white rounded-2xl border-2 transition-all duration-200 p-4 sm:p-5 flex flex-col justify-between cursor-pointer relative overflow-hidden ${
+                  isSelected
+                    ? 'border-blue-600 ring-2 ring-blue-100 shadow-md bg-blue-50/20'
+                    : 'border-gray-200/90 hover:border-blue-300 hover:shadow-md'
+                }`}
+              >
+                {/* Selected Badge */}
+                {isSelected && (
+                  <div className="absolute top-0 right-0 bg-blue-600 text-white text-[11px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-sm">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" /> Đã chọn
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex gap-4 items-start">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 relative">
+                      <img
+                        src={imgUrl}
+                        alt={salonName}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0 pr-6">
+                      <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1 leading-snug group-hover:text-blue-600 transition-colors">
+                        {salonName}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-500 mb-2 flex items-start gap-1.5 line-clamp-2">
+                        <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                        <span>{salonAddress}</span>
+                      </p>
+
+                      <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                        <span className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-md font-medium text-[11px]">
+                          <Clock className="w-3 h-3 text-gray-500" /> {openHour} - {closeHour}
+                        </span>
+                        {salon.phoneNumber && (
+                          <span className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-md font-medium text-[11px]">
+                            <Phone className="w-3 h-3 text-gray-500" /> {salon.phoneNumber}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-auto">
-                  <button onClick={() => { setSelectedSalon(salon); setStep(2); navigate('/booking/select-stylist-and-date'); }} className="w-full sm:w-auto bg-[#1b2a4a] hover:bg-[#244383] text-white px-8 py-2.5 rounded-lg font-bold text-sm uppercase transition-colors shadow-sm">
-                    CHỌN SALON NÀY
+
+                {/* Bottom Action */}
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-400">
+                    {salon.city || 'Việt Nam'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleConfirmAndNext(salon);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
+                      isSelected
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                        : 'bg-gray-100 text-gray-700 hover:bg-[#1b2a4a] hover:text-white'
+                    }`}
+                  >
+                    {isSelected ? 'Tiếp tục bước 2' : 'Chọn salon này'}
+                    <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-      </div>
+      )}
+
+      {/* Sticky Bottom Bar if a salon is selected */}
+      {selectedSalon && (
+        <div className="sticky bottom-4 mt-8 z-10">
+          <div className="bg-[#1b2a4a] text-white p-4 rounded-2xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-blue-900/50">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                <Check className="w-5 h-5 stroke-[2.5]" />
+              </div>
+              <div className="truncate">
+                <p className="text-xs text-blue-200">Salon đang chọn:</p>
+                <p className="text-sm sm:text-base font-bold text-white truncate">
+                  {selectedSalon.salonName || selectedSalon.name}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setStep(2)}
+              className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              Tiếp tục chọn Stylist & Ngày giờ
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default SelectSalon;

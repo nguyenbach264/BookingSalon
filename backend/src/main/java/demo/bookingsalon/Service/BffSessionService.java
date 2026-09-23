@@ -60,8 +60,8 @@ public class BffSessionService {
                                   String keycloakId) {
         HttpSession session = request.getSession(true);
 
-        boolean isRemember = Boolean.TRUE.equals(rememberMe);
-        int sessionTimeoutSeconds = isRemember ? (30 * 24 * 3600) : (30 * 60); // 30 ngày hoặc 30 phút
+        // Duy trì phiên đăng nhập 30 ngày theo yêu cầu, chỉ hết hạn sau 30 ngày hoặc khi người dùng chủ động đăng xuất
+        int sessionTimeoutSeconds = 30 * 24 * 3600;
         session.setMaxInactiveInterval(sessionTimeoutSeconds);
 
         Instant expiresAt = Instant.now().plusSeconds(Math.max(30, expiresIn));
@@ -73,8 +73,8 @@ public class BffSessionService {
             session.setAttribute(SESSION_KEYCLOAK_ID, keycloakId);
         }
 
-        // Thiết lập JSESSIONID cookie với maxAge tương ứng
-        long cookieMaxAge = isRemember ? (30L * 24 * 3600) : -1;
+        // Thiết lập JSESSIONID cookie với maxAge 30 ngày
+        long cookieMaxAge = 30L * 24 * 3600;
         ResponseCookie sessionCookie = ResponseCookie.from("JSESSIONID", session.getId())
                 .httpOnly(true)
                 .secure(false)
@@ -87,8 +87,8 @@ public class BffSessionService {
         // Dọn dẹp sạch sẽ các cookie token cũ nếu còn tồn tại trên browser
         purgeLegacyTokenCookies(response);
 
-        log.info("BFF Session initialized for user {}, session ID: {}, rememberMe: {}",
-                keycloakId, session.getId(), isRemember);
+        log.info("BFF Session initialized for user {}, session ID: {}, duration: 30 days",
+                keycloakId, session.getId());
     }
 
     /**
@@ -152,7 +152,9 @@ public class BffSessionService {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("grant_type", "refresh_token");
         formData.add("client_id", clientId);
-        formData.add("client_secret", clientSecret);
+        if (clientSecret != null && !clientSecret.isBlank()) {
+            formData.add("client_secret", clientSecret);
+        }
         formData.add("refresh_token", refreshToken);
 
         String responseBody = webClientBuilder.build()

@@ -22,10 +22,14 @@ public interface BookingMapper {
     BookingDTO toBookingDTO(Booking booking);
 
     @Mapping(target = "salonId", source = "salon.id")
+    @Mapping(target = "salonName", source = "salon.salonName")
+    @Mapping(target = "salonAddress", source = "salon.address")
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "stylistId", source = "stylist.id")
+    @Mapping(target = "stylistName", source = "stylist.fullName")
     @Mapping(target = "serviceIds", source = "bookingDetails", qualifiedByName = "mapServiceIds")
     @Mapping(target = "totalServices", source = "bookingDetails", qualifiedByName = "mapTotalServices")
+    @Mapping(target = "isReviewed", source = "reviewed")
     BookingResponse toBookingResponse(Booking booking);
 
     @Named("mapServiceIds")

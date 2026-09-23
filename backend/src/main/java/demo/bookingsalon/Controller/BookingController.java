@@ -10,10 +10,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/booking")
+@RequestMapping({"/api/booking", "/api/bookings"})
 @RequiredArgsConstructor
 public class BookingController {
     private final BookingService bookingService;
@@ -29,12 +30,34 @@ public class BookingController {
     }
 
     @GetMapping("/user/{id}")
-    public ResponseEntity<?> getBookingByUserId(@PathVariable UUID userId) {
+    public ResponseEntity<?> getBookingByUserId(@PathVariable("id") UUID userId) {
         return ResponseEntity.status(HttpStatus.OK).body(bookingService.getBookingByUserId(userId));
     }
 
+    @GetMapping("/user/{id}/status/{status}")
+    public ResponseEntity<?> getBookingByUserIdAndStatus(@PathVariable("id") UUID userId, @PathVariable("status") BookingStatus status) {
+        return ResponseEntity.status(HttpStatus.OK).body(bookingService.getBookingByUserIdAndStatus(userId, status));
+    }
+
+    @GetMapping("/stylist/{id}")
+    public ResponseEntity<?> getBookingByStylistId(@PathVariable("id") UUID stylistId) {
+        return ResponseEntity.status(HttpStatus.OK).body(bookingService.getBookingByStylistId(stylistId));
+    }
+
+    @GetMapping("/stylist/{id}/status/{status}")
+    public ResponseEntity<?> getBookingByStylistIdAndStatus(@PathVariable("id") UUID stylistId, @PathVariable("status") BookingStatus status) {
+        return ResponseEntity.status(HttpStatus.OK).body(bookingService.getBookingByStylistIdAndStatus(stylistId, status));
+    }
+
+    @GetMapping("/stylist/{stylistId}/booked-slots")
+    public ResponseEntity<List<String>> getBookedSlots(
+            @PathVariable UUID stylistId,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate date) {
+        return ResponseEntity.status(HttpStatus.OK).body(bookingService.getBookedTimeSlotsByStylistAndDate(stylistId, date));
+    }
+
     @GetMapping("/salon/{id}")
-    public ResponseEntity<?> getBookingBySalonId(@PathVariable UUID salonId) {
+    public ResponseEntity<?> getBookingBySalonId(@PathVariable("id") UUID salonId) {
         return ResponseEntity.status(HttpStatus.OK).body(bookingService.getBookingBySalonId(salonId));
     }
 
@@ -44,7 +67,7 @@ public class BookingController {
                 .body(bookingService.createBooking(createBookingRequest));
     }
 
-    @PostMapping("/{id}")
+    @RequestMapping(value = {"/{id}", "/{id}/status"}, method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<?> updateBooking(@PathVariable UUID id, @RequestParam BookingStatus status) {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(bookingService.updateBooking(id, status));
     }
@@ -72,5 +95,10 @@ public class BookingController {
     @GetMapping("/statistics/user/{userId}")
     public ResponseEntity<BookingStatisticsResponse> getBookingStatisticsByUser(@PathVariable UUID userId) {
         return ResponseEntity.status(HttpStatus.OK).body(bookingService.getBookingStatisticsByUser(userId));
+    }
+
+    @GetMapping("/statistics/stylist/{stylistId}")
+    public ResponseEntity<BookingStatisticsResponse> getBookingStatisticsByStylist(@PathVariable UUID stylistId) {
+        return ResponseEntity.status(HttpStatus.OK).body(bookingService.getBookingStatisticsByStylist(stylistId));
     }
 }

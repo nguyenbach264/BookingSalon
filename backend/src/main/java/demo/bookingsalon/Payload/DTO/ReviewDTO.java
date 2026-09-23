@@ -25,5 +25,11 @@ public class ReviewDTO {
 
     private String reviewContent;
 
+    private UUID bookingId;
+
+    private UUID stylistId;
+
+    private UUID salonId;
+
     private LocalDateTime createdAt;
 }

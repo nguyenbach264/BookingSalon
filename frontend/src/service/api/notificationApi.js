@@ -1,15 +1,17 @@
-import axios from "axios";
+import api from "./axiosApi";
 
-const API_URL = "http://localhost:8080/api/notifications"; 
+// Lấy danh sách thông báo của user
+export const getUserNotifications = (userId) =>
+  api.get(`/notifications/user/${userId}`).then((r) => r.data);
 
-export const notificationApi = async (data) => {
-  const response = await axios.post(
-    API_URL, 
-    data, 
-    {
-      withCredentials: true
-    }
-  ); 
+// Đánh dấu 1 thông báo đã đọc
+export const markNotificationAsRead = (notificationId) =>
+  api.put(`/notifications/${notificationId}/read`).then((r) => r.data);
 
-  return response.data; 
-}; 
+// Đánh dấu tất cả thông báo của user đã đọc
+export const markAllNotificationsAsRead = (userId) =>
+  api.put(`/notifications/user/${userId}/read-all`).then((r) => r.data);
+
+// Tạo thông báo mới (nếu cần từ client)
+export const createNotification = (data) =>
+  api.post("/notifications", data).then((r) => r.data);

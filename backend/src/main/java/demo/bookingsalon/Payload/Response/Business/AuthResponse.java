@@ -26,6 +26,16 @@ public class AuthResponse {
         private String phoneNumber;
         private String avatarUrl;
         private String role;          // USER | STYLIST | ADMIN
+        private String gender;
+        private String address;
+        private String city;
+        private String district;
+        private String ward;
+        private String membershipTier;
+        private boolean emailVerified;
+        private boolean phoneVerified;
+        private String voucherCode;
+        private java.time.LocalDateTime createdAt;
     }
 }
 

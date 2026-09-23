@@ -4,6 +4,7 @@ import { Form, Input, Button, Select, message, Breadcrumb } from 'antd';
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { selectCartItems, clearCart } from "../../redux/cartSlice";
+import { useAuth } from "../../auth/authProvider";
 
 const MOCK_PROVINCES = [
   { value: 'hanoi', label: 'Hà Nội' },
@@ -53,6 +54,7 @@ const CheckoutPage = () => {
 
   const navigate = useNavigate(); 
   const dispatch = useDispatch(); 
+  const { authenticated, openLoginModal } = useAuth();
 
   const [selectedProvince, setSelectedProvince] = useState(null);
   const [selectedDistrict, setSelectedDistrict] = useState(null);
@@ -83,6 +85,10 @@ const CheckoutPage = () => {
   };
 
   const handlePlaceOrder = () => {
+    if (!authenticated) {
+      openLoginModal('Quý khách cần đăng nhập tài khoản để đặt hàng!', '/checkout');
+      return;
+    }
     message.success("Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại 30Shine.");
     dispatch(clearCart()); 
     navigate("/shop"); 
