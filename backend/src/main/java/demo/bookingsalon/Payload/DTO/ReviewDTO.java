@@ -19,6 +19,8 @@ public class ReviewDTO {
 
     private UUID productId;
 
+    private String productName;
+
     private Integer rating;
 
     private String type;

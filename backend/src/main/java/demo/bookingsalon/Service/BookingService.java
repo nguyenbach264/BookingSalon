@@ -203,7 +203,7 @@ public class BookingService {
         Stylist stylist = stylistRepository.findById(bookingRequest.getStylistId()).orElseThrow(() ->
                 new NotFoundException("Stylist not found"));
 
-        String bookingCode = "BB-" + LocalDateTime.now().getYear() + "-" + String.format("%05d", new Random().nextInt(90000) + 10000);
+        String bookingCode = "BB-" + LocalDateTime.now().getYear() + "-" + UUID.randomUUID().toString().replace("-","").substring(0, 8).toUpperCase();
         String paymentMethodStr = bookingRequest.getPaymentMethod() != null ? bookingRequest.getPaymentMethod().toUpperCase() : "CASH";
         String paymentStatusStr = "BANK_TRANSFER".equals(paymentMethodStr) ? "PAID" : "UNPAID";
 
@@ -249,7 +249,7 @@ public class BookingService {
         }
 
         Payment payment = Payment.builder()
-                .paymentCode("PAY-" + String.format("%06d", new Random().nextInt(900000) + 100000))
+                .paymentCode("PAY-" + UUID.randomUUID().toString().replace("-","").substring(0, 10).toUpperCase())
                 .amount(finalTotal)
                 .status("PAID".equals(paymentStatusStr) ? demo.bookingsalon.Enum.PaymentStatus.SUCCESS : demo.bookingsalon.Enum.PaymentStatus.PENDING)
                 .paymentMethod(methodEnum)

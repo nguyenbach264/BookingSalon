@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import ShopPage from "../ShopPage/main";
+import ProductDetailPage from '../ShopPage/ProductDetailPage';
 import CheckoutPage from "../CheckoutPage/main";
 import HomePage from "../HomePage/main";
 import ServicePage from "../ServicePage/main";
@@ -20,6 +21,7 @@ import RegisterPage from "../ShopPage/RegisterPage";
 import UserProfilePage from "../UserPage/UserProfilePage";
 import MyBookingsPage from "../UserPage/MyBookingsPage";
 import MyOrdersPage from "../UserPage/MyOrdersPage";
+import PaymentResultPage from "../PaymentPage/PaymentResultPage";
 import { useAuth } from "../../auth/authProvider";
 
 function AppRoutes() {
@@ -95,6 +97,7 @@ function AppRoutes() {
         </Route>
 
         <Route path="/shop" element={<ShopPage />} />
+        <Route path="/shop/product/:id" element={<ProductDetailPage />} />
 
         <Route
           path="/checkout"
@@ -107,6 +110,9 @@ function AppRoutes() {
 
         {/* OAuth2 / Google Callback redirect */}
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
+
+        {/* VNPay Payment Result page — public, no auth required */}
+        <Route path="/payment/result" element={<PaymentResultPage />} />
 
         {/* ── STYLIST ROUTES ─────────────────────────────────── */}
         <Route

@@ -1,16 +1,35 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { generateCodeVerifier, generateCodeChallenge, generateState } from "./pkce";
 
-// Proactively purge any token and user keys from localStorage/sessionStorage
+const SESSION_USER_KEY = "bs_user_profile";
+
+const getSavedProfile = () => {
+  try {
+    const raw = localStorage.getItem(SESSION_USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const saveProfile = (user) => {
+  try {
+    if (user) {
+      localStorage.setItem(SESSION_USER_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(SESSION_USER_KEY);
+    }
+  } catch (e) {}
+};
+
+// Purge any raw token keys from localStorage/sessionStorage
 export const purgeBrowserTokens = () => {
   try {
     const keysToRemove = [
       "refresh_token", "access_token", "token", 
       "refreshToken", "accessToken",
       "bs_access_token", "bs_refresh_token",
-      "jwt", "id_token",
-      "bs_user", "user", "userInfo", "role",
-      "bs_remembered_account"
+      "jwt", "id_token"
     ];
     keysToRemove.forEach(k => {
       localStorage.removeItem(k);
@@ -19,17 +38,15 @@ export const purgeBrowserTokens = () => {
   } catch (e) {}
 };
 
-// Immediately purge on module load
-purgeBrowserTokens();
-
 // ── CONTEXT ──────────────────────────────────────────────────────────────────
 const AuthContext = createContext(null);
 
 // ── PROVIDER ─────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }) {
+  const savedProfile = getSavedProfile();
   const [initialized, setInitialized] = useState(false);
-  const [authenticated, setAuthenticated] = useState(false);
-  const [userInfo, setUserInfo] = useState(null);
+  const [authenticated, setAuthenticated] = useState(Boolean(savedProfile));
+  const [userInfo, setUserInfo] = useState(savedProfile);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
 
@@ -61,51 +78,115 @@ export function AuthProvider({ children }) {
     setRegisterModalVisible(false);
   }, []);
 
+  // ── 8. REFRESH TOKEN (BFF ĐÃ TỰ ĐỘNG REFRESH SERVER-SIDE VÀ DUY TRÌ 30 NGÀY) ──
+  const refreshToken = useCallback(async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/refresh-token", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (response.ok) {
+        try {
+          const meRes = await fetch("http://localhost:8080/api/auth/me", {
+            method: "GET",
+            credentials: "include",
+          });
+          if (meRes.ok) {
+            const user = await meRes.json();
+            setUserInfo(user);
+            setAuthenticated(true);
+            saveProfile(user);
+            return true;
+          }
+        } catch (e) {}
+        return true;
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }, []);
+
+  // ── KIỂM TRA PHIÊN ĐĂNG NHẬP QUA SERVER SESSION (BFF) ───────────────────────
+  const checkCurrentSession = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/auth/me", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const user = await res.json();
+        setUserInfo(user);
+        setAuthenticated(true);
+        saveProfile(user);
+        return true;
+      }
+
+      // Nếu res không ok (ví dụ 401), thử refresh token ngầm 1 lần
+      const refreshed = await refreshToken();
+      if (refreshed) {
+        return true;
+      }
+
+      // Chỉ khi xác nhận phiên hết hạn thực sự
+      saveProfile(null);
+      setUserInfo(null);
+      setAuthenticated(false);
+      return false;
+    } catch (err) {
+      console.warn("checkCurrentSession error or backend offline:", err);
+      // Nếu backend tạm thời offline nhưng đã có profile đã lưu, giữ nguyên trạng thái
+      const cached = getSavedProfile();
+      if (cached) {
+        setUserInfo(cached);
+        setAuthenticated(true);
+        return true;
+      }
+      return false;
+    }
+  }, [refreshToken]);
+
   // ── KIỂM TRA PHIÊN ĐĂNG NHẬP BAN ĐẦU QUA SERVER SESSION (BFF) ───────────────
   useEffect(() => {
     let isMounted = true;
 
-    const checkCurrentSession = async () => {
-      purgeBrowserTokens();
-
-      try {
-        // Gửi cookie JSESSIONID lên BFF để kiểm tra phiên đăng nhập
-        const res = await fetch("http://localhost:8080/api/auth/me", {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (res.ok) {
-          const user = await res.json();
-          if (isMounted) {
-            setUserInfo(user);
-            setAuthenticated(true);
-          }
-        } else {
-          if (isMounted) {
-            setUserInfo(null);
-            setAuthenticated(false);
-          }
-        }
-      } catch (err) {
-        console.warn("Session check error or backend offline:", err);
-        if (isMounted) {
-          setUserInfo(null);
-          setAuthenticated(false);
-        }
-      } finally {
-        if (isMounted) {
-          setInitialized(true);
-        }
+    checkCurrentSession().finally(() => {
+      if (isMounted) {
+        setInitialized(true);
       }
-    };
-
-    checkCurrentSession();
+    });
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [checkCurrentSession]);
+
+  // Proactively keep session alive and refresh before expiration (every 4 minutes)
+  useEffect(() => {
+    if (!authenticated) return;
+
+    const interval = setInterval(() => {
+      checkCurrentSession();
+    }, 4 * 60 * 1000);
+
+    const onFocus = () => {
+      checkCurrentSession();
+    };
+    window.addEventListener("focus", onFocus);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkCurrentSession();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [authenticated, checkCurrentSession]);
 
   // ── 1a. ĐĂNG NHẬP BẰNG AUTHORIZATION CODE FLOW + PKCE ──────────────────────
   const login = useCallback(async (arg1 = {}, password, rememberMe = false) => {
@@ -184,6 +265,7 @@ export function AuthProvider({ children }) {
 
       setUserInfo(data.user);
       setAuthenticated(true);
+      saveProfile(data.user);
       return { success: true, user: data.user };
     } catch (error) {
       const message = error.message || "Có lỗi xảy ra, vui lòng thử lại!";
@@ -239,6 +321,7 @@ export function AuthProvider({ children }) {
 
       setUserInfo(resData.user);
       setAuthenticated(true);
+      saveProfile(resData.user);
       return { success: true, user: resData.user };
     } catch (error) {
       const message = error.message || "Xác thực mã OTP thất bại!";
@@ -266,6 +349,7 @@ export function AuthProvider({ children }) {
       }
       setUserInfo(data.user);
       setAuthenticated(true);
+      saveProfile(data.user);
       return { success: true, user: data.user };
     } catch (error) {
       const message = error.message || "Có lỗi xảy ra, vui lòng thử lại!";
@@ -300,6 +384,7 @@ export function AuthProvider({ children }) {
 
       setUserInfo(data.user);
       setAuthenticated(true);
+      saveProfile(data.user);
       return { success: true, user: data.user };
     } catch (error) {
       const message = error.message || "Có lỗi xảy ra khi xử lý xác thực!";
@@ -315,6 +400,7 @@ export function AuthProvider({ children }) {
     setAuthenticated(false);
     setUserInfo(null);
     setAuthError(null);
+    saveProfile(null);
     purgeBrowserTokens();
 
     // 1. Gọi backend để BFF xoá session server, thu hồi token tại Keycloak và xoá JSESSIONID
@@ -336,51 +422,6 @@ export function AuthProvider({ children }) {
       console.warn("Front-channel logout ping error", e);
     }
   }, []);
-
-  // ── 8. REFRESH TOKEN (BFF ĐÃ TỰ ĐỘNG REFRESH SERVER-SIDE VÀ DUY TRÌ 30 NGÀY) ──
-  const refreshToken = useCallback(async () => {
-    try {
-      const response = await fetch("http://localhost:8080/api/auth/refresh-token", {
-        method: "POST",
-        credentials: "include",
-      });
-      if (response.ok) {
-        try {
-          const meRes = await fetch("http://localhost:8080/api/auth/me", {
-            method: "GET",
-            credentials: "include",
-          });
-          if (meRes.ok) {
-            const user = await meRes.json();
-            setUserInfo(user);
-            setAuthenticated(true);
-          }
-        } catch (e) {}
-        return true;
-      }
-      return false;
-    } catch (error) {
-      return false;
-    }
-  }, []);
-
-  // Tự động kiểm tra và refresh token khi người dùng quay lại tab sau một thời gian
-  useEffect(() => {
-    if (!authenticated) return;
-
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === "visible") {
-        try {
-          await refreshToken();
-        } catch (e) {}
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [authenticated, refreshToken]);
 
   // ── 9. QUÊN MẬT KHẨU: GỬI OTP ──────────────────────────────────────────────
   const sendForgotPasswordOtp = useCallback(async (email) => {
@@ -452,6 +493,7 @@ export function AuthProvider({ children }) {
         handleOAuth2Callback,
         logout,
         refreshToken,
+        checkCurrentSession,
         getToken,
         sendForgotPasswordOtp,
         verifyAndResetPassword,

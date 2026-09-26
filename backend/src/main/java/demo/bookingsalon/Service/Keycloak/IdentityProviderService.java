@@ -47,6 +47,24 @@ public class IdentityProviderService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void autoConfigureGoogleIdpOnStartup() {
+        try {
+            // Đảm bảo Access Token, SSO Session và Refresh Token của Realm có thời hạn 30 ngày (2.592.000 giây)
+            org.keycloak.representations.idm.RealmRepresentation rep = keycloak.realm(realm).toRepresentation();
+            int thirtyDays = 30 * 24 * 3600;
+            rep.setAccessTokenLifespan(thirtyDays);
+            rep.setAccessTokenLifespanForImplicitFlow(thirtyDays);
+            rep.setSsoSessionIdleTimeout(thirtyDays);
+            rep.setSsoSessionMaxLifespan(thirtyDays);
+            rep.setClientSessionIdleTimeout(thirtyDays);
+            rep.setClientSessionMaxLifespan(thirtyDays);
+            rep.setSsoSessionIdleTimeoutRememberMe(thirtyDays);
+            rep.setSsoSessionMaxLifespanRememberMe(thirtyDays);
+            keycloak.realm(realm).update(rep);
+            log.info("Configured Keycloak realm '{}' access token and session lifespan to 30 days", realm);
+        } catch (Exception ex) {
+            log.warn("Could not auto-tune Keycloak realm session timeout: {}", ex.getMessage());
+        }
+
         if (googleIdpEnabled && configuredGoogleClientId != null && !configuredGoogleClientId.isBlank() &&
             configuredGoogleClientSecret != null && !configuredGoogleClientSecret.isBlank()) {
             try {

@@ -38,6 +38,7 @@ import java.util.UUID;
  */
 @Slf4j
 @Component
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.keycloak-seeder.enabled", havingValue = "true", matchIfMissing = true)
 @Order(2)
 @RequiredArgsConstructor
 public class KeycloakSeeder implements ApplicationRunner {
@@ -311,12 +312,16 @@ public class KeycloakSeeder implements ApplicationRunner {
             org.keycloak.admin.client.resource.RealmResource realmRes = keycloak.realm(realm);
             org.keycloak.representations.idm.RealmRepresentation rep = realmRes.toRepresentation();
             int thirtyDaysSeconds = 30 * 24 * 3600;
+            rep.setAccessTokenLifespan(thirtyDaysSeconds);
+            rep.setAccessTokenLifespanForImplicitFlow(thirtyDaysSeconds);
             rep.setSsoSessionIdleTimeout(thirtyDaysSeconds);
             rep.setSsoSessionMaxLifespan(thirtyDaysSeconds);
+            rep.setClientSessionIdleTimeout(thirtyDaysSeconds);
+            rep.setClientSessionMaxLifespan(thirtyDaysSeconds);
             rep.setSsoSessionIdleTimeoutRememberMe(thirtyDaysSeconds);
             rep.setSsoSessionMaxLifespanRememberMe(thirtyDaysSeconds);
             realmRes.update(rep);
-            log.info("   🔑 KeycloakSeeder: Realm '{}' SSO Session & Refresh Token lifespan configured to 30 days.", realm);
+            log.info("   🔑 KeycloakSeeder: Realm '{}' Access Token, SSO Session & Refresh Token lifespan configured to 30 days.", realm);
         } catch (Exception e) {
             log.warn("   ⚠️  Could not configure realm session lifespan in Keycloak: {}", e.getMessage());
         }

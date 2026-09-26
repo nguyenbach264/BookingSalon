@@ -62,7 +62,14 @@ public class BookingController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createBooking(@RequestBody @Valid CreateBookingRequest createBookingRequest) throws Exception {
+    public ResponseEntity<?> createBooking(@RequestBody @Valid CreateBookingRequest createBookingRequest,
+                                            org.springframework.security.core.Authentication authentication) throws Exception {
+        // Security: authentication already validated via JWT at SecurityConfig level.
+        // Log for audit trail.
+        if (authentication != null && authentication.isAuthenticated()) {
+            org.slf4j.LoggerFactory.getLogger(BookingController.class)
+                    .info("createBooking called by principal={}", authentication.getName());
+        }
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(bookingService.createBooking(createBookingRequest));
     }

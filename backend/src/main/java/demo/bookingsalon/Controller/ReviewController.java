@@ -24,8 +24,19 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUserId(userId));
     }
 
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<?> getReviewsByProductId(@PathVariable("productId") java.util.UUID productId) {
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByProductId(productId));
+    }
+
     @PostMapping
     public ResponseEntity<?> createReview(@RequestBody ReviewDTO reviewDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(reviewService.createReview(reviewDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteReview(@PathVariable("id") java.util.UUID id) {
+        reviewService.deleteReview(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

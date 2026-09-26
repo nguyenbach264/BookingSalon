@@ -2,12 +2,14 @@ package demo.bookingsalon.Payload.DTO;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
+@Builder
 public class ServiceOfferingDTO {
     private UUID id;
 

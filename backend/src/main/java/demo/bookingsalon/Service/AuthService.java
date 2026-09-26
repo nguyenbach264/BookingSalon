@@ -732,4 +732,12 @@ public class AuthService {
         }
         return defaultRole;
     }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public String getFrontendClientId() {
+        return frontendClientId;
+    }
 }

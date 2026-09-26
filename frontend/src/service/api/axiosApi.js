@@ -55,19 +55,31 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      // Nếu người dùng chưa từng đăng nhập hoặc session chưa khởi tạo, thử refresh token 1 lần ngầm
+      // Thử refresh token ngầm — BFF sẽ dùng refresh token từ server-side session
       try {
         const refreshed = await _authContext?.refreshToken?.();
         if (refreshed) {
           processQueue(null);
           return api(originalRequest);
-        } else {
-          throw new Error("Session expired");
         }
+        // Nếu refresh thất bại, thử thêm 1 lần sau delay ngắn (tránh race condition khi session vừa khởi tạo)
+        await new Promise(resolve => setTimeout(resolve, 600));
+        const retried = await _authContext?.refreshToken?.();
+        if (retried) {
+          processQueue(null);
+          return api(originalRequest);
+        }
+        throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.");
       } catch (refreshError) {
         processQueue(refreshError);
-        // Mở modal đăng nhập kèm thông báo giống như ServicePage
-        _authContext?.openLoginModal?.("Quý khách cần đăng nhập tài khoản để tiếp tục!");
+        // Chỉ mở modal đăng nhập với trang khách hàng, không làm gián đoạn dashboard của Admin/Stylist
+        const isDashboard = typeof window !== "undefined" &&
+          (window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/stylist"));
+        // Chỉ mở modal nếu auth context đã initialized (tránh flash modal khi trang vừa load)
+        const isInitialized = _authContext?.initialized !== false;
+        if (!isDashboard && isInitialized && _authContext?.openLoginModal) {
+          _authContext.openLoginModal("Phiên đăng nhập của quý khách đã hết hạn. Vui lòng đăng nhập lại để tiếp tục!");
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

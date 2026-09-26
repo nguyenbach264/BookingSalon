@@ -76,6 +76,12 @@ public class Order extends BaseEntity {
     @Builder.Default
     private List<OrderDetail> orderDetails = new ArrayList<>();
 
+    @Column(name = "vnpay_txn_ref", length = 60)
+    private String vnpayTxnRef;
+
+    @Column(name = "vnpay_url", columnDefinition = "TEXT")
+    private String vnpayUrl;
+
     @Version
     private Long version;
 }

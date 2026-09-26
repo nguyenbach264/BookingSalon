@@ -182,7 +182,7 @@ export default function ServicePage() {
         </div>
 
         {/* Banner thông báo kết quả tìm kiếm */}
-        {searchQuery && (
+        {searchQuery && ( 
           <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-2 text-sm text-gray-800">
               <Sparkles size={16} className="text-[#60a5fa] shrink-0" />

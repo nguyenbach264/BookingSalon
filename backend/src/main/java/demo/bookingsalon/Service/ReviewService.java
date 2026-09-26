@@ -117,4 +117,9 @@ public class ReviewService {
             return data;
         }
     }
+
+    @Transactional
+    public void deleteReview(UUID id) {
+        reviewRepository.deleteById(id);
+    }
 }

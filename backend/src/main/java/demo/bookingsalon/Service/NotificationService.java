@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -190,6 +191,34 @@ public class NotificationService {
                 .title("Đơn hàng đã giao thành công!")
                 .message("Đơn hàng " + (orderCode != null ? orderCode : "") + " đã được giao đến bạn. Cảm ơn bạn đã mua sắm tại BachBarber!")
                 .type("ORDER_DELIVERED")
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .expiredAt(LocalDateTime.now().plusDays(30))
+                .build();
+        return createNotification(notification);
+    }
+
+    @Transactional
+    public NotificationDTO notifyOrderCreated(UUID userId, String orderCode, BigDecimal amount) {
+        Notification notification = Notification.builder()
+                .userId(userId)
+                .title("Đặt hàng thành công!")
+                .message("Đơn hàng " + orderCode + " trị giá " + String.format("%,d", amount != null ? amount.longValue() : 0) + "₫ đã được ghi nhận thành công.")
+                .type("ORDER_CREATED")
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .expiredAt(LocalDateTime.now().plusDays(30))
+                .build();
+        return createNotification(notification);
+    }
+
+    @Transactional
+    public NotificationDTO notifyOrderPaid(UUID userId, String orderCode, BigDecimal amount) {
+        Notification notification = Notification.builder()
+                .userId(userId)
+                .title("Thanh toán thành công!")
+                .message("Đơn hàng " + orderCode + " đã được xác nhận thanh toán thành công qua chuyển khoản ngân hàng.")
+                .type("ORDER_CONFIRMED")
                 .isRead(false)
                 .createdAt(LocalDateTime.now())
                 .expiredAt(LocalDateTime.now().plusDays(30))

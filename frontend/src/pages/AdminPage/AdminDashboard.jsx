@@ -26,6 +26,7 @@ import {
   Popconfirm,
   DatePicker,
   InputNumber,
+  Rate,
 } from "antd";
 import {
   UserOutlined,
@@ -68,17 +69,64 @@ import { getUsers, getStylists, updateBookingStatus, getStylistServices } from "
 import { getSalons } from "../../service/api/salonApi";
 import { getServiceOfferings } from "../../service/api/serviceApi";
 import { getAdminVouchers, createVoucher, deleteVoucher } from "../../service/api/voucherApi";
+import { getAdminProducts, createAdminProduct, updateAdminProduct, deleteAdminProduct, getAdminProductStats, getAdminOrders, updateAdminOrderStatus, getAdminReviews, deleteAdminReview } from "../../service/api/adminApi";
+import { getProductCategories } from "../../service/api/productApi";
+import { EditOutlined, ReloadOutlined } from "@ant-design/icons";
 import notificationWs from "../../service/websocket/notificationWebSocket";
 
 const { Header, Sider, Content } = Layout;
 const { Option } = Select;
+
+const parseAnyDate = (dt) => {
+  if (!dt) return null;
+  try {
+    if (Array.isArray(dt)) {
+      return new Date(dt[0], (dt[1] || 1) - 1, dt[2] || 1, dt[3] || 0, dt[4] || 0, dt[5] || 0);
+    }
+    const d = new Date(dt);
+    return isNaN(d.getTime()) ? null : d;
+  } catch {
+    return null;
+  }
+};
+
+// Helper tạo đường cong SVG mượt mà từ mảng tọa độ
+const generateSvgPath = (points) => {
+  if (!points || points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  let path = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? i : i - 1];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    path += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  }
+  return path;
+};
+
+// Helper tạo vùng gradient kín dưới đường Line SVG
+const generateAreaPath = (points, bottomY) => {
+  if (!points || points.length === 0) return "";
+  const linePath = generateSvgPath(points);
+  const first = points[0];
+  const last = points[points.length - 1];
+  return `${linePath} L ${last.x.toFixed(1)} ${bottomY} L ${first.x.toFixed(1)} ${bottomY} Z`;
+};
 
 const formatCurrency = (val) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val ?? 0);
 
 const formatDate = (dt) => {
   if (!dt) return "—";
-  const d = Array.isArray(dt) ? new Date(...dt) : new Date(dt);
+  const d = parseAnyDate(dt);
+  if (!d) return "—";
   return d.toLocaleString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
@@ -134,6 +182,22 @@ export default function AdminDashboard() {
   const [creatingVoucher, setCreatingVoucher] = useState(false);
   const [voucherForm] = Form.useForm();
 
+  const [products, setProducts] = useState([]);
+  const [productCategories, setProductCategories] = useState([]);
+  const [productStats, setProductStats] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewSearch, setReviewSearch] = useState('');
+  const [reviewFilterRating, setReviewFilterRating] = useState('ALL');
+  const [productSearch, setProductSearch] = useState('');
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [productForm] = Form.useForm();
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -188,9 +252,116 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    if (activeSection === 'products' || activeSection === 'orders' || activeSection === 'reviews') {
+      loadProductsAndOrders();
+    }
+  }, [activeSection]);
+
+  const loadProductsAndOrders = async () => {
+    try {
+      const [prodsData, orderData, catData, statsData, revsData] = await Promise.allSettled([
+        getAdminProducts(),
+        getAdminOrders(),
+        getProductCategories ? getProductCategories() : Promise.resolve([]),
+        getAdminProductStats ? getAdminProductStats() : Promise.resolve(null),
+        getAdminReviews(),
+      ]);
+      if (prodsData.status === 'fulfilled') setProducts(prodsData.value?.content || prodsData.value || []);
+      if (orderData.status === 'fulfilled') setOrders(orderData.value || []);
+      if (catData.status === 'fulfilled') setProductCategories(catData.value || []);
+      if (statsData.status === 'fulfilled') setProductStats(statsData.value);
+      if (revsData.status === 'fulfilled') setReviews(revsData.value?.content || revsData.value || []);
+    } catch (err) {
+      console.error('Error loading products/orders/reviews:', err);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      await deleteAdminReview(reviewId);
+      message.success('Đã xóa đánh giá thành công!');
+      loadProductsAndOrders();
+    } catch {
+      message.error('Xóa đánh giá thất bại!');
+    }
+  };
+
+  const handleOpenProductModal = (product = null) => {
+    setEditingProduct(product);
+    if (product) {
+      productForm.setFieldsValue({
+        name: product.name,
+        description: product.description,
+        price: Number(product.price),
+        originalPrice: Number(product.originalPrice),
+        stockQuantity: product.stockQuantity,
+        imageUrl: product.imageUrl,
+        categoryId: product.categoryId,
+        active: product.active,
+      });
+    } else {
+      productForm.resetFields();
+      productForm.setFieldsValue({ active: true });
+    }
+    setProductModalOpen(true);
+  };
+
+  const handleSaveProduct = async (values) => {
+    setSavingProduct(true);
+    try {
+      const payload = {
+        name: values.name,
+        description: values.description,
+        price: values.price,
+        originalPrice: values.originalPrice || values.price,
+        stockQuantity: values.stockQuantity || 0,
+        imageUrl: values.imageUrl,
+        categoryId: values.categoryId,
+        active: values.active !== undefined ? values.active : true,
+      };
+      if (editingProduct) {
+        await updateAdminProduct(editingProduct.id, payload);
+        message.success('Đã cập nhật sản phẩm thành công!');
+      } else {
+        await createAdminProduct(payload);
+        message.success('Đã tạo sản phẩm mới thành công!');
+      }
+      setProductModalOpen(false);
+      productForm.resetFields();
+      loadProductsAndOrders();
+    } catch (err) {
+      message.error(err?.response?.data?.message || 'Lưu sản phẩm thất bại!');
+    } finally {
+      setSavingProduct(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    try {
+      await deleteAdminProduct(productId);
+      message.success('Đã xóa sản phẩm!');
+      loadProductsAndOrders();
+    } catch {
+      message.error('Xóa sản phẩm thất bại!');
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId, status) => {
+    try {
+      await updateAdminOrderStatus(orderId, status);
+      message.success('Đã cập nhật trạng thái đơn hàng!');
+      loadProductsAndOrders();
+    } catch {
+      message.error('Cập nhật thất bại!');
+    }
+  };
+
+  useEffect(() => {
     loadData();
+    loadProductsAndOrders();
     const unsub = notificationWs.subscribe(() => {
       loadDataQuietly();
+      loadProductsAndOrders();
     });
     return () => unsub();
   }, []);
@@ -293,6 +464,222 @@ export default function AdminDashboard() {
 
   const completionRate = totalBookingsCount > 0 ? Math.round((completedCount / totalBookingsCount) * 100) : 0;
 
+  // Chart period state for Admin ('day', 'week', 'month', 'year')
+  const [adminTrendPeriod, setAdminTrendPeriod] = useState("week");
+
+  // Dynamic Trend Metrics from DB Bookings and Shop Orders
+  const adminTrendMetrics = useMemo(() => {
+    const now = new Date();
+    let startDate;
+
+    switch (adminTrendPeriod) {
+      case "day":
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        break;
+      case "week": {
+        const dayOfWeek = now.getDay();
+        const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Monday
+        startDate = new Date(now.getFullYear(), now.getMonth(), diff, 0, 0, 0);
+        break;
+      }
+      case "month":
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+        break;
+      case "year":
+        startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0);
+    }
+
+    // Filter bookings in period
+    const periodBookings = bookings.filter((b) => {
+      const d = parseAnyDate(b.startTime || b.bookingDate);
+      return d && d >= startDate && d <= now;
+    });
+
+    // Filter orders in period
+    const periodOrders = orders.filter((o) => {
+      const d = parseAnyDate(o.createdAt || o.orderDate);
+      return d && d >= startDate && d <= now;
+    });
+
+    const completedBookings = periodBookings.filter((b) => b.status === "COMPLETED");
+    const validOrders = periodOrders.filter(
+      (o) => o.paymentStatus === "PAID" || o.orderStatus === "DELIVERED" || o.orderStatus === "COMPLETED"
+    );
+
+    const bookingRevenue = completedBookings.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
+    const orderRev = validOrders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+    const totalRev = bookingRevenue + orderRev;
+
+    const chartData = [];
+
+    if (adminTrendPeriod === "day") {
+      // 8 time slots: 08:00 to 22:00
+      const hours = [8, 10, 12, 14, 16, 18, 20, 22];
+      hours.forEach((h) => {
+        const slotBookings = completedBookings.filter((b) => {
+          const d = parseAnyDate(b.startTime || b.bookingDate);
+          return d && d.getHours() >= h && d.getHours() < h + 2;
+        });
+        const slotOrders = validOrders.filter((o) => {
+          const d = parseAnyDate(o.createdAt || o.orderDate);
+          return d && d.getHours() >= h && d.getHours() < h + 2;
+        });
+        const bRev = slotBookings.reduce((s, b) => s + (Number(b.totalAmount) || 0), 0);
+        const oRev = slotOrders.reduce((s, o) => s + (Number(o.totalAmount) || 0), 0);
+        const bCount = slotBookings.length;
+        const oCount = slotOrders.length;
+        chartData.push({
+          label: `${h}h00`,
+          shortLabel: `${h}h`,
+          revenue: bRev + oRev,
+          bookingRevenue: bRev,
+          orderRevenue: oRev,
+          bookingCount: bCount,
+          orderCount: oCount,
+          count: bCount + oCount,
+        });
+      });
+    } else if (adminTrendPeriod === "week") {
+      // 7 days: T2, T3, T4, T5, T6, T7, CN
+      const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+      for (let i = 0; i < 7; i++) {
+        const targetDate = new Date(startDate);
+        targetDate.setDate(startDate.getDate() + i);
+        const targetDateStr = targetDate.toISOString().slice(0, 10);
+
+        const dayBookings = completedBookings.filter((b) => {
+          const d = parseAnyDate(b.startTime || b.bookingDate);
+          return d && d.toISOString().slice(0, 10) === targetDateStr;
+        });
+        const dayOrders = validOrders.filter((o) => {
+          const d = parseAnyDate(o.createdAt || o.orderDate);
+          return d && d.toISOString().slice(0, 10) === targetDateStr;
+        });
+
+        const bRev = dayBookings.reduce((s, b) => s + (Number(b.totalAmount) || 0), 0);
+        const oRev = dayOrders.reduce((s, o) => s + (Number(o.totalAmount) || 0), 0);
+        const bCount = dayBookings.length;
+        const oCount = dayOrders.length;
+
+        chartData.push({
+          label: `${dayNames[i]} (${targetDate.getDate()}/${targetDate.getMonth() + 1})`,
+          shortLabel: dayNames[i],
+          revenue: bRev + oRev,
+          bookingRevenue: bRev,
+          orderRevenue: oRev,
+          bookingCount: bCount,
+          orderCount: oCount,
+          count: bCount + oCount,
+        });
+      }
+    } else if (adminTrendPeriod === "month") {
+      // 4-5 weeks of current month
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const chunks = [
+        { label: "Tuần 1 (1-7)", short: "Tuần 1", startDay: 1, endDay: 7 },
+        { label: "Tuần 2 (8-14)", short: "Tuần 2", startDay: 8, endDay: 14 },
+        { label: "Tuần 3 (15-21)", short: "Tuần 3", startDay: 15, endDay: 21 },
+        { label: "Tuần 4 (22-28)", short: "Tuần 4", startDay: 22, endDay: 28 },
+      ];
+      if (daysInMonth > 28) {
+        chunks.push({ label: `Tuần 5 (29-${daysInMonth})`, short: "Tuần 5", startDay: 29, endDay: daysInMonth });
+      }
+
+      chunks.forEach((chunk) => {
+        const chunkBookings = completedBookings.filter((b) => {
+          const d = parseAnyDate(b.startTime || b.bookingDate);
+          return d && d.getDate() >= chunk.startDay && d.getDate() <= chunk.endDay;
+        });
+        const chunkOrders = validOrders.filter((o) => {
+          const d = parseAnyDate(o.createdAt || o.orderDate);
+          return d && d.getDate() >= chunk.startDay && d.getDate() <= chunk.endDay;
+        });
+
+        const bRev = chunkBookings.reduce((s, b) => s + (Number(b.totalAmount) || 0), 0);
+        const oRev = chunkOrders.reduce((s, o) => s + (Number(o.totalAmount) || 0), 0);
+        const bCount = chunkBookings.length;
+        const oCount = chunkOrders.length;
+
+        chartData.push({
+          label: chunk.label,
+          shortLabel: chunk.short,
+          revenue: bRev + oRev,
+          bookingRevenue: bRev,
+          orderRevenue: oRev,
+          bookingCount: bCount,
+          orderCount: oCount,
+          count: bCount + oCount,
+        });
+      });
+    } else if (adminTrendPeriod === "year") {
+      // 12 months
+      for (let m = 0; m < 12; m++) {
+        const monthBookings = completedBookings.filter((b) => {
+          const d = parseAnyDate(b.startTime || b.bookingDate);
+          return d && d.getMonth() === m && d.getFullYear() === now.getFullYear();
+        });
+        const monthOrders = validOrders.filter((o) => {
+          const d = parseAnyDate(o.createdAt || o.orderDate);
+          return d && d.getMonth() === m && d.getFullYear() === now.getFullYear();
+        });
+
+        const bRev = monthBookings.reduce((s, b) => s + (Number(b.totalAmount) || 0), 0);
+        const oRev = monthOrders.reduce((s, o) => s + (Number(o.totalAmount) || 0), 0);
+        const bCount = monthBookings.length;
+        const oCount = monthOrders.length;
+
+        chartData.push({
+          label: `Tháng ${m + 1}`,
+          shortLabel: `T${m + 1}`,
+          revenue: bRev + oRev,
+          bookingRevenue: bRev,
+          orderRevenue: oRev,
+          bookingCount: bCount,
+          orderCount: oCount,
+          count: bCount + oCount,
+        });
+      }
+    }
+
+    return {
+      revenue: totalRev,
+      bookingRevenue,
+      orderRevenue: orderRev,
+      bookingsCount: periodBookings.length,
+      completedBookingsCount: completedBookings.length,
+      ordersCount: periodOrders.length,
+      validOrdersCount: validOrders.length,
+      totalTransactions: completedBookings.length + validOrders.length,
+      chartData,
+    };
+  }, [adminTrendPeriod, bookings, orders]);
+
+  // Dynamic Top Services from Real DB Bookings
+  const topServicesData = useMemo(() => {
+    const serviceCounts = {};
+    bookings.forEach((b) => {
+      const sName = b.serviceName || "Dịch vụ Salon";
+      if (!serviceCounts[sName]) {
+        serviceCounts[sName] = { name: sName, count: 0, rev: 0 };
+      }
+      serviceCounts[sName].count += 1;
+      if (b.status === "COMPLETED") {
+        serviceCounts[sName].rev += Number(b.totalAmount) || 0;
+      }
+    });
+    const list = Object.values(serviceCounts).sort((a, b) => b.count - a.count).slice(0, 5);
+    const maxCount = list[0]?.count || 1;
+    const colors = ["#1890ff", "#52c41a", "#722ed1", "#faad14", "#eb2f96"];
+    return list.map((item, idx) => ({
+      ...item,
+      percent: Math.round((item.count / maxCount) * 100),
+      color: colors[idx % colors.length],
+    }));
+  }, [bookings]);
+
   // Filtered bookings
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
@@ -330,6 +717,9 @@ export default function AdminDashboard() {
     { key: "salons", icon: <ShopOutlined />, label: `Salon (${salons.length})` },
     { key: "vouchers", icon: <GiftOutlined />, label: `Quản lý Voucher (${vouchers.length})` },
     { key: "stats", icon: <BarChartOutlined />, label: "Phân tích & Báo cáo" },
+    { key: "products", icon: <ShopOutlined />, label: "Quản lý sản phẩm" },
+    { key: "orders", icon: <DollarOutlined />, label: "Quản lý đơn hàng" },
+    { key: "reviews", icon: <StarOutlined />, label: `Đánh giá Shop (${reviews.length})` },
     { type: "divider" },
     { key: "settings", icon: <SettingOutlined />, label: "Cài đặt hệ thống" },
     { key: "logout", icon: <LogoutOutlined />, label: "Đăng xuất", danger: true },
@@ -649,6 +1039,9 @@ export default function AdminDashboard() {
               {activeSection === "salons" && "Danh sách Chi nhánh Salon"}
               {activeSection === "vouchers" && "Quản lý Chương trình Ưu đãi & Voucher"}
               {activeSection === "stats" && "Báo cáo phân tích doanh thu & vận hành"}
+              {activeSection === "products" && "Quản lý sản phẩm Shop"}
+              {activeSection === "orders" && "Quản lý đơn hàng Shop"}
+              {activeSection === "reviews" && "Đánh giá & Thống kê phản hồi sản phẩm"}
               {activeSection === "settings" && "Cấu hình vận hành salon"}
             </h1>
             <Tag color="blue" className="text-xs">v2.5 Enterprise</Tag>
@@ -764,60 +1157,239 @@ export default function AdminDashboard() {
                           <div className="flex items-center justify-between py-1">
                             <span className="font-bold text-gray-800 text-sm flex items-center gap-2">
                               <RiseOutlined className="text-blue-500" />
-                              Biểu đồ phân tích Doanh thu theo ngày (7 ngày gần nhất)
+                              Biểu đồ đánh giá & phân tích Doanh thu toàn hệ thống
                             </span>
-                            <Tag color="blue">VNĐ / Ngày</Tag>
+                            <Tag color="blue">Dịch vụ & Shop Sản phẩm</Tag>
                           </div>
                         }
                         className="rounded-2xl border-gray-100 shadow-sm"
                       >
-                        {/* Interactive SVG Bar & Trend Chart */}
-                        <div className="py-2">
-                          <div className="h-56 w-full flex items-end justify-between gap-3 px-2 pt-6 pb-2 border-b border-gray-100">
-                            {[
-                              { day: "Thứ 2", val: 840000, height: "45%" },
-                              { day: "Thứ 3", val: 1260000, height: "65%" },
-                              { day: "Thứ 4", val: 980000, height: "50%" },
-                              { day: "Thứ 5", val: 1540000, height: "78%" },
-                              { day: "Thứ 6", val: 1890000, height: "92%" },
-                              { day: "Thứ 7", val: 2450000, height: "100%", peak: true },
-                              { day: "Chủ nhật", val: 2180000, height: "90%" },
-                            ].map((item, idx) => (
-                              <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
-                                <Tooltip title={`${item.day}: ${formatCurrency(item.val)}`}>
-                                  <div className="w-full flex flex-col items-center">
-                                    <span className="text-[10px] font-bold text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity mb-1">
-                                      {(item.val / 1000).toFixed(0)}k
-                                    </span>
-                                    <div
-                                      style={{ height: item.height }}
-                                      className={`w-full max-w-[42px] rounded-t-xl transition-all duration-300 ${
-                                        item.peak
-                                          ? "bg-gradient-to-t from-amber-500 to-yellow-400 shadow-lg shadow-amber-500/20"
-                                          : "bg-gradient-to-t from-blue-600 to-sky-400 group-hover:from-blue-500 group-hover:to-sky-300"
-                                      }`}
-                                    />
-                                  </div>
-                                </Tooltip>
-                                <span className="text-xs text-gray-500 mt-2 font-medium">{item.day}</span>
-                              </div>
-                            ))}
+                        {/* Dropdown phân loại theo: Ngày, Tuần, Tháng, Năm nằm ngay phía trên chart */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-800 mb-0">Xu hướng Doanh thu & Lượt giao dịch</h4>
+                            <p className="text-xs text-gray-400 mb-0">Tổng hợp dữ liệu thực tế từ Lịch đặt Salon và Đơn hàng Shop</p>
                           </div>
-
-                          <div className="flex items-center justify-between text-xs text-gray-500 mt-4 px-2">
-                            <div className="flex items-center gap-4">
-                              <span className="flex items-center gap-1.5">
-                                <span className="w-3 h-3 rounded-sm bg-blue-500 inline-block" />
-                                Ngày thường
-                              </span>
-                              <span className="flex items-center gap-1.5">
-                                <span className="w-3 h-3 rounded-sm bg-amber-500 inline-block" />
-                                Đỉnh điểm cuối tuần
-                              </span>
-                            </div>
-                            <span>Doanh thu trung bình: <strong>~1.580.000₫ / ngày</strong></span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-gray-500">Phân loại theo kỳ:</span>
+                            <Select
+                              value={adminTrendPeriod}
+                              onChange={setAdminTrendPeriod}
+                              className="w-48"
+                              size="middle"
+                            >
+                              <Option value="day">📅 Hôm nay (Ngày)</Option>
+                              <Option value="week">📊 Tuần này (Tuần)</Option>
+                              <Option value="month">🗓️ Tháng này (Tháng)</Option>
+                              <Option value="year">📈 Năm nay (Năm)</Option>
+                            </Select>
                           </div>
                         </div>
+
+                        {/* 4 Mini metric cards for selected period */}
+                        <Row gutter={[12, 12]} className="mb-4">
+                          {[
+                            { label: 'Tổng doanh thu kỳ', value: formatCurrency(adminTrendMetrics.revenue), color: 'text-blue-700', bg: 'bg-blue-50', icon: '💰' },
+                            { label: 'Dịch vụ Salon', value: formatCurrency(adminTrendMetrics.bookingRevenue), color: 'text-sky-700', bg: 'bg-sky-50', icon: '✂️' },
+                            { label: 'Shop Sản phẩm', value: formatCurrency(adminTrendMetrics.orderRevenue), color: 'text-purple-700', bg: 'bg-purple-50', icon: '🛍️' },
+                            { label: 'Tổng giao dịch', value: `${adminTrendMetrics.totalTransactions} lượt`, color: 'text-emerald-700', bg: 'bg-emerald-50', icon: '📊' },
+                          ].map(({label, value, color, bg, icon}) => (
+                            <Col xs={12} sm={6} key={label}>
+                              <div className={`${bg} rounded-xl p-3 text-center border border-gray-100`}>
+                                <div className="text-xl mb-1">{icon}</div>
+                                <div className={`text-sm sm:text-base font-black ${color}`}>{value}</div>
+                                <div className="text-[11px] text-gray-500">{label}</div>
+                              </div>
+                            </Col>
+                          ))}
+                        </Row>
+
+                        {/* SVG Line Chart for Period */}
+                        {(() => {
+                          const chartData = adminTrendMetrics.chartData || [];
+                          const maxRevenue = Math.max(...chartData.map((d) => d.revenue), 1000000);
+                          const maxCount = Math.max(...chartData.map((d) => d.count), 5);
+                          const svgWidth = 720;
+                          const svgHeight = 220;
+                          const padX = 50;
+                          const padY = 25;
+                          const plotW = svgWidth - 2 * padX;
+                          const plotH = svgHeight - 2 * padY;
+
+                          const pointsRev = chartData.map((d, i) => ({
+                            x: padX + (i / Math.max(chartData.length - 1, 1)) * plotW,
+                            y: padY + (1 - (d.revenue / maxRevenue)) * (plotH - 25),
+                            ...d,
+                          }));
+
+                          const pointsCount = chartData.map((d, i) => ({
+                            x: padX + (i / Math.max(chartData.length - 1, 1)) * plotW,
+                            y: padY + (1 - (d.count / maxCount)) * (plotH - 25),
+                            ...d,
+                          }));
+
+                          const linePathRev = generateSvgPath(pointsRev);
+                          const areaPathRev = generateAreaPath(pointsRev, svgHeight - padY - 10);
+                          const linePathCount = generateSvgPath(pointsCount);
+
+                          return (
+                            <div className="bg-slate-50/70 p-4 rounded-2xl border border-gray-100">
+                              {/* Legend & Summary */}
+                              <div className="flex flex-wrap items-center justify-between mb-3 text-xs gap-2">
+                                <div className="flex items-center gap-5">
+                                  <div className="flex items-center gap-2 font-bold text-blue-600">
+                                    <span className="w-5 h-1 bg-blue-600 rounded-full inline-block" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block -ml-3.5 border-2 border-white" />
+                                    <span>Đường Doanh thu tổng (VNĐ)</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 font-bold text-emerald-600">
+                                    <span className="w-5 h-1 bg-emerald-500 rounded-full inline-block border-t border-dashed" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block -ml-3.5 border-2 border-white" />
+                                    <span>Đường Lượt giao dịch (Lịch + Đơn)</span>
+                                  </div>
+                                </div>
+                                <span className="text-gray-400 font-medium text-[11px]">
+                                  Đỉnh điểm doanh thu: <strong className="text-blue-600">{formatCurrency(maxRevenue)}</strong>
+                                </span>
+                              </div>
+
+                              <div className="relative w-full overflow-x-auto">
+                                <div className="min-w-[620px]">
+                                  <svg className="w-full h-64 overflow-visible" viewBox={`0 0 ${svgWidth} ${svgHeight}`} preserveAspectRatio="none">
+                                    <defs>
+                                      <linearGradient id="adminRevAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
+                                        <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.01" />
+                                      </linearGradient>
+                                    </defs>
+
+                                    {/* Horizontal Grid lines */}
+                                    {[35, 75, 115, 155].map((y, idx) => (
+                                      <g key={idx}>
+                                        <line x1="45" y1={y} x2={svgWidth - 40} y2={y} stroke="#e2e8f0" strokeDasharray="3 3" />
+                                        <text x="35" y={y + 3} textAnchor="end" fontSize="9" fill="#94a3b8">
+                                          {idx === 0 ? `${(maxRevenue / 1000).toFixed(0)}k` : idx === 3 ? '0' : ''}
+                                        </text>
+                                      </g>
+                                    ))}
+
+                                    {/* Revenue Area Gradient Fill */}
+                                    {areaPathRev && <path d={areaPathRev} fill="url(#adminRevAreaGrad)" />}
+
+                                    {/* Revenue Smooth Line Curve */}
+                                    {linePathRev && (
+                                      <path
+                                        d={linePathRev}
+                                        fill="none"
+                                        stroke="#2563eb"
+                                        strokeWidth="3.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    )}
+
+                                    {/* Transactions Count Line Curve */}
+                                    {linePathCount && (
+                                      <path
+                                        d={linePathCount}
+                                        fill="none"
+                                        stroke="#10b981"
+                                        strokeWidth="2.5"
+                                        strokeDasharray="5 3"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    )}
+
+                                    {/* Interactive Data Nodes with Tooltips */}
+                                    {pointsRev.map((pt, idx) => {
+                                      const countPt = pointsCount[idx] || pt;
+                                      return (
+                                        <g key={idx}>
+                                          {/* Vertical hover guide bar */}
+                                          <line
+                                            x1={pt.x}
+                                            y1={30}
+                                            x2={pt.x}
+                                            y2={svgHeight - padY - 10}
+                                            stroke="#cbd5e1"
+                                            strokeWidth="1"
+                                            strokeDasharray="2 2"
+                                            opacity="0.4"
+                                          />
+
+                                          {/* Revenue Node Point */}
+                                          <Tooltip
+                                            title={
+                                              <div className="p-1">
+                                                <p className="font-bold mb-1 text-white text-xs border-b border-gray-600 pb-1">{pt.label}</p>
+                                                <p className="text-xs text-sky-200 mb-0.5">💰 Tổng doanh thu: <strong>{formatCurrency(pt.revenue)}</strong></p>
+                                                <p className="text-[11px] text-gray-300 mb-0.5">✂️ Salon: {formatCurrency(pt.bookingRevenue)} ({pt.bookingCount} lịch)</p>
+                                                <p className="text-[11px] text-gray-300 mb-0.5">🛍️ Shop: {formatCurrency(pt.orderRevenue)} ({pt.orderCount} đơn)</p>
+                                                <p className="text-xs text-emerald-200 mb-0 font-semibold">📊 Tổng giao dịch: <strong>{pt.count}</strong></p>
+                                              </div>
+                                            }
+                                          >
+                                            <circle
+                                              cx={pt.x}
+                                              cy={pt.y}
+                                              r="5"
+                                              fill="#2563eb"
+                                              stroke="#ffffff"
+                                              strokeWidth="2.5"
+                                              className="cursor-pointer hover:scale-125 transition-transform"
+                                            />
+                                          </Tooltip>
+
+                                          {/* Count Node Point */}
+                                          <Tooltip title={`${pt.label}: ${pt.count} giao dịch (${pt.bookingCount} lịch hẹn, ${pt.orderCount} đơn hàng)`}>
+                                            <circle
+                                              cx={countPt.x}
+                                              cy={countPt.y}
+                                              r="4"
+                                              fill="#10b981"
+                                              stroke="#ffffff"
+                                              strokeWidth="2"
+                                              className="cursor-pointer hover:scale-125 transition-transform"
+                                            />
+                                          </Tooltip>
+
+                                          {/* X Axis Label */}
+                                          <text
+                                            x={pt.x}
+                                            y={svgHeight - 10}
+                                            textAnchor="middle"
+                                            fontSize="10"
+                                            fontWeight="600"
+                                            fill="#64748b"
+                                          >
+                                            {pt.shortLabel || pt.label}
+                                          </text>
+                                        </g>
+                                      );
+                                    })}
+                                  </svg>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between text-xs text-gray-500 mt-4 px-2">
+                                <div className="flex items-center gap-4">
+                                  <span className="flex items-center gap-1.5">
+                                    <span className="w-3 h-3 rounded-full bg-blue-600 inline-block" />
+                                    Doanh thu thực tế từ DB
+                                  </span>
+                                  <span className="flex items-center gap-1.5">
+                                    <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
+                                    Giao dịch hoàn tất
+                                  </span>
+                                </div>
+                                <span>
+                                  Doanh thu TB: <strong>{formatCurrency(chartData.length > 0 ? Math.round(adminTrendMetrics.revenue / Math.max(chartData.length, 1)) : 0)} / mốc</strong>
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </Card>
                     </Col>
 
@@ -1276,21 +1848,19 @@ export default function AdminDashboard() {
                         className="rounded-2xl border-gray-100 shadow-sm"
                       >
                         <div className="space-y-4 py-2">
-                          {[
-                            { name: "Cắt tóc nam chuẩn BachBarber", count: 48, percent: 38, rev: "5.760.000₫", color: "#1890ff" },
-                            { name: "Cắt Fade + Undercut Hàn Quốc", count: 32, percent: 26, rev: "5.760.000₫", color: "#52c41a" },
-                            { name: "Gội đầu massage VIP & Rửa mặt", count: 24, percent: 18, rev: "3.600.000₫", color: "#722ed1" },
-                            { name: "Nhuộm tóc thời trang / Phủ bạc", count: 14, percent: 11, rev: "3.500.000₫", color: "#faad14" },
-                            { name: "Uốn tóc Ruffled / Pre-lock", count: 9, percent: 7, rev: "3.150.000₫", color: "#eb2f96" },
-                          ].map((item, idx) => (
-                            <div key={idx}>
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="font-bold text-gray-800">{idx + 1}. {item.name}</span>
-                                <span className="text-gray-500">{item.count} lượt ({item.rev})</span>
+                          {topServicesData.length === 0 ? (
+                            <p className="text-xs text-gray-400 text-center py-4">Chưa có dữ liệu đặt lịch</p>
+                          ) : (
+                            topServicesData.map((item, idx) => (
+                              <div key={idx}>
+                                <div className="flex items-center justify-between text-xs mb-1">
+                                  <span className="font-bold text-gray-800">{idx + 1}. {item.name}</span>
+                                  <span className="text-gray-500">{item.count} lượt ({formatCurrency(item.rev)})</span>
+                                </div>
+                                <Progress percent={item.percent} strokeColor={item.color} size="small" />
                               </div>
-                              <Progress percent={item.percent} strokeColor={item.color} size="small" />
-                            </div>
-                          ))}
+                            ))
+                          )}
                         </div>
                       </Card>
                     </Col>
@@ -1466,6 +2036,484 @@ export default function AdminDashboard() {
                       rowKey="id"
                       pagination={{ pageSize: 8 }}
                       className="ant-table-modern"
+                    />
+                  </Card>
+                </div>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════ */}
+              {/* VIEW: PRODUCT MANAGEMENT */}
+              {/* ═══════════════════════════════════════════════════════ */}
+              {activeSection === 'products' && (
+                <div className="space-y-6">
+                  {/* Stats Row */}
+                  {productStats && (
+                    <Row gutter={[16, 16]}>
+                      {[
+                        { label: 'Tổng sản phẩm', value: productStats.total, color: 'text-blue-700', icon: '📦' },
+                        { label: 'Đang bán', value: productStats.active, color: 'text-green-700', icon: '✅' },
+                        { label: 'Hết hàng', value: productStats.outOfStock, color: 'text-red-700', icon: '⚠️' },
+                        { label: 'Tổng doanh thu (ước tính)', value: formatCurrency(productStats.totalRevenue), color: 'text-purple-700', icon: '💰' },
+                      ].map(({ label, value, color, icon }) => (
+                        <Col xs={12} sm={6} key={label}>
+                          <Card className="rounded-xl border-gray-100 shadow-sm">
+                            <div className="text-2xl mb-1">{icon}</div>
+                            <div className={`text-xl font-black ${color}`}>{value}</div>
+                            <div className="text-xs text-gray-500">{label}</div>
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
+                  )}
+                  
+                  {/* Top Sellers */}
+                  {productStats?.topSellers?.length > 0 && (
+                    <Card className="rounded-xl border-gray-100 shadow-sm" title={<span className="font-bold">🏆 Top 5 Bán chạy nhất</span>}>
+                      <div className="space-y-3">
+                        {productStats.topSellers.map((p, idx) => (
+                          <div key={p.id} className="flex items-center gap-3">
+                            <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 font-bold text-xs flex items-center justify-center flex-shrink-0">{idx + 1}</span>
+                            <img src={p.imageUrl} alt={p.name} className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-gray-800 truncate">{p.name}</p>
+                              <p className="text-xs text-gray-400">Đã bán: {p.soldCount} | Doanh thu: {formatCurrency(p.revenue)}đ</p>
+                            </div>
+                            <Rate disabled value={p.rating} allowHalf className="text-xs" />
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+                  
+                  {/* Product Table */}
+                  <Card
+                    className="rounded-xl border-gray-100 shadow-sm"
+                    title={<span className="font-bold">📦 Danh sách sản phẩm ({products.length})</span>}
+                    extra={
+                      <div className="flex gap-2">
+                        <Input.Search
+                          placeholder="Tìm sản phẩm..."
+                          value={productSearch}
+                          onChange={e => setProductSearch(e.target.value)}
+                          allowClear
+                          className="w-48"
+                        />
+                        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenProductModal()} className="bg-[#60a5fa]">
+                          Thêm sản phẩm
+                        </Button>
+                      </div>
+                    }
+                  >
+                    <Table
+                      dataSource={products.filter(p => !productSearch || p.name?.toLowerCase().includes(productSearch.toLowerCase()))}
+                      rowKey="id"
+                      size="middle"
+                      scroll={{ x: 800 }}
+                      pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (t) => `${t} sản phẩm` }}
+                      columns={[
+                        {
+                          title: 'Sản phẩm',
+                          key: 'product',
+                          width: 280,
+                          render: (_, r) => (
+                            <div className="flex items-center gap-3">
+                              <img src={r.imageUrl} alt={r.name} className="w-12 h-12 rounded-lg object-cover border border-gray-100 flex-shrink-0" />
+                              <div>
+                                <p className="font-semibold text-sm text-gray-800 line-clamp-1">{r.name}</p>
+                                <p className="text-xs text-gray-400">{r.categoryName}</p>
+                              </div>
+                            </div>
+                          ),
+                        },
+                        {
+                          title: 'Giá bán',
+                          dataIndex: 'price',
+                          key: 'price',
+                          render: v => <span className="font-bold text-red-600">{formatCurrency(v)}đ</span>,
+                        },
+                        {
+                          title: 'Tồn kho',
+                          dataIndex: 'stockQuantity',
+                          key: 'stock',
+                          render: v => <span className={`font-bold ${v <= 0 ? 'text-red-600' : v < 10 ? 'text-orange-600' : 'text-green-600'}`}>{v}</span>,
+                        },
+                        {
+                          title: 'Đã bán',
+                          dataIndex: 'soldCount',
+                          key: 'sold',
+                          render: v => <span className="font-semibold text-blue-600">{v || 0}</span>,
+                        },
+                        {
+                          title: 'Đánh giá',
+                          key: 'rating',
+                          render: (_, r) => (
+                            <div className="flex items-center gap-1">
+                              <span className="text-yellow-500 font-bold">{Number(r.rating || 5).toFixed(1)}</span>
+                              <span className="text-gray-400 text-xs">★ ({r.reviewCount || 0})</span>
+                            </div>
+                          ),
+                        },
+                        {
+                          title: 'Trạng thái',
+                          dataIndex: 'active',
+                          key: 'active',
+                          render: v => <Tag color={v ? 'success' : 'default'}>{v ? 'Đang bán' : 'Tạm ẩn'}</Tag>,
+                        },
+                        {
+                          title: 'Hành động',
+                          key: 'actions',
+                          fixed: 'right',
+                          width: 120,
+                          render: (_, r) => (
+                            <div className="flex gap-1">
+                              <Button size="small" icon={<EditOutlined />} onClick={() => handleOpenProductModal(r)} className="text-blue-600 border-blue-200" />
+                              <Popconfirm title="Xóa sản phẩm này?" onConfirm={() => handleDeleteProduct(r.id)} okText="Xóa" cancelText="Hủy" okType="danger">
+                                <Button size="small" icon={<DeleteOutlined />} danger />
+                              </Popconfirm>
+                            </div>
+                          ),
+                        },
+                      ]}
+                    />
+                  </Card>
+                  
+                  {/* Product Modal */}
+                  <Modal
+                    title={<span className="font-bold">{editingProduct ? '✏️ Chỉnh sửa sản phẩm' : '➕ Thêm sản phẩm mới'}</span>}
+                    open={productModalOpen}
+                    onCancel={() => { setProductModalOpen(false); productForm.resetFields(); }}
+                    footer={null}
+                    width={600}
+                  >
+                    <Form form={productForm} layout="vertical" onFinish={handleSaveProduct} className="mt-4">
+                      <Form.Item name="name" label="Tên sản phẩm" rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}>
+                        <Input placeholder="Nhập tên sản phẩm" />
+                      </Form.Item>
+                      <Form.Item name="description" label="Mô tả">
+                        <Input.TextArea rows={3} placeholder="Mô tả sản phẩm" />
+                      </Form.Item>
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <Form.Item name="price" label="Giá bán (VNĐ)" rules={[{ required: true }]}>
+                            <InputNumber min={0} className="w-full" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+                          </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                          <Form.Item name="originalPrice" label="Giá gốc (VNĐ)">
+                            <InputNumber min={0} className="w-full" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <Form.Item name="stockQuantity" label="Tồn kho" rules={[{ required: true }]}>
+                            <InputNumber min={0} className="w-full" />
+                          </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                          <Form.Item name="categoryId" label="Danh mục" rules={[{ required: true }]}>
+                            <Select placeholder="Chọn danh mục">
+                              {productCategories.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
+                            </Select>
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                      <Form.Item name="imageUrl" label="URL ảnh sản phẩm">
+                        <Input placeholder="https://..." />
+                      </Form.Item>
+                      <Form.Item name="active" label="Trạng thái" valuePropName="checked">
+                        <Switch checkedChildren="Đang bán" unCheckedChildren="Tạm ẩn" />
+                      </Form.Item>
+                      <div className="flex justify-end gap-3 mt-4">
+                        <Button onClick={() => { setProductModalOpen(false); productForm.resetFields(); }}>Hủy</Button>
+                        <Button type="primary" htmlType="submit" loading={savingProduct} className="bg-[#60a5fa]">Lưu sản phẩm</Button>
+                      </div>
+                    </Form>
+                  </Modal>
+                </div>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════ */}
+              {/* VIEW: ORDER MANAGEMENT */}
+              {/* ═══════════════════════════════════════════════════════ */}
+              {activeSection === 'orders' && (
+                <div className="space-y-6">
+                  <Card
+                    className="rounded-xl border-gray-100 shadow-sm"
+                    title={<span className="font-bold">🛒 Quản lý đơn hàng ({orders.length})</span>}
+                    extra={
+                      <Select value={orderStatusFilter} onChange={setOrderStatusFilter} className="w-44">
+                        <Option value="ALL">Tất cả trạng thái</Option>
+                        <Option value="PENDING">Chờ xử lý</Option>
+                        <Option value="CONFIRMED">Đã xác nhận</Option>
+                        <Option value="PROCESSING">Đang xử lý</Option>
+                        <Option value="SHIPPING">Đang giao</Option>
+                        <Option value="DELIVERED">Đã giao thành công</Option>
+                        <Option value="CANCELLED">Đã hủy</Option>
+                      </Select>
+                    }
+                  >
+                    <Table
+                      dataSource={orders.filter(o => {
+                        if (orderStatusFilter === 'ALL') return true;
+                        const s = o.status === 'SHIPPED' ? 'SHIPPING' : o.status;
+                        return s === orderStatusFilter;
+                      })}
+                      rowKey={r => r.id || r.orderId || r.orderCode}
+                      size="middle"
+                      scroll={{ x: 950 }}
+                      pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (t) => `${t} đơn hàng` }}
+                      columns={[
+                        {
+                          title: 'Mã đơn hàng',
+                          dataIndex: 'orderCode',
+                          key: 'orderCode',
+                          render: v => <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">{v}</span>,
+                        },
+                        {
+                          title: 'Khách hàng',
+                          key: 'customer',
+                          render: (_, r) => (
+                            <div>
+                              <p className="font-semibold text-sm mb-0">{r.receiverName || r.userName}</p>
+                              <p className="text-xs text-gray-400 mb-0">{r.receiverPhone}</p>
+                            </div>
+                          ),
+                        },
+                        {
+                          title: 'Tổng tiền',
+                          dataIndex: 'finalAmount',
+                          key: 'amount',
+                          render: v => <span className="font-bold text-red-600">{formatCurrency(v)}đ</span>,
+                        },
+                        {
+                          title: 'Thanh toán',
+                          dataIndex: 'paymentMethod',
+                          key: 'payment',
+                          render: v => <Tag color={v === 'BANK_TRANSFER' ? 'blue' : 'green'}>{v === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'Tiền mặt'}</Tag>,
+                        },
+                        {
+                          title: 'Trạng thái',
+                          dataIndex: 'status',
+                          key: 'status',
+                          render: v => {
+                            const norm = v === 'SHIPPED' ? 'SHIPPING' : v;
+                            const cfg = {
+                              PENDING: ['warning', 'Chờ xử lý'],
+                              CONFIRMED: ['processing', 'Đã xác nhận'],
+                              PROCESSING: ['cyan', 'Đang xử lý'],
+                              SHIPPING: ['blue', 'Đang giao'],
+                              DELIVERED: ['success', 'Đã giao'],
+                              CANCELLED: ['error', 'Đã hủy']
+                            };
+                            const [color, label] = cfg[norm] || ['default', v];
+                            return <Tag color={color}>{label}</Tag>;
+                          },
+                        },
+                        {
+                          title: 'Ngày đặt',
+                          dataIndex: 'createdAt',
+                          key: 'date',
+                          render: v => v ? new Date(v).toLocaleDateString('vi-VN') : '—',
+                        },
+                        {
+                          title: 'Hành động',
+                          key: 'actions',
+                          render: (_, r) => (
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                size="small"
+                                icon={<EyeOutlined />}
+                                onClick={() => { setSelectedOrder(r); setOrderModalOpen(true); }}
+                                className="text-xs text-blue-600 border-blue-200"
+                              >
+                                Chi tiết
+                              </Button>
+                              <Select
+                                value={r.status === 'SHIPPED' ? 'SHIPPING' : r.status}
+                                size="small"
+                                className="w-32"
+                                onChange={(val) => handleUpdateOrderStatus(r.id || r.orderId, val)}
+                              >
+                                <Option value="PENDING">Chờ xử lý</Option>
+                                <Option value="CONFIRMED">Đã duyệt</Option>
+                                <Option value="PROCESSING">Đang xử lý</Option>
+                                <Option value="SHIPPING">Đang giao</Option>
+                                <Option value="DELIVERED">Đã giao</Option>
+                                <Option value="CANCELLED">Đã hủy</Option>
+                              </Select>
+                            </div>
+                          ),
+                        },
+                      ]}
+                    />
+                  </Card>
+                </div>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════ */}
+              {/* VIEW: REVIEWS MANAGEMENT & STATISTICS */}
+              {/* ═══════════════════════════════════════════════════════ */}
+              {activeSection === 'reviews' && (
+                <div className="space-y-6">
+                  {/* Reviews Stats */}
+                  <Row gutter={[16, 16]}>
+                    <Col xs={12} sm={6}>
+                      <Card className="rounded-xl border-gray-100 shadow-sm">
+                        <div className="text-2xl mb-1">⭐</div>
+                        <div className="text-xl font-black text-amber-500">
+                          {reviews.length > 0 ? (reviews.reduce((s, r) => s + (r.rating || 5), 0) / reviews.length).toFixed(1) : '5.0'} / 5.0
+                        </div>
+                        <div className="text-xs text-gray-500">Điểm đánh giá trung bình</div>
+                      </Card>
+                    </Col>
+                    <Col xs={12} sm={6}>
+                      <Card className="rounded-xl border-gray-100 shadow-sm">
+                        <div className="text-2xl mb-1">💬</div>
+                        <div className="text-xl font-black text-blue-700">{reviews.length}</div>
+                        <div className="text-xs text-gray-500">Tổng số lượt đánh giá</div>
+                      </Card>
+                    </Col>
+                    <Col xs={12} sm={6}>
+                      <Card className="rounded-xl border-gray-100 shadow-sm">
+                        <div className="text-2xl mb-1">🌟</div>
+                        <div className="text-xl font-black text-emerald-600">
+                          {reviews.filter(r => r.rating === 5).length}
+                        </div>
+                        <div className="text-xs text-gray-500">Đánh giá 5 sao tuyệt đối</div>
+                      </Card>
+                    </Col>
+                    <Col xs={12} sm={6}>
+                      <Card className="rounded-xl border-gray-100 shadow-sm">
+                        <div className="text-2xl mb-1">👍</div>
+                        <div className="text-xl font-black text-purple-700">
+                          {reviews.length > 0 ? Math.round((reviews.filter(r => (r.rating || 5) >= 4).length / reviews.length) * 100) : 100}%
+                        </div>
+                        <div className="text-xs text-gray-500">Tỉ lệ phản hồi tích cực (4-5★)</div>
+                      </Card>
+                    </Col>
+                  </Row>
+
+                  {/* Reviews Table Card */}
+                  <Card
+                    className="rounded-xl border-gray-100 shadow-sm"
+                    title={<span className="font-bold">⭐ Quản lý đánh giá sản phẩm ({reviews.length})</span>}
+                    extra={
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Input.Search
+                          placeholder="Tìm sản phẩm, khách hàng, nội dung..."
+                          value={reviewSearch}
+                          onChange={(e) => setReviewSearch(e.target.value)}
+                          allowClear
+                          className="w-56"
+                          size="small"
+                        />
+                        <Select
+                          value={reviewFilterRating}
+                          onChange={setReviewFilterRating}
+                          className="w-36"
+                          size="small"
+                        >
+                          <Option value="ALL">Tất cả số sao</Option>
+                          <Option value="5">5 sao ⭐⭐⭐⭐⭐</Option>
+                          <Option value="4">4 sao ⭐⭐⭐⭐</Option>
+                          <Option value="3">3 sao ⭐⭐⭐</Option>
+                          <Option value="2">2 sao ⭐⭐</Option>
+                          <Option value="1">1 sao ⭐</Option>
+                        </Select>
+                      </div>
+                    }
+                  >
+                    <Table
+                      dataSource={reviews.filter((r) => {
+                        const matchRating = reviewFilterRating === 'ALL' || String(r.rating) === String(reviewFilterRating);
+                        const matchSearch =
+                          !reviewSearch ||
+                          r.productName?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
+                          r.username?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
+                          r.reviewContent?.toLowerCase().includes(reviewSearch.toLowerCase());
+                        return matchRating && matchSearch;
+                      })}
+                      rowKey={(r) => r.id || Math.random()}
+                      size="middle"
+                      scroll={{ x: 800 }}
+                      pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (t) => `${t} đánh giá` }}
+                      columns={[
+                        {
+                          title: 'Sản phẩm',
+                          key: 'product',
+                          width: 250,
+                          render: (_, r) => {
+                            const prod = products.find(p => p.id === r.productId);
+                            return (
+                              <div className="flex items-center gap-2.5">
+                                <img
+                                  src={prod?.imageUrl || "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=100&auto=format&fit=crop"}
+                                  alt={r.productName || prod?.name}
+                                  className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-xs text-gray-800 line-clamp-1 mb-0">
+                                    {r.productName || prod?.name || 'Sản phẩm salon'}
+                                  </p>
+                                  <span className="text-[10px] text-gray-400 font-mono">
+                                    ID: {String(r.productId || '').slice(0, 8)}...
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          },
+                        },
+                        {
+                          title: 'Khách hàng',
+                          key: 'user',
+                          width: 150,
+                          render: (_, r) => (
+                            <div>
+                              <p className="font-semibold text-xs text-gray-800 mb-0">{r.username || 'Khách hàng'}</p>
+                              <Tag color="cyan" className="text-[9px] px-1 py-0 leading-none">Đã mua hàng</Tag>
+                            </div>
+                          ),
+                        },
+                        {
+                          title: 'Đánh giá',
+                          dataIndex: 'rating',
+                          key: 'rating',
+                          width: 140,
+                          render: (v) => <Rate disabled value={v || 5} allowHalf className="text-xs text-amber-500" />,
+                        },
+                        {
+                          title: 'Nội dung phản hồi',
+                          dataIndex: 'reviewContent',
+                          key: 'content',
+                          render: (v) => <p className="text-xs text-gray-700 leading-relaxed mb-0 line-clamp-2">{v || '—'}</p>,
+                        },
+                        {
+                          title: 'Thời gian',
+                          dataIndex: 'createdAt',
+                          key: 'date',
+                          width: 120,
+                          render: (v) => <span className="text-xs text-gray-400">{v ? new Date(v).toLocaleDateString('vi-VN') : '—'}</span>,
+                        },
+                        {
+                          title: 'Thao tác',
+                          key: 'actions',
+                          width: 90,
+                          render: (_, r) => (
+                            <Popconfirm
+                              title="Xóa đánh giá này khỏi hệ thống?"
+                              onConfirm={() => handleDeleteReview(r.id)}
+                              okText="Xóa"
+                              cancelText="Hủy"
+                              okType="danger"
+                            >
+                              <Button size="small" icon={<DeleteOutlined />} danger className="text-xs">
+                                Xóa
+                              </Button>
+                            </Popconfirm>
+                          ),
+                        },
+                      ]}
                     />
                   </Card>
                 </div>
@@ -1756,6 +2804,167 @@ export default function AdminDashboard() {
           </div>
         </Form>
       </Modal>
+
+      {/* ── MODAL: ORDER DETAIL ────────────────────────────────────── */}
+      {selectedOrder && (
+        <Modal
+          open={orderModalOpen}
+          onCancel={() => { setOrderModalOpen(false); setSelectedOrder(null); }}
+          footer={null}
+          title={
+            <div className="flex items-center justify-between pr-6">
+              <div className="flex items-center gap-2">
+                <DollarOutlined className="text-blue-600 text-lg" />
+                <span className="font-bold text-base">Chi tiết Đơn hàng #{selectedOrder.orderCode}</span>
+              </div>
+              <Tag
+                color={
+                  selectedOrder.status === 'DELIVERED' ? 'success' :
+                  selectedOrder.status === 'SHIPPING' || selectedOrder.status === 'SHIPPED' ? 'blue' :
+                  selectedOrder.status === 'PROCESSING' ? 'cyan' :
+                  selectedOrder.status === 'CONFIRMED' ? 'processing' :
+                  selectedOrder.status === 'CANCELLED' ? 'error' : 'warning'
+                }
+                className="font-bold text-xs"
+              >
+                {selectedOrder.status}
+              </Tag>
+            </div>
+          }
+          width={720}
+          className="rounded-2xl"
+        >
+          <div className="py-2 space-y-4 text-xs">
+            {/* Customer & Shipping Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-gray-100">
+              <div>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Thông tin người nhận</p>
+                <p className="font-bold text-sm text-gray-800 mb-0.5">{selectedOrder.receiverName || selectedOrder.userName}</p>
+                <p className="text-gray-600 mb-0.5">📞 {selectedOrder.receiverPhone}</p>
+                <p className="text-gray-600 mb-0">📍 {selectedOrder.shippingAddress || 'Nhận tại Salon'}</p>
+                {selectedOrder.note && (
+                  <p className="text-gray-500 italic mt-1 mb-0">Ghi chú: "{selectedOrder.note}"</p>
+                )}
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Phương thức thanh toán</p>
+                <p className="font-bold text-sm text-gray-800 mb-0.5">
+                  {selectedOrder.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản VietQR' : 'Tiền mặt khi giao hàng (COD)'}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-gray-500">Trạng thái thanh toán:</span>
+                  <Tag color={selectedOrder.paymentStatus === 'SUCCESS' ? 'success' : 'warning'}>
+                    {selectedOrder.paymentStatus === 'SUCCESS' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                  </Tag>
+                </div>
+                <p className="text-gray-400 mt-2 mb-0">
+                  Ngày đặt: {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString('vi-VN') : '—'}
+                </p>
+              </div>
+            </div>
+
+            {/* Ordered Items Table */}
+            <div>
+              <p className="font-bold text-sm text-gray-800 mb-2">📦 Danh sách sản phẩm đặt mua</p>
+              <div className="border border-gray-100 rounded-xl overflow-hidden">
+                <Table
+                  dataSource={selectedOrder.items || []}
+                  rowKey={(i) => i.orderDetailId || i.productId || Math.random()}
+                  pagination={false}
+                  size="small"
+                  columns={[
+                    {
+                      title: 'Sản phẩm',
+                      key: 'item',
+                      render: (_, item) => (
+                        <div className="flex items-center gap-2.5">
+                          <img
+                            src={item.productImage || "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=100&auto=format&fit=crop"}
+                            alt={item.productName}
+                            className="w-9 h-9 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                          />
+                          <span className="font-semibold text-xs text-gray-800 line-clamp-1">{item.productName}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      title: 'Đơn giá',
+                      dataIndex: 'unitPrice',
+                      key: 'unitPrice',
+                      render: (v) => <span>{formatCurrency(v)}đ</span>,
+                    },
+                    {
+                      title: 'Số lượng',
+                      dataIndex: 'quantity',
+                      key: 'qty',
+                      align: 'center',
+                      render: (v) => <Tag color="blue" className="font-bold">{v}</Tag>,
+                    },
+                    {
+                      title: 'Thành tiền',
+                      dataIndex: 'totalPrice',
+                      key: 'lineTotal',
+                      align: 'right',
+                      render: (v, r) => (
+                        <span className="font-bold text-red-600">
+                          {formatCurrency(v || (Number(r.unitPrice) * Number(r.quantity)))}đ
+                        </span>
+                      ),
+                    },
+                  ]}
+                  locale={{ emptyText: 'Không có thông tin chi tiết món hàng' }}
+                />
+              </div>
+            </div>
+
+            {/* Financial Summary */}
+            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-1.5">
+              <div className="flex justify-between text-gray-600">
+                <span>Tiền hàng:</span>
+                <span>{formatCurrency(selectedOrder.totalAmount || selectedOrder.finalAmount)}đ</span>
+              </div>
+              {selectedOrder.shippingFee > 0 && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Phí vận chuyển:</span>
+                  <span>+{formatCurrency(selectedOrder.shippingFee)}đ</span>
+                </div>
+              )}
+              {selectedOrder.discountAmount > 0 && (
+                <div className="flex justify-between text-emerald-600 font-medium">
+                  <span>Giảm giá:</span>
+                  <span>-{formatCurrency(selectedOrder.discountAmount)}đ</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm font-black text-red-600 pt-1.5 border-t border-gray-200">
+                <span>Tổng cộng thanh toán:</span>
+                <span>{formatCurrency(selectedOrder.finalAmount)}đ</span>
+              </div>
+            </div>
+
+            {/* Status Update Control */}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+              <span className="font-bold text-gray-700">Cập nhật trạng thái đơn:</span>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={selectedOrder.status === 'SHIPPED' ? 'SHIPPING' : selectedOrder.status}
+                  onChange={(val) => handleUpdateOrderStatus(selectedOrder.id || selectedOrder.orderId, val)}
+                  className="w-44"
+                >
+                  <Option value="PENDING">Chờ xử lý</Option>
+                  <Option value="CONFIRMED">Đã duyệt (Confirmed)</Option>
+                  <Option value="PROCESSING">Đang chuẩn bị (Processing)</Option>
+                  <Option value="SHIPPING">Đang giao hàng (Shipping)</Option>
+                  <Option value="DELIVERED">Đã giao thành công (Delivered)</Option>
+                  <Option value="CANCELLED">Hủy đơn hàng (Cancelled)</Option>
+                </Select>
+                <Button type="primary" onClick={() => { setOrderModalOpen(false); setSelectedOrder(null); }} className="bg-blue-600">
+                  Đóng
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Layout>
   );
 }
