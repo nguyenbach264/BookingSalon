@@ -45,6 +45,11 @@ public class NotificationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(notificationService.createNotification(notification));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getNotificationById(@PathVariable("id") UUID notificationId) {
+        return ResponseEntity.status(HttpStatus.OK).body(notificationService.getNotificationById(notificationId));
+    }
+
     @PutMapping("/{id}/read")
     public ResponseEntity<?> markNotificationAsRead(@PathVariable("id") UUID notificationId) {
         return ResponseEntity.status(HttpStatus.OK).body(notificationService.markNotificationAsRead(notificationId));

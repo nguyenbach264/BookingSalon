@@ -26,7 +26,7 @@ const DEFAULT_SERVICE_IMAGES = [
 ];
 
 export function SelectService() {
-  const { setStep, selectedStylist, selectedServices, setSelectedServices } = useBooking();
+  const { setStep, selectedStylist, selectedServices, setSelectedServices, selectedSalon } = useBooking();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,9 +51,9 @@ export function SelectService() {
               proficiencyLevel: item.proficiencyLevel,
             }));
           }
-          return getServiceOfferings();
+          return getServiceOfferings(selectedSalon?.id);
         })
-      : getServiceOfferings();
+      : getServiceOfferings(selectedSalon?.id);
 
     fetchPromise
       .then((data) => {
@@ -67,6 +67,8 @@ export function SelectService() {
             description: s.description || 'Dịch vụ chăm sóc tóc chuyên nghiệp',
             image: s.image || DEFAULT_SERVICE_IMAGES[idx % DEFAULT_SERVICE_IMAGES.length],
             category: s.categoryName || (s.name && s.name.toLowerCase().includes('uốn') ? 'Uốn & Nhuộm' : s.name && s.name.toLowerCase().includes('massage') ? 'Chăm sóc da' : 'Cắt gội'),
+            isSuspended: !!s.isSuspended,
+            suspensionReason: s.suspensionReason,
           }));
           setServices(normalized);
           setLoading(false);
@@ -83,9 +85,10 @@ export function SelectService() {
     return () => {
       isMounted = false;
     };
-  }, [selectedStylist?.id]);
+  }, [selectedStylist?.id, selectedSalon?.id]);
 
   const toggleService = (srv) => {
+    if (srv.isSuspended) return;
     const exists = selectedServices.some((s) => s.id === srv.id);
     if (exists) {
       const updated = selectedServices.filter((s) => s.id !== srv.id);
@@ -184,15 +187,18 @@ export function SelectService() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredServices.map((srv) => {
             const isSelected = selectedServices.some((s) => s.id === srv.id);
+            const isSuspended = !!srv.isSuspended;
 
             return (
               <div
                 key={srv.id}
-                onClick={() => toggleService(srv)}
-                className={`group bg-white rounded-2xl overflow-hidden border-2 transition-all duration-200 cursor-pointer flex flex-col justify-between ${
-                  isSelected
-                    ? 'border-blue-600 ring-2 ring-blue-100 shadow-md bg-blue-50/20'
-                    : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+                onClick={() => !isSuspended && toggleService(srv)}
+                className={`group bg-white rounded-2xl overflow-hidden border-2 transition-all duration-200 flex flex-col justify-between ${
+                  isSuspended
+                    ? 'opacity-65 cursor-not-allowed border-dashed border-amber-300 bg-amber-50/20'
+                    : isSelected
+                    ? 'border-blue-600 ring-2 ring-blue-100 shadow-md bg-blue-50/20 cursor-pointer'
+                    : 'border-gray-200 hover:border-blue-300 hover:shadow-md cursor-pointer'
                 }`}
               >
                 <div>
@@ -200,7 +206,7 @@ export function SelectService() {
                     <img
                       src={srv.image}
                       alt={srv.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className={`w-full h-full object-cover transition-transform duration-300 ${isSuspended ? 'grayscale' : 'group-hover:scale-105'}`}
                     />
                     <div className="absolute top-2 left-2 bg-[#1b2a4a]/80 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-md flex items-center gap-1">
                       <Clock className="w-3 h-3" />

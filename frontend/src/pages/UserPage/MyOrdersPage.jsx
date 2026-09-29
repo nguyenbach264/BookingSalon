@@ -115,14 +115,24 @@ export default function MyOrdersPage() {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+    try {
+      let date;
+      if (Array.isArray(dateStr)) {
+        const [year, month, day, hour = 0, minute = 0, second = 0] = dateStr;
+        date = new Date(year, month - 1, day, hour, minute, second);
+      } else {
+        date = new Date(dateStr);
+      }
+      return date.toLocaleDateString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    } catch {
+      return String(dateStr);
+    }
   };
 
   const getStatusBadge = (status) => {

@@ -109,6 +109,13 @@ export function SelectStylistAndDate() {
     };
   }, [selectedStylist?.id, selectedDate]);
 
+  const formatLocalDate = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Generate next 7 days for the date picker
   const next7Days = useMemo(() => {
     const days = [];
@@ -116,7 +123,7 @@ export function SelectStylistAndDate() {
     for (let i = 0; i < 7; i++) {
       const d = new Date();
       d.setDate(d.getDate() + i);
-      const isoStr = d.toISOString().split('T')[0];
+      const isoStr = formatLocalDate(d);
       const dayOfWeek = dayNames[d.getDay()];
       const dayNum = d.getDate();
       const monthNum = d.getMonth() + 1;
@@ -131,7 +138,7 @@ export function SelectStylistAndDate() {
   const timeSlots = useMemo(() => {
     const slots = [];
     const now = new Date();
-    const isSelectedDayToday = selectedDate === now.toISOString().split('T')[0];
+    const isSelectedDayToday = selectedDate === formatLocalDate(now);
     const currentHour = now.getHours();
     const currentMin = now.getMinutes();
 

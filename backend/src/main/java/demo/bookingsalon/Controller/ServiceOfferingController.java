@@ -19,19 +19,14 @@ public class ServiceOfferingController {
     private final ServiceOfferingService serviceOfferingService;
 
     @GetMapping()
-    public ResponseEntity<?> getServiceOfferings() {
-        return ResponseEntity.status(HttpStatus.OK).body(serviceOfferingService.getServiceOfferings());
+    public ResponseEntity<?> getServiceOfferings(@RequestParam(required = false) UUID salonId) {
+        return ResponseEntity.status(HttpStatus.OK).body(serviceOfferingService.getServiceOfferings(salonId));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getServiceOfferingById(@PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(serviceOfferingService.getServiceOfferingById(id));
     }
-
-//    @GetMapping("/salon/{id}")
-//    public ResponseEntity<?> getServiceOfferingBySalonId(@PathVariable String id) {
-//        return ResponseEntity.status(HttpStatus.OK).body(serviceOfferingService.getServiceOfferingBySalonId(id));
-//    }
 
     @GetMapping("/salon/list/{ids}")
     public ResponseEntity<?> getServiceOfferingByIds(@RequestParam Set<UUID> ids) {

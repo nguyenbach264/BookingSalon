@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Modal, Badge, Dropdown, Avatar, Tag, Popover, Empty } from 'antd';
+import { Modal, Badge, Dropdown, Avatar, Tag, Popover, Empty, Button, Spin } from 'antd';
 import {
   Bell,
   LogOut,
@@ -41,11 +41,21 @@ const Header = ({ onLoginClick }) => {
     markAsRead,
     markAllAsRead,
     setSelectedNotification,
+    fetchSingleNotification,
   } = useNotification();
   const { userInfo, initialized, authenticated, logout, openLoginModal } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+
+  const handleNotificationClick = (notif) => {
+    setNotificationOpen(false);
+    if (!notif?.id) return;
+    if (!notif.isRead) {
+      markAsRead(notif.id);
+    }
+    navigate(`/notification_detail?id=${notif.id}`);
+  };
 
   // Reset giá trị tìm kiếm khi chuyển trang (chỉ giữ lại query khi đang ở trang /service)
   useEffect(() => {
@@ -140,7 +150,7 @@ const Header = ({ onLoginClick }) => {
 
   // Cấu hình giao diện riêng biệt cho từng loại thông báo (User Notification Types)
   const getNotificationConfig = (notif) => {
-    const type = notif.type || 'INFO';
+    const type = notif?.type || 'INFO';
     if (type === 'BOOKING_CREATED') {
       return {
         tag: <Tag color="green" className="text-[9px] font-bold border-none px-1.5 rounded-full">Đặt lịch mới</Tag>,
@@ -234,13 +244,11 @@ const Header = ({ onLoginClick }) => {
             return (
               <div
                 key={notif.id}
-                onClick={() => {
-                  if (!notif.isRead) markAsRead(notif.id);
-                  setNotificationOpen(false);
-                  if (config.targetRoute) navigate(config.targetRoute);
-                }}
-                className={`p-3.5 transition-colors cursor-pointer hover:bg-blue-50/40 relative flex gap-3 ${
-                  !notif.isRead ? 'bg-blue-50/20' : 'bg-white'
+                onClick={() => handleNotificationClick(notif)}
+                className={`p-3.5 transition-all duration-200 cursor-pointer relative flex gap-3 ${
+                  !notif.isRead
+                    ? 'bg-blue-50/90 hover:bg-blue-200/80 border-l-4 border-l-blue-600 shadow-xs'
+                    : 'bg-white hover:bg-slate-200/70 border-l-4 border-l-transparent hover:border-l-blue-400'
                 }`}
               >
                 {/* Icon Circle */}
@@ -272,9 +280,7 @@ const Header = ({ onLoginClick }) => {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!notif.isRead) markAsRead(notif.id);
-                        setNotificationOpen(false);
-                        if (config.targetRoute) navigate(config.targetRoute);
+                        handleNotificationClick(notif);
                       }}
                       className="text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 cursor-pointer"
                     >
@@ -284,7 +290,7 @@ const Header = ({ onLoginClick }) => {
                 </div>
 
                 {!notif.isRead && (
-                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 mt-1" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0 mt-1 shadow-xs" />
                 )}
               </div>
             );
@@ -468,6 +474,7 @@ const Header = ({ onLoginClick }) => {
           </button>
         </div>
       )}
+
     </header>
   );
 };

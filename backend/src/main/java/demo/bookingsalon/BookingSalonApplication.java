@@ -8,6 +8,9 @@ import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import jakarta.annotation.PostConstruct;
+import java.util.TimeZone;
+
 @SpringBootApplication
 @ComponentScan(basePackages = {
         "demo.bookingsalon",
@@ -19,6 +22,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableRetry
 @EnableTransactionManagement
 public class BookingSalonApplication {
+
+    @PostConstruct
+    public void init() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+    }
 
     public static void main(String[] args) {
         // Tự động nạp file .env vào System Properties trước khi Spring Boot khởi động

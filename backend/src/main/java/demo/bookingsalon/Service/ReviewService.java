@@ -64,10 +64,14 @@ public class ReviewService {
         }
 
         if (reviewDTO.getBookingId() != null) {
-            bookingRepository.findById(reviewDTO.getBookingId()).ifPresent(b -> {
+            demo.bookingsalon.Entity.Booking b = bookingRepository.findById(reviewDTO.getBookingId()).orElse(null);
+            if (b != null) {
+                if (b.isReviewed()) {
+                    throw new IllegalStateException("Lịch hẹn này đã được gửi đánh giá trước đó!");
+                }
                 b.setReviewed(true);
                 bookingRepository.save(b);
-            });
+            }
         }
 
         Review review = Review.builder()

@@ -1,5 +1,6 @@
 package demo.bookingsalon.Entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -27,6 +28,9 @@ public class Notification extends BaseEntity {
     @Column(name = "booking_id")
     private UUID bookingId;
 
+    @Column(name = "order_id")
+    private UUID orderId;
+
     @Column(name = "title")
     private String title;
 
@@ -36,11 +40,24 @@ public class Notification extends BaseEntity {
     @Column(name = "type")
     private String type;
 
+    @JsonProperty("isRead")
     @Builder.Default
     @Column(name = "is_read", nullable = false)
     private boolean isRead = false;
 
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
+
     @Column(name = "expired_at")
     private LocalDateTime expiredAt;
-}
 
+    @JsonProperty("isRead")
+    public boolean isRead() {
+        return isRead;
+    }
+
+    @JsonProperty("isRead")
+    public void setRead(boolean isRead) {
+        this.isRead = isRead;
+    }
+}

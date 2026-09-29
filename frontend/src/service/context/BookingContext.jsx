@@ -10,10 +10,13 @@ export function BookingProvider({ children }) {
   const [selectedSalon, setSelectedSalonState] = useState(null);
   const [selectedStylist, setSelectedStylist] = useState(null);
   
-  // Format today's date YYYY-MM-DD
+  // Format today's date YYYY-MM-DD in local time
   const getTodayStr = () => {
     const d = new Date();
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const [selectedDate, setSelectedDate] = useState(getTodayStr());

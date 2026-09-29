@@ -108,7 +108,13 @@ export default function MyBookingsPage() {
   const formatDateTime = (dt) => {
     if (!dt) return '—';
     try {
-      const d = Array.isArray(dt) ? new Date(...dt) : new Date(dt);
+      let d;
+      if (Array.isArray(dt)) {
+        const [year, month, day, hour = 0, minute = 0, second = 0] = dt;
+        d = new Date(year, month - 1, day, hour, minute, second);
+      } else {
+        d = new Date(dt);
+      }
       return d.toLocaleString('vi-VN', {
         hour: '2-digit',
         minute: '2-digit',
@@ -165,6 +171,13 @@ export default function MyBookingsPage() {
       });
       message.success('Cảm ơn bạn đã gửi đánh giá trải nghiệm!');
       setReviewModalOpen(false);
+      setBookings((prev) =>
+        prev.map((item) =>
+          item.id === reviewBooking?.id
+            ? { ...item, isReviewed: true, isReview: true, reviewed: true }
+            : item
+        )
+      );
       loadData();
       setActiveTab('REVIEWS');
     } catch (err) {
@@ -176,21 +189,31 @@ export default function MyBookingsPage() {
   };
 
   const renderBookingCard = (b, isCompleted = false) => {
+    const hasReviewed = Boolean(b.isReviewed || b.isReview || b.reviewed);
+
     return (
       <div
         key={b.id || b.bookingCode}
         className="bg-white rounded-2xl border border-gray-100 hover:border-blue-300 p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between"
       >
         <div>
-          {/* Header row: Code & Status */}
+          {/* Header row: Code & Created time & Status */}
           <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
-            <div className="flex items-center gap-2">
-              <span className="font-mono font-black text-xs text-[#60a5fa] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
-                {b.bookingCode || 'BB-2026'}
-              </span>
-              <span className="text-xs text-gray-400">
-                {formatDateTime(b.startTime)}
-              </span>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-black text-xs text-[#60a5fa] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+                  {b.bookingCode || 'BB-2026'}
+                </span>
+                {b.createdAt ? (
+                  <span className="text-[11px] text-gray-400">
+                    Đặt lúc: {formatDateTime(b.createdAt)}
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-400">
+                    {formatDateTime(b.startTime)}
+                  </span>
+                )}
+              </div>
             </div>
             <div>
               {b.status === 'PENDING' && (
@@ -223,6 +246,12 @@ export default function MyBookingsPage() {
 
           {/* Details */}
           <div className="space-y-2.5 text-sm text-gray-700 mb-6">
+            <div className="flex items-center gap-2.5">
+              <CalendarOutlined className="text-[#60a5fa] shrink-0" />
+              <span>Thời gian hẹn:</span>
+              <strong className="text-gray-900 font-bold">{formatDateTime(b.startTime)}</strong>
+            </div>
+
             <div className="flex items-center gap-2.5">
               <EnvironmentOutlined className="text-[#60a5fa] shrink-0" />
               <span className="font-semibold text-gray-900">{b.salonName || 'Salon BachBarber'}</span>
@@ -278,10 +307,10 @@ export default function MyBookingsPage() {
 
           {isCompleted && (
             <div className="w-full flex items-center justify-between">
-              {b.isReviewed ? (
-                <Tag color="blue" className="rounded-full text-xs font-bold border-none py-1 px-3">
-                  ★ Đã gửi đánh giá
-                </Tag>
+              {hasReviewed ? (
+                <span className="text-xs text-emerald-600 font-bold flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                  <CheckCircleOutlined /> Đã đánh giá dịch vụ
+                </span>
               ) : (
                 <Button
                   type="primary"

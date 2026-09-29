@@ -4,6 +4,10 @@ import api from "./axiosApi";
 export const getUserNotifications = (userId) =>
   api.get(`/notifications/user/${userId}`).then((r) => r.data);
 
+// Lấy chi tiết 1 thông báo theo ID (được đánh dấu đã đọc trong DB)
+export const getNotificationById = (notificationId) =>
+  api.get(`/notifications/${notificationId}`).then((r) => r.data);
+
 // Đánh dấu 1 thông báo đã đọc
 export const markNotificationAsRead = (notificationId) =>
   api.put(`/notifications/${notificationId}/read`).then((r) => r.data);

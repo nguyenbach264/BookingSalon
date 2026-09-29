@@ -1,15 +1,18 @@
 package demo.bookingsalon.Payload.DTO;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ServiceOfferingDTO {
     private UUID id;
 
@@ -28,4 +31,8 @@ public class ServiceOfferingDTO {
     private String salonId;
 
     private String categoryId;
+
+    private Boolean isSuspended;
+
+    private String suspensionReason;
 }

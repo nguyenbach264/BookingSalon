@@ -1,5 +1,6 @@
 package demo.bookingsalon.Payload.Response.Business;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import demo.bookingsalon.Enum.BookingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,6 +34,8 @@ public class BookingResponse {
 
     private LocalDateTime endTime;
 
+    private LocalDateTime createdAt;
+
     private UUID salonId;
 
     private String salonName;
@@ -63,5 +66,26 @@ public class BookingResponse {
 
     private BigDecimal totalAmount;
 
+    @JsonProperty("isReviewed")
     private boolean isReviewed;
+
+    @JsonProperty("isReviewed")
+    public boolean isReviewed() {
+        return isReviewed;
+    }
+
+    @JsonProperty("isReviewed")
+    public void setReviewed(boolean isReviewed) {
+        this.isReviewed = isReviewed;
+    }
+
+    @JsonProperty("isReview")
+    public boolean getIsReview() {
+        return isReviewed;
+    }
+
+    @JsonProperty("reviewed")
+    public boolean getReviewed() {
+        return isReviewed;
+    }
 }

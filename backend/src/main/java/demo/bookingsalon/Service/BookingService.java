@@ -50,7 +50,7 @@ public class BookingService {
     public List<BookingResponse> getBookings() {
         return bookingRepository.findAll().stream()
                 .map(booking -> bookingMapper.toBookingResponse(booking))
-                .sorted(Comparator.comparing(BookingResponse::getStartTime))
+                .sorted(Comparator.comparing(BookingResponse::getStartTime, Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
     }
 
@@ -65,7 +65,13 @@ public class BookingService {
     public List<BookingResponse> getBookingByUserId(UUID userId) {
         return bookingRepository.getBookingByUserId(userId).stream()
                 .map(booking -> bookingMapper.toBookingResponse(booking))
-                .sorted(Comparator.comparing(BookingResponse::getUserId))
+                .sorted(Comparator.comparing(
+                        BookingResponse::getCreatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ).thenComparing(
+                        BookingResponse::getStartTime,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ))
                 .toList();
     }
 

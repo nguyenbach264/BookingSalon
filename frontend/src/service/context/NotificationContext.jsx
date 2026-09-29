@@ -4,9 +4,19 @@ import { useAuth } from "../../auth/authProvider";
 import notificationWs from "../websocket/notificationWebSocket";
 import {
   getUserNotifications,
+  getNotificationById as apiGetNotificationById,
   markNotificationAsRead as apiMarkRead,
   markAllNotificationsAsRead as apiMarkAllRead,
 } from "../api/notificationApi";
+
+const normalizeNotification = (notif) => {
+  if (!notif) return notif;
+  const isRead = notif.isRead !== undefined ? Boolean(notif.isRead) : Boolean(notif.read);
+  return {
+    ...notif,
+    isRead,
+  };
+};
 
 const NotificationContext = createContext(null);
 
@@ -25,7 +35,8 @@ export const NotificationProvider = ({ children }) => {
     setLoading(true);
     try {
       const data = await getUserNotifications(userId);
-      const list = Array.isArray(data) ? data : [];
+      const rawList = Array.isArray(data) ? data : [];
+      const list = rawList.map(normalizeNotification);
       setNotifications(list);
       setUnreadCount(list.filter((n) => !n.isRead).length);
     } catch (err) {
@@ -35,14 +46,35 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [userId, authenticated]);
 
+  // Lấy chi tiết 1 thông báo theo ID từ DB và đánh dấu đã đọc
+  const fetchSingleNotification = useCallback(async (notificationId) => {
+    if (!notificationId) return null;
+    try {
+      const data = await apiGetNotificationById(notificationId);
+      const normalized = normalizeNotification(data);
+      setSelectedNotification(normalized);
+      // Cập nhật danh sách local để phản ánh isRead = true và tính lại unreadCount
+      setNotifications((prev) => {
+        const next = prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n));
+        setUnreadCount(next.filter((n) => !n.isRead).length);
+        return next;
+      });
+      return normalized;
+    } catch (err) {
+      console.warn("Could not fetch single notification:", err);
+      return null;
+    }
+  }, []);
+
   // Đánh dấu 1 thông báo là đã đọc
   const markAsRead = useCallback(async (notificationId) => {
     try {
       await apiMarkRead(notificationId);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      setNotifications((prev) => {
+        const next = prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n));
+        setUnreadCount(next.filter((n) => !n.isRead).length);
+        return next;
+      });
     } catch (err) {
       console.warn("Failed to mark notification as read:", err);
     }
@@ -108,16 +140,17 @@ export const NotificationProvider = ({ children }) => {
       // Chỉ xử lý thông báo gửi riêng cho User này hoặc broadcast
       if (incoming.userId && incoming.userId !== userId) return;
 
+      const incomingNormalized = normalizeNotification(incoming);
       setNotifications((prev) => {
         // Tránh trùng lặp nếu id đã có
-        const exists = prev.some((n) => n.id === incoming.id);
+        const exists = prev.some((n) => n.id === incomingNormalized.id);
         if (exists) return prev;
-        return [incoming, ...prev];
+        return [incomingNormalized, ...prev];
       });
       setUnreadCount((prev) => prev + 1);
 
       // Kích hoạt banner thông báo tức thời
-      showNotificationToast(incoming);
+      showNotificationToast(incomingNormalized);
     });
 
     return () => {
@@ -134,6 +167,7 @@ export const NotificationProvider = ({ children }) => {
         loading,
         selectedNotification,
         setSelectedNotification,
+        fetchSingleNotification,
         markAsRead,
         markAllAsRead,
         refreshNotifications: fetchNotifications,

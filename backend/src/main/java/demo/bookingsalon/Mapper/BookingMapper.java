@@ -30,6 +30,7 @@ public interface BookingMapper {
     @Mapping(target = "serviceIds", source = "bookingDetails", qualifiedByName = "mapServiceIds")
     @Mapping(target = "totalServices", source = "bookingDetails", qualifiedByName = "mapTotalServices")
     @Mapping(target = "isReviewed", source = "reviewed")
+    @Mapping(target = "createdAt", source = "createdAt")
     BookingResponse toBookingResponse(Booking booking);
 
     @Named("mapServiceIds")
