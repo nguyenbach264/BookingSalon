@@ -96,7 +96,10 @@ public class Stylist extends BaseUser {
 
     @Builder.Default
     @Column(name = "status")
-    private String status = "ACTIVE";
+    private String status = "OFF";
+
+    @Column(name = "next_available_on_time")
+    private java.time.LocalDateTime nextAvailableOnTime;
 
     @Version
     @Column(name = "version")

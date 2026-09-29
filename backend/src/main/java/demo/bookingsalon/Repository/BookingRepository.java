@@ -33,7 +33,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     long countByStatusAndStylistId(BookingStatus status, UUID stylistId);
 
     @Query("SELECT b FROM Booking b WHERE b.salon.id = :salonId " +
-           "AND b.status != 'CANCELLED' " +
+           "AND b.status != demo.bookingsalon.Enum.BookingStatus.CANCELLED " +
            "AND ((b.startTime < :endTime AND b.endTime > :startTime))")
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Booking> findConflictingBookings(@Param("salonId") UUID salonId,
@@ -41,7 +41,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
                                           @Param("endTime") LocalDateTime endTime);
 
     @Query("SELECT b FROM Booking b WHERE b.stylist.id = :stylistId " +
-           "AND b.status != 'CANCELLED' " +
+           "AND b.status != demo.bookingsalon.Enum.BookingStatus.CANCELLED " +
            "AND ((b.startTime < :endTime AND b.endTime > :startTime))")
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Booking> findConflictingBookingsByStylist(@Param("stylistId") UUID stylistId,
@@ -49,8 +49,8 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
                                                    @Param("endTime") LocalDateTime endTime);
 
     @Query("SELECT b FROM Booking b WHERE b.stylist.id = :stylistId " +
-           "AND b.status != 'CANCELLED' " +
-           "AND b.startTime >= :dayStart AND b.startTime < :dayEnd")
+           "AND b.status != demo.bookingsalon.Enum.BookingStatus.CANCELLED " +
+           "AND ((b.startTime < :dayEnd AND b.endTime > :dayStart))")
     List<Booking> findActiveBookingsByStylistAndDate(@Param("stylistId") UUID stylistId,
                                                     @Param("dayStart") LocalDateTime dayStart,
                                                     @Param("dayEnd") LocalDateTime dayEnd);

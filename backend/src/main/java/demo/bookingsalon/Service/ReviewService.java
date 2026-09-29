@@ -26,6 +26,7 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final demo.bookingsalon.Repository.BookingRepository bookingRepository;
+    private final demo.bookingsalon.Repository.StylistRepository stylistRepository;
     private final NotificationWebSocketHandler webSocketHandler;
     private final ObjectMapper objectMapper;
     private final ReviewMapper reviewMapper;
@@ -86,6 +87,19 @@ public class ReviewService {
                 .build();
 
         Review savedReview = reviewRepository.save(review);
+
+        // Cập nhật rating và review count thật của Stylist trong CSDL
+        if (review.getStylistId() != null) {
+            Double avg = reviewRepository.getAverageRatingByStylistId(review.getStylistId());
+            Long count = reviewRepository.countByStylistId(review.getStylistId());
+            stylistRepository.findById(review.getStylistId()).ifPresent(s -> {
+                s.setRatingAverage(avg != null ? java.math.BigDecimal.valueOf(avg).setScale(2, java.math.RoundingMode.HALF_UP) : java.math.BigDecimal.ZERO);
+                s.setRating(avg != null ? avg : 0.0);
+                s.setTotalReviewsCount(count != null ? count.intValue() : 0);
+                stylistRepository.save(s);
+            });
+        }
+
         ReviewDTO response = reviewMapper.toReviewDTO(savedReview);
 
         broadcastNewReview(response);

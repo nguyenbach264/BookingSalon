@@ -22,6 +22,7 @@ public class StylistController {
 
     private final StylistRepository stylistRepository;
     private final StylistServiceRepository stylistServiceRepository;
+    private final demo.bookingsalon.Repository.ReviewRepository reviewRepository;
 
     @Data
     @Builder
@@ -47,6 +48,9 @@ public class StylistController {
         private String workShiftType;
         private Boolean isFeatured;
         private String status;
+        private Boolean isDutyActive;
+        private java.time.LocalDateTime nextAvailableOnTime;
+        private Long cooldownRemainingSeconds;
         private UUID salonId;
         private String salonName;
         private String salonAddress;
@@ -65,8 +69,9 @@ public class StylistController {
     }
 
     @GetMapping
-    public ResponseEntity<List<StylistDetailDTO>> getAllStylists() {
+    public ResponseEntity<List<StylistDetailDTO>> getAllStylists(@RequestParam(value = "onlyActive", defaultValue = "false") boolean onlyActive) {
         List<StylistDetailDTO> list = stylistRepository.findAll().stream()
+                .filter(s -> !onlyActive || "ACTIVE".equalsIgnoreCase(s.getStatus()))
                 .map(this::toDTO)
                 .toList();
         return ResponseEntity.ok(list);
@@ -80,9 +85,12 @@ public class StylistController {
     }
 
     @GetMapping("/salon/{salonId}")
-    public ResponseEntity<List<StylistDetailDTO>> getStylistsBySalon(@PathVariable UUID salonId) {
+    public ResponseEntity<List<StylistDetailDTO>> getStylistsBySalon(
+            @PathVariable UUID salonId,
+            @RequestParam(value = "onlyActive", defaultValue = "true") boolean onlyActive) {
         List<StylistDetailDTO> list = stylistRepository.findAll().stream()
                 .filter(s -> s.getSalon() != null && salonId.equals(s.getSalon().getId()))
+                .filter(s -> !onlyActive || "ACTIVE".equalsIgnoreCase(s.getStatus()))
                 .map(this::toDTO)
                 .toList();
         return ResponseEntity.ok(list);
@@ -103,7 +111,54 @@ public class StylistController {
         return ResponseEntity.ok(dtoList);
     }
 
+    @PutMapping("/{id}/duty-status")
+    public ResponseEntity<?> toggleDutyStatus(
+            @PathVariable UUID id,
+            @RequestBody java.util.Map<String, Boolean> body) {
+        Boolean active = body.get("active");
+        if (active == null) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Thiếu trường active"));
+        }
+        Stylist s = stylistRepository.findById(id)
+                .orElseThrow(() -> new demo.bookingsalon.Exception.NotFoundException("Stylist không tồn tại"));
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+        if (Boolean.TRUE.equals(active)) {
+            // Muốn bật lại ON: kiểm tra cooldown 2 tiếng
+            if (s.getNextAvailableOnTime() != null && s.getNextAvailableOnTime().isAfter(now)) {
+                long remainingSeconds = java.time.Duration.between(now, s.getNextAvailableOnTime()).getSeconds();
+                long mins = remainingSeconds / 60;
+                long secs = remainingSeconds % 60;
+                return ResponseEntity.status(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS)
+                        .body(java.util.Map.of(
+                                "message", "Bạn vừa tắt trạng thái hoạt động. Cần đợi hết 2 tiếng mới có thể bật lại (còn " + mins + " phút " + secs + " giây)!",
+                                "cooldownRemainingSeconds", remainingSeconds
+                        ));
+            }
+            s.setStatus("ACTIVE");
+            s.setNextAvailableOnTime(null);
+        } else {
+            // Muốn tắt OFF: kích hoạt đếm ngược 2 tiếng trước khi được bật lại
+            s.setStatus("OFF");
+            s.setNextAvailableOnTime(now.plusHours(2));
+        }
+
+        Stylist updated = stylistRepository.save(s);
+        return ResponseEntity.ok(toDTO(updated));
+    }
+
     private StylistDetailDTO toDTO(Stylist s) {
+        Long count = reviewRepository.countByStylistId(s.getId());
+        Double avg = reviewRepository.getAverageRatingByStylistId(s.getId());
+        BigDecimal ratingAvg = avg != null ? BigDecimal.valueOf(avg).setScale(1, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO;
+        int reviewCount = count != null ? count.intValue() : 0;
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        Long cooldownSec = null;
+        if (s.getNextAvailableOnTime() != null && s.getNextAvailableOnTime().isAfter(now)) {
+            cooldownSec = java.time.Duration.between(now, s.getNextAvailableOnTime()).getSeconds();
+        }
+
         return StylistDetailDTO.builder()
                 .id(s.getId())
                 .keycloakId(s.getKeycloakId())
@@ -117,8 +172,8 @@ public class StylistController {
                 .experienceYears(s.getExperienceYears())
                 .specialties(s.getSpecialties())
                 .levelRank(s.getLevelRank())
-                .ratingAverage(s.getRatingAverage())
-                .totalReviewsCount(s.getTotalReviewsCount())
+                .ratingAverage(reviewCount > 0 ? ratingAvg : (s.getRatingAverage() != null ? s.getRatingAverage() : BigDecimal.ZERO))
+                .totalReviewsCount(reviewCount)
                 .totalServedBookings(s.getTotalServedBookings())
                 .baseSalary(s.getBaseSalary())
                 .commissionRate(s.getCommissionRate())
@@ -126,6 +181,9 @@ public class StylistController {
                 .workShiftType(s.getWorkShiftType())
                 .isFeatured(s.isFeatured())
                 .status(s.getStatus())
+                .isDutyActive("ACTIVE".equalsIgnoreCase(s.getStatus()))
+                .nextAvailableOnTime(s.getNextAvailableOnTime())
+                .cooldownRemainingSeconds(cooldownSec)
                 .salonId(s.getSalon() != null ? s.getSalon().getId() : null)
                 .salonName(s.getSalon() != null ? s.getSalon().getSalonName() : "")
                 .salonAddress(s.getSalon() != null ? s.getSalon().getAddress() : "")

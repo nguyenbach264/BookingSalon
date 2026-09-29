@@ -102,13 +102,27 @@ public class BookingService {
         List<Booking> bookings = bookingRepository.findActiveBookingsByStylistAndDate(stylistId, dayStart, dayEnd);
 
         Set<String> bookedSlots = new TreeSet<>();
-        for (Booking b : bookings) {
-            LocalDateTime cur = b.getStartTime();
-            LocalDateTime end = b.getEndTime();
-            while (cur.isBefore(end)) {
-                bookedSlots.add(String.format("%02d:%02d", cur.getHour(), cur.getMinute()));
-                cur = cur.plusMinutes(30);
+        java.time.LocalTime slot = java.time.LocalTime.of(8, 0);
+        java.time.LocalTime endOfDay = java.time.LocalTime.of(21, 0);
+
+        while (slot.isBefore(endOfDay)) {
+            LocalDateTime slotStart = LocalDateTime.of(date, slot);
+            LocalDateTime slotEnd = slotStart.plusMinutes(30);
+
+            for (Booking b : bookings) {
+                LocalDateTime bStart = b.getStartTime();
+                LocalDateTime bEnd = b.getEndTime();
+                if (bEnd == null || !bEnd.isAfter(bStart)) {
+                    bEnd = bStart.plusMinutes(45);
+                }
+                // Nếu khoảng thời gian của slot [slotStart, slotEnd] giao với [bStart, bEnd]
+                // (slotStart < bEnd AND slotEnd > bStart) -> stylist đang bận trong slot này
+                if (slotStart.isBefore(bEnd) && slotEnd.isAfter(bStart)) {
+                    bookedSlots.add(String.format("%02d:%02d", slot.getHour(), slot.getMinute()));
+                    break;
+                }
             }
+            slot = slot.plusMinutes(30);
         }
         return new ArrayList<>(bookedSlots);
     }
