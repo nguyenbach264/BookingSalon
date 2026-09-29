@@ -12,6 +12,7 @@ import {
   Input,
   Drawer,
   message,
+  Tooltip,
 } from "antd";
 import {
   CalendarOutlined,
@@ -34,7 +35,7 @@ import {
   getStylistStatistics,
   getBookingsByStylist,
 } from "../../service/api/bookingApi";
-import { getStylistById, getStylistServices, updateBookingStatus } from "../../service/api/adminApi";
+import { getStylistById, getStylistServices, updateBookingStatus, updateStylistDutyStatus } from "../../service/api/adminApi";
 
 import StylistOverview from "./views/StylistOverview";
 import StylistHaircutSchedule from "./views/StylistHaircutSchedule";
@@ -122,7 +123,85 @@ export default function StylistDashboard() {
   const [filterSearch, setFilterSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
 
-  const [onDuty, setOnDuty] = useState(true);
+  // Duty status & Cooldown management (Requirement 4)
+  const [dutyLoading, setDutyLoading] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  useEffect(() => {
+    if (profile?.cooldownRemainingSeconds !== undefined && profile?.cooldownRemainingSeconds !== null) {
+      setCooldownSeconds(Math.max(0, Number(profile.cooldownRemainingSeconds) || 0));
+    } else if (profile?.nextAvailableOnTime) {
+      const diff = Math.max(0, Math.floor((new Date(profile.nextAvailableOnTime).getTime() - Date.now()) / 1000));
+      setCooldownSeconds(diff);
+    } else {
+      setCooldownSeconds(0);
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setCooldownSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownSeconds]);
+
+  const formatCooldown = (seconds) => {
+    if (seconds <= 0) return "";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
+
+  const isDutyActive = profile?.status === "ACTIVE" || profile?.isDutyActive === true;
+  const isCoolingDown = cooldownSeconds > 0 && !isDutyActive;
+
+  const handleToggleDuty = async (checked) => {
+    if (!checked) {
+      Modal.confirm({
+        title: "Tắt trạng thái hoạt động?",
+        content: "Lưu ý: Khi tắt hoạt động, tên của bạn sẽ tạm thời ẩn khỏi danh sách đặt hẹn của khách hàng và bạn phải đợi 2 tiếng mới có thể bật lại chế độ nhận khách!",
+        okText: "Xác nhận tắt (Nghỉ 2 tiếng)",
+        cancelText: "Hủy bỏ",
+        okButtonProps: { danger: true },
+        onOk: async () => {
+          try {
+            setDutyLoading(true);
+            const res = await updateStylistDutyStatus(stylistId, false);
+            setProfile(res);
+            message.info("Đã tắt trạng thái hoạt động. Bắt đầu đếm ngược thời gian chờ 2 tiếng.");
+          } catch (err) {
+            message.error(err?.response?.data?.message || "Không thể cập nhật trạng thái!");
+          } finally {
+            setDutyLoading(false);
+          }
+        },
+      });
+    } else {
+      if (cooldownSeconds > 0) {
+        message.warning(`Bạn đang trong thời gian nghỉ. Vui lòng đợi hết ${formatCooldown(cooldownSeconds)} để bật lại!`);
+        return;
+      }
+      try {
+        setDutyLoading(true);
+        const res = await updateStylistDutyStatus(stylistId, true);
+        setProfile(res);
+        message.success("Đã bật chế độ Hoạt động - Sẵn sàng nhận khách đặt lịch!");
+      } catch (err) {
+        message.error(err?.response?.data?.message || "Không thể bật trạng thái hoạt động!");
+      } finally {
+        setDutyLoading(false);
+      }
+    }
+  };
+
   const [currentTime, setCurrentTime] = useState(() => new Date().toLocaleTimeString("vi-VN"));
   const [statsPeriod, setStatsPeriod] = useState("week");
   const [periodSearch, setPeriodSearch] = useState("");
@@ -582,26 +661,36 @@ export default function StylistDashboard() {
 
         <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-100 flex-wrap">
           {b.status === "PENDING" && (
-            <Button
-              type="primary"
-              size="small"
-              icon={<CheckOutlined />}
-              onClick={() => handleStatusChange(b.id, "CONFIRMED")}
-              className="bg-blue-600 font-bold rounded-lg"
-            >
-              Nhận lịch này
-            </Button>
+            <>
+              <Button
+                type="primary"
+                size="small"
+                icon={<CheckOutlined />}
+                onClick={() => handleStatusChange(b.id, "CONFIRMED")}
+                className="bg-blue-600 font-bold rounded-lg"
+              >
+                Nhận lịch này
+              </Button>
+              <Button
+                size="small"
+                danger
+                onClick={() => handleStatusChange(b.id, "CANCELLED")}
+                className="rounded-lg"
+              >
+                Hủy lịch
+              </Button>
+            </>
           )}
 
           {b.status === "CONFIRMED" && (
             <Button
               type="primary"
               size="small"
-              icon={<PlayCircleOutlined />}
-              onClick={() => handleStatusChange(b.id, "IN_PROGRESS")}
-              className="bg-purple-600 font-bold rounded-lg"
+              icon={<CheckCircleOutlined />}
+              onClick={() => handleStatusChange(b.id, "COMPLETED")}
+              className="bg-emerald-600 font-bold rounded-lg"
             >
-              Bắt đầu cắt tóc
+              Đã hoàn thành
             </Button>
           )}
 
@@ -611,20 +700,9 @@ export default function StylistDashboard() {
               size="small"
               icon={<CheckCircleOutlined />}
               onClick={() => handleStatusChange(b.id, "COMPLETED")}
-              className="bg-green-600 font-bold rounded-lg"
+              className="bg-emerald-600 font-bold rounded-lg"
             >
-              Hoàn thành dịch vụ
-            </Button>
-          )}
-
-          {b.status !== "COMPLETED" && b.status !== "CANCELLED" && (
-            <Button
-              size="small"
-              danger
-              onClick={() => handleStatusChange(b.id, "CANCELLED")}
-              className="rounded-lg"
-            >
-              Hủy lịch
+              Đã hoàn thành
             </Button>
           )}
         </div>
@@ -734,18 +812,45 @@ export default function StylistDashboard() {
               <span>{currentTime}</span>
             </div>
 
-            {/* Duty Switch */}
-            <div className="flex items-center gap-1.5 text-xs">
-              <Switch
-                checked={onDuty}
-                onChange={(checked) => {
-                  setOnDuty(checked);
-                  message.info(checked ? "Đã bật chế độ sẵn sàng nhận khách" : "Đã chuyển sang trạng thái tạm nghỉ");
-                }}
-                checkedChildren="Đang trực"
-                unCheckedChildren="Tạm nghỉ"
-                className={onDuty ? "bg-emerald-600" : "bg-gray-400"}
-              />
+            {/* Duty Switch with 2h Cooldown (Requirement 4) */}
+            <div className="flex items-center gap-2">
+              <Tooltip
+                title={
+                  isCoolingDown
+                    ? `Đang trong thời gian nghỉ. Có thể bật lại sau: ${formatCooldown(cooldownSeconds)}`
+                    : isDutyActive
+                    ? "Đang sẵn sàng nhận khách đặt lịch. Bấm để tắt (nghỉ 2 tiếng)"
+                    : "Đang tắt hoạt động. Bấm để bật sẵn sàng nhận khách"
+                }
+              >
+                <div className="flex items-center gap-2 bg-slate-50 border border-gray-200/80 px-2.5 sm:px-3 py-1.5 rounded-xl shadow-xs">
+                  <span className="text-xs font-bold text-gray-700 hidden sm:inline">Hoạt động:</span>
+                  <Switch
+                    checked={isDutyActive}
+                    loading={dutyLoading}
+                    disabled={isCoolingDown || dutyLoading}
+                    onChange={handleToggleDuty}
+                    checkedChildren="BẬT"
+                    unCheckedChildren="TẮT"
+                    className={isDutyActive ? "bg-emerald-600" : "bg-gray-400"}
+                  />
+                  {isCoolingDown && (
+                    <Tag color="error" className="font-mono text-[11px] font-bold m-0 px-2 py-0.5 rounded-lg animate-pulse">
+                      ⏳ Nghỉ: {formatCooldown(cooldownSeconds)}
+                    </Tag>
+                  )}
+                  {isDutyActive && (
+                    <Tag color="success" className="text-[11px] font-bold m-0 px-2 py-0.5 rounded-lg hidden sm:inline-flex">
+                      🟢 Nhận khách
+                    </Tag>
+                  )}
+                  {!isDutyActive && !isCoolingDown && (
+                    <Tag color="default" className="text-[11px] font-bold m-0 px-2 py-0.5 rounded-lg text-gray-400 hidden sm:inline-flex">
+                      ⚪ Tạm tắt
+                    </Tag>
+                  )}
+                </div>
+              </Tooltip>
             </div>
 
             {/* Live Sync Badge */}

@@ -134,12 +134,14 @@ export default function StylistOverview({
           <Card className="rounded-2xl border-gray-100 shadow-sm bg-gradient-to-br from-amber-50/70 to-white">
             <Statistic
               title={<span className="text-xs font-bold uppercase text-amber-700 tracking-wider">Đánh giá Stylist</span>}
-              value={Number(profile?.ratingAverage || 4.9).toFixed(1)}
-              suffix={<span className="text-xs text-amber-500 font-normal">/ 5.0</span>}
+              value={profile?.totalReviewsCount > 0 ? Number(profile?.ratingAverage).toFixed(1) : "—"}
+              suffix={<span className="text-xs text-amber-500 font-normal">{profile?.totalReviewsCount > 0 ? "/ 5.0" : ""}</span>}
               prefix={<StarOutlined className="text-amber-500 mr-1" />}
               valueStyle={{ fontWeight: 900, color: "#b45309" }}
             />
-            <div className="mt-2 text-[11px] text-gray-400">Dựa trên phản hồi thực tế của khách</div>
+            <div className="mt-2 text-[11px] text-gray-400">
+              {profile?.totalReviewsCount > 0 ? `Dựa trên ${profile?.totalReviewsCount} phản hồi thực tế của khách` : "Chưa có đánh giá nào từ khách"}
+            </div>
           </Card>
         </Col>
       </Row>

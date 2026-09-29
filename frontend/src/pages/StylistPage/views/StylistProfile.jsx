@@ -44,8 +44,12 @@ export default function StylistProfile({ profile, userInfo, formatCurrency }) {
 
           <div className="bg-slate-50 p-4 rounded-xl border border-gray-100 space-y-1">
             <span className="text-gray-400">Hiệu suất phục vụ</span>
-            <p className="font-bold text-sm text-amber-600 mb-0">⭐ {Number(profile?.ratingAverage || 4.9).toFixed(1)} / 5.0</p>
-            <span className="text-[11px] text-gray-500">{profile?.totalServedBookings || 1000}+ khách hàng hài lòng</span>
+            <p className="font-bold text-sm text-amber-600 mb-0">
+              ⭐ {profile?.totalReviewsCount > 0 ? `${Number(profile?.ratingAverage).toFixed(1)} / 5.0` : "Chưa có đánh giá"}
+            </p>
+            <span className="text-[11px] text-gray-500">
+              {profile?.totalReviewsCount > 0 ? `${profile.totalReviewsCount} đánh giá từ khách hàng` : "Chưa nhận đánh giá nào"}
+            </span>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-xl border border-gray-100 space-y-1">

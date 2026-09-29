@@ -349,66 +349,28 @@ export default function StylistAppointments({
 
                 {/* 2. Thao tác khi ĐÃ NHẬN LỊCH */}
                 {r.status === "CONFIRMED" && (
-                  <>
-                    <Button
-                      size="small"
-                      type="primary"
-                      icon={<CheckCircleOutlined />}
-                      onClick={() => handleStatusChange && handleStatusChange(r.id, "COMPLETED")}
-                      className="text-xs bg-emerald-600 hover:bg-emerald-700 font-bold rounded-lg h-7"
-                    >
-                      Hoàn thành cắt
-                    </Button>
-                    <Popconfirm
-                      title="Hủy lịch hẹn"
-                      description="Bạn có chắc chắn muốn hủy lịch hẹn này không?"
-                      okText="Hủy lịch"
-                      cancelText="Không"
-                      okButtonProps={{ danger: true }}
-                      onConfirm={() => handleStatusChange && handleStatusChange(r.id, "CANCELLED")}
-                    >
-                      <Button
-                        size="small"
-                        danger
-                        icon={<CloseCircleOutlined />}
-                        className="text-xs rounded-lg h-7"
-                      >
-                        Hủy
-                      </Button>
-                    </Popconfirm>
-                  </>
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<CheckCircleOutlined />}
+                    onClick={() => handleStatusChange && handleStatusChange(r.id, "COMPLETED")}
+                    className="text-xs bg-emerald-600 hover:bg-emerald-700 font-bold rounded-lg h-7"
+                  >
+                    Đã hoàn thành
+                  </Button>
                 )}
 
                 {/* 3. Thao tác khi ĐANG CẮT TÓC */}
                 {r.status === "IN_PROGRESS" && (
-                  <>
-                    <Button
-                      size="small"
-                      type="primary"
-                      icon={<CheckCircleOutlined />}
-                      onClick={() => handleStatusChange && handleStatusChange(r.id, "COMPLETED")}
-                      className="text-xs bg-emerald-600 hover:bg-emerald-700 font-bold rounded-lg h-7"
-                    >
-                      Hoàn thành cắt
-                    </Button>
-                    <Popconfirm
-                      title="Hủy lịch hẹn"
-                      description="Bạn có chắc chắn muốn hủy lịch hẹn này không?"
-                      okText="Hủy lịch"
-                      cancelText="Không"
-                      okButtonProps={{ danger: true }}
-                      onConfirm={() => handleStatusChange && handleStatusChange(r.id, "CANCELLED")}
-                    >
-                      <Button
-                        size="small"
-                        danger
-                        icon={<CloseCircleOutlined />}
-                        className="text-xs rounded-lg h-7"
-                      >
-                        Hủy
-                      </Button>
-                    </Popconfirm>
-                  </>
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<CheckCircleOutlined />}
+                    onClick={() => handleStatusChange && handleStatusChange(r.id, "COMPLETED")}
+                    className="text-xs bg-emerald-600 hover:bg-emerald-700 font-bold rounded-lg h-7"
+                  >
+                    Đã hoàn thành
+                  </Button>
                 )}
 
                 {/* 4. Trạng thái HOÀN THÀNH */}

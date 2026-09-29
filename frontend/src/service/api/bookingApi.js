@@ -25,12 +25,12 @@ export const createBooking = (payload) =>
   api.post("/booking", payload).then((r) => r.data);
 
 // GET /api/stylists
-export const getAllStylists = () =>
-  api.get("/stylists").then((r) => r.data);
+export const getAllStylists = (params = {}) =>
+  api.get("/stylists", { params }).then((r) => r.data);
 
 // GET /api/stylists/salon/:salonId
-export const getStylistsBySalon = (salonId) =>
-  api.get(`/stylists/salon/${salonId}`).then((r) => r.data);
+export const getStylistsBySalon = (salonId, params = {}) =>
+  api.get(`/stylists/salon/${salonId}`, { params }).then((r) => r.data);
 
 // GET /api/booking
 export const getAllBookings = () =>
@@ -43,4 +43,8 @@ export const getStylistServices = (stylistId) =>
 // GET /api/booking/stylist/:stylistId/booked-slots?date=YYYY-MM-DD
 export const getStylistBookedSlots = (stylistId, date) =>
   api.get(`/booking/stylist/${stylistId}/booked-slots`, { params: { date } }).then((r) => r.data);
+
+// PUT /api/stylists/:id/duty-status
+export const updateStylistDutyStatus = (stylistId, active) =>
+  api.put(`/stylists/${stylistId}/duty-status`, { active }).then((r) => r.data);
 

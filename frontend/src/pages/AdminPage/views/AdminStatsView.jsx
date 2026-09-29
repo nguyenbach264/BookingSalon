@@ -112,8 +112,12 @@ export default function AdminStatsView({
                   </div>
 
                   <div className="text-right">
-                    <p className="font-bold text-xs text-amber-600 mb-0">{Number(st.ratingAverage || 4.9).toFixed(1)} ★</p>
-                    <span className="text-[11px] text-gray-500">{st.totalServedBookings || 100} lượt cắt</span>
+                    <p className="font-bold text-xs text-amber-600 mb-0">
+                      {st.totalReviewsCount > 0 ? `${Number(st.ratingAverage).toFixed(1)} ★` : "Chưa có ★"}
+                    </p>
+                    <span className="text-[11px] text-gray-500">
+                      {st.totalReviewsCount > 0 ? `${st.totalReviewsCount} đánh giá` : `${st.totalServedBookings || 0} lượt cắt`}
+                    </span>
                   </div>
                 </div>
               ))}

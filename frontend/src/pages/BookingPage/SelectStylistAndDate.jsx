@@ -42,26 +42,34 @@ export function SelectStylistAndDate() {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Fetch stylists from backend for the selected salon
+  // Fetch stylists from backend for the selected salon (only active stylists with duty ON)
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
 
     const fetchPromise = selectedSalon?.id
-      ? getStylistsBySalon(selectedSalon.id).then((res) => {
+      ? getStylistsBySalon(selectedSalon.id, { onlyActive: true }).then((res) => {
           if (Array.isArray(res) && res.length > 0) return res;
-          return getAllStylists(); // Fallback to all stylists if salon list is empty
+          return getAllStylists({ onlyActive: true }); // Fallback to active stylists
         })
-      : getAllStylists();
+      : getAllStylists({ onlyActive: true });
 
     fetchPromise
       .then((data) => {
         if (isMounted) {
-          const list = Array.isArray(data) ? data : [];
+          const rawList = Array.isArray(data) ? data : [];
+          // Requirement 4: Filter out stylists whose status is OFF (not active)
+          const list = rawList.filter(
+            (s) => s.status === 'ACTIVE' || s.isDutyActive === true
+          );
           setStylists(list);
-          // If no stylist is selected yet, or if current selection is invalid, preselect first stylist
-          if (list.length > 0 && !selectedStylist) {
-            setSelectedStylist(list[0]);
+          // If no stylist is selected yet, or if current selection is invalid/off, select first active stylist
+          if (list.length > 0) {
+            if (!selectedStylist || !list.some((s) => s.id === selectedStylist.id)) {
+              setSelectedStylist(list[0]);
+            }
+          } else {
+            setSelectedStylist(null);
           }
           setLoading(false);
         }
@@ -229,7 +237,7 @@ export function SelectStylistAndDate() {
           </div>
         ) : stylists.length === 0 ? (
           <div className="p-8 text-center text-gray-500 text-sm">
-            Hiện chưa có stylist nào thuộc chi nhánh này.
+            Hiện chưa có stylist nào đang hoạt động (nhận khách) tại chi nhánh này. Vui lòng thử lại sau!
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
@@ -237,7 +245,8 @@ export function SelectStylistAndDate() {
               const isSelected = selectedStylist?.id === stylist.id;
               const avatar = getStylistAvatar(stylist, idx);
               const rank = stylist.levelRank || 'Stylist';
-              const rating = stylist.ratingAverage || '4.9';
+              const hasReviews = (stylist.totalReviewsCount || 0) > 0;
+              const rating = hasReviews ? Number(stylist.ratingAverage).toFixed(1) : null;
 
               return (
                 <div
@@ -278,13 +287,21 @@ export function SelectStylistAndDate() {
                     {rank}
                   </span>
 
-                  {/* Rating & stats */}
+                  {/* Real Rating & Reviews from DB */}
                   <div className="flex items-center gap-1 text-xs text-amber-500 font-bold">
                     <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    <span>{rating}</span>
-                    <span className="text-gray-400 font-normal text-[10px]">
-                      ({stylist.totalServedBookings || 120}+ lượt)
-                    </span>
+                    {hasReviews ? (
+                      <>
+                        <span>{rating}</span>
+                        <span className="text-gray-400 font-normal text-[10px]">
+                          ({stylist.totalReviewsCount} đánh giá)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-gray-400 font-normal text-[11px]">
+                        Chưa có đánh giá
+                      </span>
+                    )}
                   </div>
                 </div>
               );

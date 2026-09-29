@@ -20,6 +20,9 @@ export const getStylistById = (id) =>
 export const getStylistServices = (id) =>
   api.get(`/stylists/${id}/services`).then((r) => r.data);
 
+export const updateStylistDutyStatus = (id, active) =>
+  api.put(`/stylists/${id}/duty-status`, { active }).then((r) => r.data);
+
 export const updateBookingStatus = (bookingId, status) =>
   api.post(`/booking/${bookingId}?status=${status}`).then((r) => r.data);
 

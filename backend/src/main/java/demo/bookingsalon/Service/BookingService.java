@@ -223,6 +223,10 @@ public class BookingService {
         Stylist stylist = stylistRepository.findById(bookingRequest.getStylistId()).orElseThrow(() ->
                 new NotFoundException("Stylist not found"));
 
+        if (stylist.getStatus() != null && "OFF".equalsIgnoreCase(stylist.getStatus())) {
+            throw new Exception("Stylist hiện đang tạm nghỉ, không thể nhận lịch hẹn. Vui lòng chọn Stylist khác.");
+        }
+
         String bookingCode = "BB-" + LocalDateTime.now().getYear() + "-" + UUID.randomUUID().toString().replace("-","").substring(0, 8).toUpperCase();
         String paymentMethodStr = bookingRequest.getPaymentMethod() != null ? bookingRequest.getPaymentMethod().toUpperCase() : "CASH";
         String paymentStatusStr = "BANK_TRANSFER".equals(paymentMethodStr) ? "PAID" : "UNPAID";
