@@ -146,33 +146,9 @@ export default function ServicePage() {
 
   return (
     <div className="w-full flex-1 bg-gray-50 flex flex-col pb-16">
-      {/* Breadcrumb strip */}
-      <div className="w-full bg-white py-3 border-b border-gray-200">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-          <Breadcrumb
-            items={[
-              {
-                title: (
-                  <span
-                    className="text-gray-500 cursor-pointer hover:text-blue-500 transition-colors"
-                    onClick={() => navigate('/')}
-                  >
-                    Trang chủ
-                  </span>
-                ),
-              },
-              { title: <span className="text-gray-900 font-medium">Bảng giá dịch vụ</span> },
-            ]}
-          />
-        </div>
-      </div>
-
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
         <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-[#60a5fa] border border-blue-200 mb-3">
-            <Sparkles size={14} />
-            BẢNG GIÁ DỊCH VỤ NIÊM YẾT
-          </span>
+    
           <h1 className="text-3xl sm:text-4xl font-black text-gray-900 uppercase tracking-tight">
             Menu Dịch Vụ BachBarber
           </h1>
@@ -389,7 +365,7 @@ export default function ServicePage() {
               className="w-full bg-[#60a5fa] hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-base transition-all shadow-md hover:shadow-lg active:scale-[0.98] uppercase flex items-center justify-center gap-2 cursor-pointer"
             >
               <Scissors size={18} />
-              Đặt lịch dịch vụ này
+              Đặt lịch ngay
             </button>
           </div>
         )}

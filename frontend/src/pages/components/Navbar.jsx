@@ -39,13 +39,13 @@ export default function Navbar() {
   const navItems = [
     {
       key: 'service',
-      label: 'BẢNG GIÁ DỊCH VỤ',
+      label: 'DỊCH VỤ',
       path: '/service',
       icon: <Scissors size={15} />,
     },
     {
       key: 'shop',
-      label: 'CỬA HÀNG SẢN PHẨM',
+      label: 'CỬA HÀNG',
       path: '/shop',
       icon: <ShoppingBag size={15} />,
     },
@@ -64,7 +64,7 @@ export default function Navbar() {
     },
     {
       key: 'reviews',
-      label: 'ĐÁNH GIÁ KHÁCH HÀNG',
+      label: 'VỀ CHÚNG TÔI',
       onClick: () => {
         if (location.pathname !== '/') {
           navigate('/#reviews');
@@ -91,9 +91,8 @@ export default function Navbar() {
             >
               <Home
                 size={26}
-                className={`drop-shadow-sm py-0.5 border-b-2 transition-colors duration-300 ${
-                  isActive('/') ? 'border-[#60a5fa] text-[#60a5fa]' : 'border-transparent text-gray-700 hover:border-[#60a5fa] hover:text-[#60a5fa]'
-                }`}
+                className={`drop-shadow-sm py-0.5 border-b-2 transition-colors duration-300 ${isActive('/') ? 'border-[#60a5fa] text-[#60a5fa]' : 'border-transparent text-gray-700 hover:border-[#60a5fa] hover:text-[#60a5fa]'
+                  }`}
               />
             </button>
 
@@ -111,19 +110,18 @@ export default function Navbar() {
                   className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 pt-3 pb-2 text-xs md:text-sm font-bold tracking-wide whitespace-nowrap shrink-0 cursor-pointer`}
                 >
                   <span
-                    className={`py-1 border-b-2 transition-colors duration-300 ${
-                      active
+                    className={`py-1 border-b-2 transition-colors duration-300 relative ${active
                         ? "border-[#60a5fa] text-[#60a5fa]"
                         : "border-transparent text-gray-700 hover:border-[#60a5fa] hover:text-[#60a5fa]"
-                    }`}
+                      }`}
                   >
                     {item.label}
+                    {item.badge && (
+                      <span className="bg-red-600 text-slate-900 text-[10px] font-black px-1.5 py-0.3 rounded-full leading-tight uppercase animate-pulse absolute -top-0 -right-7">
+                        {item.badge}
+                      </span>
+                    )}
                   </span>
-                  {item.badge && (
-                    <span className="bg-amber-400 text-slate-900 text-[10px] font-black px-1.5 py-0.2 rounded-full leading-tight uppercase animate-pulse">
-                      {item.badge}
-                    </span>
-                  )}
                 </button>
               );
             })}

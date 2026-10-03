@@ -156,18 +156,7 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
 
   return (
     <div className="w-full flex-1 flex flex-col">
-      <div className="w-full bg-gray-50 py-3 border-b border-gray-200">
-        <div className="max-w-[1280px] mx-auto px-4">
-          <Breadcrumb
-            items={[
-              { title: <span className="text-gray-500 cursor-pointer hover:text-blue-600 transition-colors">Trang chủ</span> },
-              { title: <span className="text-gray-500 cursor-pointer hover:text-blue-600 transition-colors">Cửa hàng</span> },
-              { title: <span className="text-gray-900 font-medium">{currentCategoryName}</span> }
-            ]}
-          />
-        </div>
-      </div>
-
+  
       <main className="w-full flex-1">
         <div className="max-w-[1280px] mx-auto px-4 py-8">
           {/* ── HERO PROMOTIONAL BANNER ── */}
@@ -194,24 +183,6 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* ── TRUST BADGES BAR ── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-8">
-            {[
-              { icon: "⚡", title: "Giao hỏa tốc 2H", desc: "Nội thành nhận ngay trong ngày" },
-              { icon: "🛡️", title: "Chính hãng 100%", desc: "Bảo đảm xuất xứ rõ ràng" },
-              { icon: "🔄", title: "Đổi trả 7 ngày", desc: "Miễn phí đổi hàng nếu lỗi SX" },
-              { icon: "💈", title: "Stylist tư vấn", desc: "Tư vấn sản phẩm chuẩn chất tóc" },
-            ].map((badge, idx) => (
-              <div key={idx} className="bg-white border border-gray-100 rounded-xl p-3.5 flex items-center gap-3 shadow-xs">
-                <span className="text-2xl flex-shrink-0">{badge.icon}</span>
-                <div className="min-w-0">
-                  <p className="font-bold text-xs text-gray-800 mb-0.5 truncate">{badge.title}</p>
-                  <p className="text-[11px] text-gray-400 mb-0 truncate">{badge.desc}</p>
-                </div>
-              </div>
-            ))}
           </div>
 
           <div className="mb-8 mt-2">
