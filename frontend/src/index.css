@@ -3,6 +3,26 @@
 @tailwind utilities;
 
 /*
+ * Đồng bộ font chữ toàn hệ thống theo chuẩn Booking Page (Inter)
+ */
+html,
+body,
+#root,
+input,
+button,
+select,
+textarea,
+.ant-btn,
+.ant-input,
+.ant-select,
+.ant-table,
+.ant-card,
+.ant-modal,
+.ant-typography {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/*
  * Cố định thanh cuộn và chống layout shift (lệch giao diện trái/phải) khi mở/đóng Modal:
  * 1. scrollbar-gutter: stable đảm bảo khoảng trống thanh cuộn luôn được bảo toàn, không bị biến mất khi bật modal.
  * 2. overflow-y: scroll ép hiển thị rãnh cuộn dọc cố định trên toàn hệ thống.
@@ -34,4 +54,77 @@ html body.ant-scrolling-effect {
 
 .ant-modal-mask {
   touch-action: auto !important;
+}
+
+/*
+ * Chuyển đổi thanh gạch ngang mặc định của Carousel sang dạng CHẤM TRÒN HOÀN CHỈNH
+ * Gam màu chủ đạo: #60a5fa
+ */
+.ant-carousel .slick-dots {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 10px !important;
+  bottom: 20px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  z-index: 20 !important;
+}
+
+.ant-carousel .slick-dots li {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 12px !important;
+  height: 12px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.ant-carousel .slick-dots li button {
+  display: block !important;
+  position: relative !important;
+  width: 12px !important;
+  height: 12px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  opacity: 0.8 !important;
+  outline: none !important;
+  cursor: pointer !important;
+  overflow: hidden !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Triệt tiêu dứt điểm thanh pseudo-element ::after và ::before màu trắng mặc định của Ant Design */
+.ant-carousel .slick-dots li button::after,
+.ant-carousel .slick-dots li button::before,
+.ant-carousel .slick-dots li::after,
+.ant-carousel .slick-dots li::before {
+  display: none !important;
+  content: none !important;
+}
+
+.ant-carousel .slick-dots li.slick-active {
+  width: 15px !important;
+  height: 15px !important;
+  border-radius: 50% !important;
+}
+
+.ant-carousel .slick-dots li.slick-active button {
+  width: 15px !important;
+  height: 15px !important;
+  border-radius: 9999px !important;
+  background: #60a5fa !important;
+  border: 2px solid #ffffff !important;
+  opacity: 1 !important;
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.95), 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  transform: scale(1.25) !important;
 }

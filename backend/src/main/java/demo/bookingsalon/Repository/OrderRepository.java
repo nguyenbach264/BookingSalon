@@ -12,6 +12,7 @@ import java.util.UUID;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     Optional<Order> findByOrderCode(String orderCode);
+    Optional<Order> findByVnpayTxnRef(String vnpayTxnRef);
     List<Order> findByUserIdOrderByCreatedAtDesc(UUID userId);
     List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);
     long countByStatus(OrderStatus status);

@@ -101,7 +101,7 @@ public class PaymentApplicationService {
                 PaymentStrategy paymentStrategy = paymentFactory.getStrategy(PaymentMethod.COD);
                 CreatePaymentRequest createPaymentRequest = new CreatePaymentRequest();
                 createPaymentRequest.setBookingId(bookingResponse.getId());
-                createPaymentRequest.setPaymentMethod(bookingResponse.getPaymentMethod());
+                createPaymentRequest.setPaymentMethod(request.getPaymentMethod());
                 PaymentTransaction paymentTransaction = paymentStrategy.generatePayment(payment, createPaymentRequest);
                 payment.getTransactions().add(paymentTransaction);
                 payment.transitionTo(PaymentStatus.PROCESSING);

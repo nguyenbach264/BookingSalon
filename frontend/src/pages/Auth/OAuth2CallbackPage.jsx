@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Spin, Alert, Button } from "antd";
 import { useAuth } from "../../auth/authProvider";
+import { useRoleRedirect } from "../../hooks/useRoleRedirect";
 
 export default function OAuth2CallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { handleOAuth2Callback } = useAuth();
+  const redirectByRole = useRoleRedirect();
 
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -44,7 +46,7 @@ export default function OAuth2CallbackPage() {
         if (result.success) {
           sessionStorage.removeItem("oauth_code_verifier");
           sessionStorage.removeItem("oauth_redirect_after");
-          navigate(redirectAfter, { replace: true });
+          redirectByRole(result.user);
         } else {
           setErrorMessage(result.error || "Xác thực tài khoản thất bại!");
           setLoading(false);

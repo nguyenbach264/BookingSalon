@@ -50,7 +50,7 @@ const RegisterPage = ({ visible, onClose, onLogin, onRegistered }) => {
         open={visible && !otpModalVisible}
         onCancel={onClose}
         footer={null}
-        width={680}
+        width={620}
         centered
         className="rounded-2xl overflow-hidden"
         destroyOnClose
@@ -59,7 +59,7 @@ const RegisterPage = ({ visible, onClose, onLogin, onRegistered }) => {
           setErrorMessage("");
         }}
       >
-        <div className="p-6 sm:p-8 text-center">
+        <div className="p-5 sm:p-7 text-center">
           <h2 className="text-2xl font-black text-[#1b2a4a] mb-1 tracking-wide">ĐĂNG KÝ TÀI KHOẢN</h2>
           <p className="text-gray-500 text-sm mb-6">Điền thông tin để nhận mã xác thực OTP qua Email</p>
 
@@ -73,27 +73,31 @@ const RegisterPage = ({ visible, onClose, onLogin, onRegistered }) => {
           )}
 
           <Form form={form} layout="vertical" onFinish={handleSubmit}>
-            <Form.Item
-              name="fullname"
-              label={<span className="font-semibold text-gray-700">Họ và tên</span>}
-              rules={[{ required: true, message: "Vui lòng nhập Họ và tên!" }]}
-              className="mb-3"
-            >
-              <Input size="large" placeholder="Ví dụ: Nguyễn Văn A" className="rounded-xl h-11" />
-            </Form.Item>
+            {/* Hàng 1: Họ tên & Tên đăng nhập */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-1">
+              <Form.Item
+                name="fullname"
+                label={<span className="font-semibold text-gray-700">Họ và tên</span>}
+                rules={[{ required: true, message: "Vui lòng nhập Họ và tên!" }]}
+                className="mb-3 text-left"
+              >
+                <Input size="large" placeholder="Ví dụ: Nguyễn Văn A" className="rounded-xl h-11" />
+              </Form.Item>
 
-            <Form.Item
-              name="username"
-              label={<span className="font-semibold text-gray-700">Tên đăng nhập</span>}
-              rules={[
-                { required: true, message: "Vui lòng nhập Tên đăng nhập!" },
-                { min: 3, message: "Tên đăng nhập phải có ít nhất 3 ký tự!" },
-              ]}
-              className="mb-3"
-            >
-              <Input size="large" placeholder="Nhập tên tài khoản..." className="rounded-xl h-11" />
-            </Form.Item>
+              <Form.Item
+                name="username"
+                label={<span className="font-semibold text-gray-700">Tên đăng nhập</span>}
+                rules={[
+                  { required: true, message: "Vui lòng nhập Tên đăng nhập!" },
+                  { min: 3, message: "Tên đăng nhập phải có ít nhất 3 ký tự!" },
+                ]}
+                className="mb-3 text-left"
+              >
+                <Input size="large" placeholder="Nhập tên tài khoản..." className="rounded-xl h-11" />
+              </Form.Item>
+            </div>
 
+            {/* Hàng 2: Số điện thoại & Email */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-1">
               <Form.Item
                 name="phone"
@@ -102,10 +106,11 @@ const RegisterPage = ({ visible, onClose, onLogin, onRegistered }) => {
                   { required: true, message: "Vui lòng nhập Số điện thoại!" },
                   { pattern: /^0[3-9]\d{8}$/, message: "Số điện thoại không hợp lệ (10 số)!" },
                 ]}
-                className="mb-3"
+                className="mb-3 text-left"
               >
                 <Input size="large" placeholder="0901234567" className="rounded-xl h-11" />
               </Form.Item>
+
               <Form.Item
                 name="email"
                 label={<span className="font-semibold text-gray-700">Địa chỉ Email</span>}
@@ -113,23 +118,46 @@ const RegisterPage = ({ visible, onClose, onLogin, onRegistered }) => {
                   { required: true, message: "Vui lòng nhập Email!" },
                   { type: "email", message: "Định dạng Email không hợp lệ!" },
                 ]}
-                className="mb-3"
+                className="mb-3 text-left"
               >
                 <Input size="large" placeholder="email@domain.com" className="rounded-xl h-11" />
               </Form.Item>
             </div>
 
-            <Form.Item
-              name="password"
-              label={<span className="font-semibold text-gray-700">Mật khẩu</span>}
-              rules={[
-                { required: true, message: "Vui lòng nhập Mật khẩu!" },
-                { min: 8, message: "Mật khẩu phải có ít nhất 8 ký tự!" },
-              ]}
-              className="mb-5"
-            >
-              <Input.Password size="large" placeholder="Tối thiểu 8 ký tự..." className="rounded-xl h-11" />
-            </Form.Item>
+            {/* Hàng 3: Mật khẩu & Xác nhận mật khẩu */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-1">
+              <Form.Item
+                name="password"
+                label={<span className="font-semibold text-gray-700">Mật khẩu</span>}
+                rules={[
+                  { required: true, message: "Vui lòng nhập Mật khẩu!" },
+                  { min: 8, message: "Mật khẩu phải có ít nhất 8 ký tự!" },
+                ]}
+                className="mb-3 text-left"
+              >
+                <Input.Password size="large" placeholder="Tối thiểu 8 ký tự..." className="rounded-xl h-11" />
+              </Form.Item>
+
+              <Form.Item
+                name="confirmPassword"
+                label={<span className="font-semibold text-gray-700">Xác nhận mật khẩu</span>}
+                dependencies={['password']}
+                rules={[
+                  { required: true, message: "Vui lòng xác nhận mật khẩu!" },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value || getFieldValue('password') === value) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(new Error('Mật khẩu xác nhận không khớp!'));
+                    },
+                  }),
+                ]}
+                className="mb-4 text-left"
+              >
+                <Input.Password size="large" placeholder="Nhập lại mật khẩu..." className="rounded-xl h-11" />
+              </Form.Item>
+            </div>
 
             <Button
               type="primary"

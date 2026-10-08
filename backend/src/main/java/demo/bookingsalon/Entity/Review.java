@@ -39,5 +39,14 @@ public class Review extends BaseEntity {
 
     @Column(name = "type")
     private String type;
+
+    @Column(name = "booking_id")
+    private java.util.UUID bookingId;
+
+    @Column(name = "stylist_id")
+    private java.util.UUID stylistId;
+
+    @Column(name = "salon_id")
+    private java.util.UUID salonId;
 }
 

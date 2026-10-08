@@ -15,4 +15,10 @@ public class BookingStatisticsResponse {
     private long completed;      // Đã hoàn thành
     private long cancelled;      // Đã hủy
     private long total;          // Tổng cộng
+
+    public long getPendingCount() { return pending; }
+    public long getConfirmedCount() { return confirmed; }
+    public long getCompletedCount() { return completed; }
+    public long getCancelledCount() { return cancelled; }
+    public long getTotalCount() { return total; }
 }

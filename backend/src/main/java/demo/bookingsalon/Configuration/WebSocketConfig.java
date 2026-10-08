@@ -20,8 +20,9 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(
                 notificationWebSocketHandler,
-                "/ws/reviews"
-        ).setAllowedOrigins("http://localhost:5173");
+                "/ws/reviews",
+                "/ws/notifications"
+        ).setAllowedOriginPatterns("*");
     }
 }
 

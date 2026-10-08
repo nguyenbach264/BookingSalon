@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import ShopPage from "../ShopPage/main";
+import ProductDetailPage from '../ShopPage/ProductDetailPage';
 import CheckoutPage from "../CheckoutPage/main";
 import HomePage from "../HomePage/main";
 import ServicePage from "../ServicePage/main";
@@ -13,10 +14,43 @@ import { Checkout } from "../BookingPage/Checkout";
 import { CheckoutSuccessfully } from "../BookingPage/CheckoutSuccessfully";
 import ProtectedRoute from "./ProtectedRoute";
 import OAuth2CallbackPage from "../Auth/OAuth2CallbackPage";
+import StylistDashboard from "../StylistPage/StylistDashboard";
+import AdminDashboard from "../AdminPage/AdminDashboard";
+import LoginPage from "../ShopPage/LoginPage";
+import RegisterPage from "../ShopPage/RegisterPage";
+import UserProfilePage from "../UserPage/UserProfilePage";
+import MyBookingsPage from "../UserPage/MyBookingsPage";
+import MyOrdersPage from "../UserPage/MyOrdersPage";
+import PaymentResultPage from "../PaymentPage/PaymentResultPage";
+import { useAuth } from "../../auth/authProvider";
 
 function AppRoutes() {
+  const {
+    loginModalVisible,
+    registerModalVisible,
+    authNotice,
+    targetRedirect,
+    closeLoginModal,
+    closeRegisterModal,
+    openRegisterModal,
+    openLoginModal,
+  } = useAuth();
+
   return (
     <>
+      <LoginPage
+        visible={loginModalVisible}
+        onClose={closeLoginModal}
+        onGoToRegister={openRegisterModal}
+        notice={authNotice}
+        targetRedirect={targetRedirect}
+      />
+      <RegisterPage
+        visible={registerModalVisible}
+        onClose={closeRegisterModal}
+        onLogin={() => openLoginModal()}
+      />
+
       <Routes>
         <Route path="/" element={<HomePage />}>
           <Route index element={<HomeContent />} />
@@ -36,9 +70,34 @@ function AppRoutes() {
             <Route path="checkout" element={<Checkout />} />
             <Route path="checkout-successfully" element={<CheckoutSuccessfully />} />
           </Route>
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <UserProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-bookings"
+            element={
+              <ProtectedRoute>
+                <MyBookingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-orders"
+            element={
+              <ProtectedRoute>
+                <MyOrdersPage />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         <Route path="/shop" element={<ShopPage />} />
+        <Route path="/shop/product/:id" element={<ProductDetailPage />} />
 
         <Route
           path="/checkout"
@@ -51,6 +110,33 @@ function AppRoutes() {
 
         {/* OAuth2 / Google Callback redirect */}
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
+
+        {/* VNPay Payment Result page — public, no auth required */}
+        <Route path="/payment/result" element={<PaymentResultPage />} />
+
+        {/* ── STYLIST ROUTES ─────────────────────────────────── */}
+        <Route
+          path="/stylist/*"
+          element={
+            <ProtectedRoute roles={["STYLIST"]}>
+              <Routes>
+                <Route path="dashboard" element={<StylistDashboard />} />
+              </Routes>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ── ADMIN ROUTES ───────────────────────────────────── */}
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute roles={["ADMIN"]}>
+              <Routes>
+                <Route path="dashboard" element={<AdminDashboard />} />
+              </Routes>
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/unauthorized"

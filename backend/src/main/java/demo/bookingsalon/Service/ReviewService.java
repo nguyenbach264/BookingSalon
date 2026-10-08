@@ -25,6 +25,8 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final demo.bookingsalon.Repository.BookingRepository bookingRepository;
+    private final demo.bookingsalon.Repository.StylistRepository stylistRepository;
     private final NotificationWebSocketHandler webSocketHandler;
     private final ObjectMapper objectMapper;
     private final ReviewMapper reviewMapper;
@@ -37,6 +39,13 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public List<ReviewDTO> getReviewsByProductId(UUID productId) {
         return reviewRepository.findByProductIdOrderByCreatedAtDesc(productId).stream()
+                .map(reviewMapper::toReviewDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewDTO> getReviewsByUserId(UUID userId) {
+        return reviewRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(reviewMapper::toReviewDTO)
                 .toList();
     }
@@ -55,15 +64,42 @@ public class ReviewService {
                     .orElse(null);
         }
 
+        if (reviewDTO.getBookingId() != null) {
+            demo.bookingsalon.Entity.Booking b = bookingRepository.findById(reviewDTO.getBookingId()).orElse(null);
+            if (b != null) {
+                if (b.isReviewed()) {
+                    throw new IllegalStateException("Lịch hẹn này đã được gửi đánh giá trước đó!");
+                }
+                b.setReviewed(true);
+                bookingRepository.save(b);
+            }
+        }
+
         Review review = Review.builder()
                 .user(user)
                 .product(product)
+                .bookingId(reviewDTO.getBookingId())
+                .stylistId(reviewDTO.getStylistId())
+                .salonId(reviewDTO.getSalonId())
                 .rating(reviewDTO.getRating() != null ? reviewDTO.getRating() : 5)
-                .type(reviewDTO.getType())
+                .type(reviewDTO.getType() != null ? reviewDTO.getType() : "SERVICE")
                 .reviewContent(reviewDTO.getReviewContent())
                 .build();
 
         Review savedReview = reviewRepository.save(review);
+
+        // Cập nhật rating và review count thật của Stylist trong CSDL
+        if (review.getStylistId() != null) {
+            Double avg = reviewRepository.getAverageRatingByStylistId(review.getStylistId());
+            Long count = reviewRepository.countByStylistId(review.getStylistId());
+            stylistRepository.findById(review.getStylistId()).ifPresent(s -> {
+                s.setRatingAverage(avg != null ? java.math.BigDecimal.valueOf(avg).setScale(2, java.math.RoundingMode.HALF_UP) : java.math.BigDecimal.ZERO);
+                s.setRating(avg != null ? avg : 0.0);
+                s.setTotalReviewsCount(count != null ? count.intValue() : 0);
+                stylistRepository.save(s);
+            });
+        }
+
         ReviewDTO response = reviewMapper.toReviewDTO(savedReview);
 
         broadcastNewReview(response);
@@ -98,5 +134,10 @@ public class ReviewService {
         public Object getData() {
             return data;
         }
+    }
+
+    @Transactional
+    public void deleteReview(UUID id) {
+        reviewRepository.deleteById(id);
     }
 }

@@ -46,7 +46,7 @@ public class AuthController {
                 : null;
         bffSessionService.saveSessionTokens(httpRequest, httpResponse,
                 authResponse.getAccessToken(), authResponse.getRefreshToken(),
-                authResponse.getExpiresIn(), request.getRememberMe(), keycloakId);
+                authResponse.getExpiresIn(), request.getRememberMe(), keycloakId, authService.getClientId());
         return ResponseEntity.ok(sanitize(authResponse));
     }
 
@@ -71,7 +71,7 @@ public class AuthController {
                 : null;
         bffSessionService.saveSessionTokens(httpRequest, httpResponse,
                 authResponse.getAccessToken(), authResponse.getRefreshToken(),
-                authResponse.getExpiresIn(), false, keycloakId);
+                authResponse.getExpiresIn(), false, keycloakId, authService.getClientId());
         return ResponseEntity.status(HttpStatus.CREATED).body(sanitize(authResponse));
     }
 
@@ -86,7 +86,7 @@ public class AuthController {
                 : null;
         bffSessionService.saveSessionTokens(httpRequest, httpResponse,
                 authResponse.getAccessToken(), authResponse.getRefreshToken(),
-                authResponse.getExpiresIn(), false, keycloakId);
+                authResponse.getExpiresIn(), false, keycloakId, authService.getClientId());
         return ResponseEntity.status(HttpStatus.CREATED).body(sanitize(authResponse));
     }
 
@@ -101,7 +101,7 @@ public class AuthController {
                 : null;
         bffSessionService.saveSessionTokens(httpRequest, httpResponse,
                 authResponse.getAccessToken(), authResponse.getRefreshToken(),
-                authResponse.getExpiresIn(), true, keycloakId);
+                authResponse.getExpiresIn(), true, keycloakId, authService.getFrontendClientId());
         return ResponseEntity.ok(sanitize(authResponse));
     }
 
@@ -131,7 +131,10 @@ public class AuthController {
     // POST /api/auth/refresh-token
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest httpRequest) {
-        String token = bffSessionService.resolveValidAccessToken(httpRequest);
+        String token = bffSessionService.forceRefreshToken(httpRequest);
+        if (token == null || token.isBlank()) {
+            token = bffSessionService.resolveValidAccessToken(httpRequest);
+        }
         if (token == null || token.isBlank()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

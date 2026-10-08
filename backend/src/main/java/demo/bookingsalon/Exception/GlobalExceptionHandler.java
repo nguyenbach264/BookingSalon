@@ -35,7 +35,10 @@ public class GlobalExceptionHandler {
         log.error("Payment error: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", ex.getMessage()));
+                .body(Map.of(
+                        "error", ex.getMessage(),
+                        "message", ex.getMessage()
+                ));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

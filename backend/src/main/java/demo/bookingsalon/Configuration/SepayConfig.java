@@ -8,16 +8,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class SepayConfig {
     // Mã định danh doanh nghiệp
-    @Value("${sepay.merchant-id}") private String merchantId;
+    @Value("${sepay.merchant-id:mock_merchant_id}") private String merchantId;
 
-    @Value("${sepay.secret-key}") private String secretKey;
+    @Value("${sepay.secret-key:mock_secret_key}") private String secretKey;
 
-    @Value("${sepay.webhook-api-key}") private String webhookApiKey;
+    @Value("${sepay.webhook-api-key:mock_webhook_api_key}") private String webhookApiKey;
 
-    @Value("${sepay.env}") private String environment;
+    @Value("${sepay.env:sandbox}") private String environment;
 
     // Base url cho API thanh toán
-    @Value("${sepay.api-base-url}") private String apiBaseUrl;
+    @Value("${sepay.api-base-url:https://pgapi.sepay.vn}") private String apiBaseUrl;
 
     // Base URL cho API thanh toán
     public String getApiBaseUrl() {
