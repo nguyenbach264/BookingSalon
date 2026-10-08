@@ -86,7 +86,7 @@ Kịch bản 3 — RCE (Remote Code Execution) qua MySQL:
 ### Vấn đề migration giải quyết
 
 Hãy tưởng tượng bạn có 5 developer cùng làm việc trên dự án BookingSalon:
-  
+
 ```
 Dev A (backend) → thêm cột voucher_code vào bảng users
 Dev B (backend) → thêm bảng user_vouchers
@@ -981,7 +981,7 @@ ORDER BY installed_rank;
 5. Tách application-dev.properties và application-production.properties (1 ngày)
 6. Setup secret manager cho production (1-2 ngày)
 ```
-
+  
 ---
 
 *Tài liệu này là phần chi tiết hóa của mục C2 trong `BookingSalon_Production_Review.md`.
