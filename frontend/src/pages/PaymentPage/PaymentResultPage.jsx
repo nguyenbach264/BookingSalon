@@ -35,8 +35,9 @@ export default function PaymentResultPage() {
   const orderInfo = searchParams.get('orderInfo') || searchParams.get('vnp_OrderInfo') || '';
 
   const isSuccess = responseCode === '00';
-  // VNPay trả về amount * 100, chia lại để lấy số tiền thật
-  const amount = parseInt(amountRaw, 10) / 100;
+  // VNPay trả về amount * 100, chia lại để lấy số tiền thật nếu cần
+  const rawNum = parseInt(amountRaw, 10) || 0;
+  const amount = rawNum > 5000000 && rawNum % 100 === 0 ? rawNum / 100 : rawNum;
 
   const formatPrice = (val) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);

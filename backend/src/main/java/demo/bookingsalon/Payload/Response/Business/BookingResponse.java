@@ -50,6 +50,8 @@ public class BookingResponse {
 
     private Set<UUID> serviceIds;
 
+    private java.util.List<String> serviceNames;
+
     private BookingStatus status;
 
     private String paymentMethod;

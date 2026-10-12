@@ -93,6 +93,17 @@ const AdminStylistManager = () => {
   const [terminateForm] = Form.useForm();
   const [salaryForm] = Form.useForm();
 
+  // KPI Detail Modal
+  const [kpiStylistModalTitle, setKpiStylistModalTitle] = useState("");
+  const [kpiStylistModalVisible, setKpiStylistModalVisible] = useState(false);
+  const [kpiStylistModalList, setKpiStylistModalList] = useState([]);
+
+  const handleOpenStylistKpi = (title, list) => {
+    setKpiStylistModalTitle(title);
+    setKpiStylistModalList(list);
+    setKpiStylistModalVisible(true);
+  };
+
   const fetchStylists = useCallback(async () => {
     setLoading(true);
     try {
@@ -438,33 +449,39 @@ const AdminStylistManager = () => {
     <div className="space-y-6">
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={8}>
-          <Card className="rounded-xl border border-blue-100 shadow-sm bg-gradient-to-br from-blue-50 to-white">
-            <Statistic
-              title={<span className="text-gray-600 font-semibold">Tổng Stylist</span>}
-              value={totalCount}
-              prefix={<ScissorOutlined className="text-blue-600 mr-2" />}
-              valueStyle={{ color: "#1d4ed8", fontWeight: "bold" }}
-            />
+          <Card
+            className="rounded-2xl border border-blue-100 shadow-sm bg-blue-50/40 cursor-pointer hover:shadow-md transition-all group"
+            onClick={() => handleOpenStylistKpi("Tất cả Stylist trong hệ thống", stylists)}
+          >
+            <div className="text-xs font-semibold text-gray-500 mb-2">Tổng Stylist</div>
+            <div className="flex items-center gap-3">
+              <ScissorOutlined className="text-blue-600 text-2xl" />
+              <span className="text-3xl font-black text-blue-700">{totalCount}</span>
+            </div>
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card className="rounded-xl border border-emerald-100 shadow-sm bg-gradient-to-br from-emerald-50 to-white">
-            <Statistic
-              title={<span className="text-gray-600 font-semibold">Đang làm việc</span>}
-              value={activeCount}
-              prefix={<CheckCircleOutlined className="text-emerald-600 mr-2" />}
-              valueStyle={{ color: "#047857", fontWeight: "bold" }}
-            />
+          <Card
+            className="rounded-2xl border border-emerald-100 shadow-sm bg-emerald-50/40 cursor-pointer hover:shadow-md transition-all group"
+            onClick={() => handleOpenStylistKpi("Stylist Đang làm việc (Active)", stylists.filter(s => s.status === "ACTIVE"))}
+          >
+            <div className="text-xs font-semibold text-gray-500 mb-2">Đang làm việc</div>
+            <div className="flex items-center gap-3">
+              <CheckCircleOutlined className="text-emerald-600 text-2xl" />
+              <span className="text-3xl font-black text-emerald-700">{activeCount}</span>
+            </div>
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card className="rounded-xl border border-amber-100 shadow-sm bg-gradient-to-br from-amber-50 to-white">
-            <Statistic
-              title={<span className="text-gray-600 font-semibold">Đã nghỉ việc</span>}
-              value={inactiveCount}
-              prefix={<StopOutlined className="text-amber-600 mr-2" />}
-              valueStyle={{ color: "#b45309", fontWeight: "bold" }}
-            />
+          <Card
+            className="rounded-2xl border border-amber-100 shadow-sm bg-amber-50/40 cursor-pointer hover:shadow-md transition-all group"
+            onClick={() => handleOpenStylistKpi("Stylist Đã nghỉ việc (Terminated / Inactive)", stylists.filter(s => s.status !== "ACTIVE"))}
+          >
+            <div className="text-xs font-semibold text-gray-500 mb-2">Đã nghỉ việc</div>
+            <div className="flex items-center gap-3">
+              <StopOutlined className="text-amber-600 text-2xl" />
+              <span className="text-3xl font-black text-amber-700">{inactiveCount}</span>
+            </div>
           </Card>
         </Col>
       </Row>
@@ -1051,6 +1068,60 @@ const AdminStylistManager = () => {
             </Descriptions.Item>
           </Descriptions>
         )}
+      </Modal>
+
+      {/* ── KPI STYLISTS LIST DRILL-DOWN MODAL ── */}
+      <Modal
+        title={<span className="font-bold text-gray-800">{kpiStylistModalTitle} ({kpiStylistModalList.length})</span>}
+        open={kpiStylistModalVisible}
+        onCancel={() => setKpiStylistModalVisible(false)}
+        footer={null}
+        width={750}
+        centered
+        destroyOnClose
+      >
+        <div className="mt-4">
+          <Table
+            dataSource={kpiStylistModalList}
+            rowKey={(r) => r.id || r.username}
+            size="small"
+            pagination={{ pageSize: 6 }}
+            columns={[
+              {
+                title: "Stylist",
+                dataIndex: "fullName",
+                render: (v, r) => (
+                  <div className="flex items-center gap-2">
+                    <Avatar size={32} src={r.avatarUrl} icon={<ScissorOutlined />} />
+                    <div>
+                      <div className="font-bold text-xs">{v || r.username}</div>
+                      <div className="text-[10px] text-gray-400">{r.nickname || `@${r.username}`}</div>
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                title: "Chi nhánh",
+                dataIndex: "salonName",
+                render: (v) => <span className="text-xs text-gray-600">{v || "—"}</span>,
+              },
+              {
+                title: "Cấp bậc",
+                dataIndex: "levelRank",
+                render: (v) => <Tag color="blue">{v || "SENIOR"}</Tag>,
+              },
+              {
+                title: "Trạng thái",
+                dataIndex: "status",
+                render: (v) => (
+                  <Tag color={v === "ACTIVE" ? "success" : "error"}>
+                    {v === "ACTIVE" ? "Đang làm việc" : "Đã nghỉ việc"}
+                  </Tag>
+                ),
+              },
+            ]}
+          />
+        </div>
       </Modal>
     </div>
   );

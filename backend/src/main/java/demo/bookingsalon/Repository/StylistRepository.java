@@ -16,8 +16,8 @@ public interface StylistRepository extends JpaRepository<Stylist, UUID> {
     List<Stylist> findByStatus(String status);
     List<Stylist> findBySalonIdAndStatus(UUID salonId, String status);
 
-    @Query("SELECT s FROM Stylist s WHERE " +
-           "(:salonId IS NULL OR s.salon.id = :salonId) AND " +
+    @Query("SELECT s FROM Stylist s LEFT JOIN s.salon sal WHERE " +
+           "(:salonId IS NULL OR sal.id = :salonId) AND " +
            "(:status IS NULL OR s.status = :status) AND " +
            "(:search IS NULL OR LOWER(s.fullName) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR LOWER(s.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) " +

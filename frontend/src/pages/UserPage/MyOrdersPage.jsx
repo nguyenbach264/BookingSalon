@@ -341,6 +341,9 @@ export default function MyOrdersPage() {
                           url = await orderApi.getOrderVnPayUrl(order.orderId);
                         }
                         if (url) {
+                          if (url.includes('sandbox.vnpayment.vn')) {
+                            url = url.replace('https://sandbox.vnpayment.vn/paymentv2/vpcpay.html', '/payment/vnpay-sandbox-simulator');
+                          }
                           window.location.href = url;
                         } else {
                           message.error("Không thể tạo liên kết thanh toán VNPay!");
@@ -351,7 +354,7 @@ export default function MyOrdersPage() {
                     }}
                     className="bg-red-600 hover:bg-red-700 font-bold rounded-xl text-xs h-9 flex items-center gap-1.5 border-none shadow-sm"
                   >
-                    Thanh toán VNPay ngay
+                    Thanh toán VNPay (Sandbox)
                     <ArrowRight size={13} />
                   </Button>
                 )}

@@ -32,3 +32,13 @@ export const submitReview = (payload) =>
 export const cancelMyBooking = (bookingId) =>
   api.post(`/booking/${bookingId}?status=CANCELLED`).then((r) => r.data);
 
+// Cập nhật ảnh đại diện người dùng
+export const uploadUserAvatar = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/users/me/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then((r) => r.data);
+};
+
+

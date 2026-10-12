@@ -666,7 +666,7 @@ CREATE TABLE `orders` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
+-- nếu thay đổi cả những yêu cầu trên thì sao
 -- Dumping data for table `orders`
 --
 

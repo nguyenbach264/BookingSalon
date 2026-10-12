@@ -146,7 +146,7 @@ export default function ServicePage() {
 
   return (
     <div className="w-full flex-1 bg-gray-50 flex flex-col pb-16">
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
+      <div className="max-w-[1280px] mx-auto px-4 py-10 w-full flex-1">
         <div className="text-center mb-12">
     
           <h1 className="text-3xl sm:text-4xl font-black text-gray-900 uppercase tracking-tight">

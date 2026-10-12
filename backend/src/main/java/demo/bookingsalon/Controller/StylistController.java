@@ -23,6 +23,9 @@ public class StylistController {
     private final StylistRepository stylistRepository;
     private final StylistServiceRepository stylistServiceRepository;
     private final demo.bookingsalon.Repository.ReviewRepository reviewRepository;
+    private final demo.bookingsalon.Storage.MediaStorageService mediaStorageService;
+    private final demo.bookingsalon.Validation.MediaValidation mediaValidation;
+    private final demo.bookingsalon.Repository.UserRepository userRepository;
 
     @Data
     @Builder
@@ -145,6 +148,53 @@ public class StylistController {
 
         Stylist updated = stylistRepository.save(s);
         return ResponseEntity.ok(toDTO(updated));
+    }
+
+    @PostMapping(value = "/{id}/avatar", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<java.util.Map<String, String>> uploadStylistAvatar(
+            @PathVariable UUID id,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        mediaValidation.validate(file);
+        Stylist stylist = stylistRepository.findById(id)
+                .orElseThrow(() -> new demo.bookingsalon.Exception.NotFoundException("Stylist không tồn tại"));
+
+        var uploadResult = mediaStorageService.upload(file, "booking-salon/avatars/stylists/" + id);
+        stylist.setAvatarUrl(uploadResult.secureUrl());
+        stylistRepository.save(stylist);
+
+        if (stylist.getKeycloakId() != null) {
+            demo.bookingsalon.Entity.User user = userRepository.findByKeycloakId(stylist.getKeycloakId());
+            if (user != null) {
+                user.setAvatarUrl(uploadResult.secureUrl());
+                userRepository.save(user);
+            }
+        }
+
+        return ResponseEntity.ok(java.util.Map.of("avatarUrl", uploadResult.secureUrl()));
+    }
+
+    @PostMapping(value = "/me/avatar", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<java.util.Map<String, String>> uploadMyStylistAvatar(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        if (jwt == null) return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).build();
+        UUID keycloakId = UUID.fromString(jwt.getSubject());
+        mediaValidation.validate(file);
+
+        Stylist stylist = stylistRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new demo.bookingsalon.Exception.NotFoundException("Stylist không tồn tại"));
+
+        var uploadResult = mediaStorageService.upload(file, "booking-salon/avatars/stylists/" + stylist.getId());
+        stylist.setAvatarUrl(uploadResult.secureUrl());
+        stylistRepository.save(stylist);
+
+        demo.bookingsalon.Entity.User user = userRepository.findByKeycloakId(keycloakId);
+        if (user != null) {
+            user.setAvatarUrl(uploadResult.secureUrl());
+            userRepository.save(user);
+        }
+
+        return ResponseEntity.ok(java.util.Map.of("avatarUrl", uploadResult.secureUrl()));
     }
 
     private StylistDetailDTO toDTO(Stylist s) {

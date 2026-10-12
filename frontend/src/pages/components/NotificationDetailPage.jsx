@@ -375,10 +375,12 @@ const NotificationDetailPage = ({ onGoBack }) => {
               <div className="pt-2 flex items-center justify-end gap-3 flex-wrap">
                 {order.paymentStatus === "PENDING" && order.vnpayUrl && (
                   <a
-                    href={order.vnpayUrl}
+                    href={order.vnpayUrl.includes('sandbox.vnpayment.vn')
+                      ? order.vnpayUrl.replace('https://sandbox.vnpayment.vn/paymentv2/vpcpay.html', '/payment/vnpay-sandbox-simulator')
+                      : order.vnpayUrl}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" /> Thanh toán qua VNPay
+                    <ExternalLink className="w-3.5 h-3.5" /> Thanh toán qua VNPay (Sandbox)
                   </a>
                 )}
                 <button

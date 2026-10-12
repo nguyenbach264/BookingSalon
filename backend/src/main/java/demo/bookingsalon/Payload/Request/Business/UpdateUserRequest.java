@@ -23,5 +23,9 @@ public class UpdateUserRequest {
 
     private String ward;
 
+    private String membershipTier;
+
+    private Boolean emailVerified;
+
     private Boolean enabled;
 }

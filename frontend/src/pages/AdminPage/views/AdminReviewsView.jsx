@@ -10,8 +10,16 @@ import {
   Tag,
   Popconfirm,
   Button,
+  Modal,
+  Statistic,
 } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  EyeOutlined,
+  StarOutlined,
+  MessageOutlined,
+  LikeOutlined,
+} from "@ant-design/icons";
 
 const { Option } = Select;
 
@@ -26,48 +34,103 @@ export default function AdminReviewsView({
 }) {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
 
+  // Detail Modal for Reviews KPI Cards
+  const [kpiReviewModalTitle, setKpiReviewModalTitle] = useState("");
+  const [kpiReviewModalOpen, setKpiReviewModalOpen] = useState(false);
+  const [kpiReviewModalList, setKpiReviewModalList] = useState([]);
+
+  const handleOpenReviewKpi = (title, list) => {
+    setKpiReviewModalTitle(title);
+    setKpiReviewModalList(list);
+    setKpiReviewModalOpen(true);
+  };
+
+  const avgRating = (reviews || []).length > 0
+    ? ((reviews || []).reduce((s, r) => s + (r.rating || 5), 0) / reviews.length).toFixed(1)
+    : "5.0";
+  const fiveStarReviews = (reviews || []).filter((r) => r.rating === 5);
+  const positiveReviews = (reviews || []).filter((r) => (r.rating || 5) >= 4);
+  const positiveRate = (reviews || []).length > 0
+    ? Math.round((positiveReviews.length / reviews.length) * 100)
+    : 100;
+
   return (
     <div className="space-y-6">
-      {/* Reviews Stats */}
+      {/* ── TOP KPI STATS CARDS WITH DRILL-DOWN ── */}
       <Row gutter={[16, 16]}>
-        <Col xs={12} sm={6}>
-          <Card className="rounded-xl border-gray-100 shadow-sm">
-            <div className="text-2xl mb-1">⭐</div>
-            <div className="text-xl font-black text-amber-500">
-              {reviews.length > 0
-                ? (reviews.reduce((s, r) => s + (r.rating || 5), 0) / reviews.length).toFixed(1)
-                : "5.0"}{" "}
-              / 5.0
+        <Col xs={24} sm={12} lg={6}>
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-amber-50/60 group"
+            onClick={() => handleOpenReviewKpi("Tất cả đánh giá xếp theo điểm", [...(reviews || [])].sort((a, b) => (b.rating || 5) - (a.rating || 5)))}
+          >
+            <Statistic
+              title={<span className="text-xs font-bold uppercase text-amber-700">Điểm đánh giá TB</span>}
+              value={avgRating}
+              suffix={<span className="text-xs text-amber-500 font-normal">/ 5.0</span>}
+              prefix={<StarOutlined className="text-amber-500 mr-1" />}
+              styles={{ content: { fontWeight: 900, color: "#78350f" } }}
+            />
+            <div className="mt-2 text-xs text-amber-700 font-medium flex items-center justify-between group-hover:underline">
+              <span>Chất lượng chung: Rất tốt</span>
+              <EyeOutlined />
             </div>
-            <div className="text-xs text-gray-500">Điểm đánh giá trung bình</div>
           </Card>
         </Col>
-        <Col xs={12} sm={6}>
-          <Card className="rounded-xl border-gray-100 shadow-sm">
-            <div className="text-2xl mb-1">💬</div>
-            <div className="text-xl font-black text-blue-700">{reviews.length}</div>
-            <div className="text-xs text-gray-500">Tổng số lượt đánh giá</div>
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-blue-50/60 group"
+            onClick={() => handleOpenReviewKpi("Tất cả lượt đánh giá sản phẩm", reviews || [])}
+          >
+            <Statistic
+              title={<span className="text-xs font-bold uppercase text-blue-700">Tổng lượt đánh giá</span>}
+              value={(reviews || []).length}
+              suffix={<span className="text-xs text-gray-400 font-normal">lượt</span>}
+              prefix={<MessageOutlined className="text-blue-500 mr-1" />}
+              styles={{ content: { fontWeight: 900, color: "#1e3a8a" } }}
+            />
+            <div className="mt-2 text-xs text-blue-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Phản hồi từ người mua hàng</span>
+              <EyeOutlined />
+            </div>
           </Card>
         </Col>
-        <Col xs={12} sm={6}>
-          <Card className="rounded-xl border-gray-100 shadow-sm">
-            <div className="text-2xl mb-1">🌟</div>
-            <div className="text-xl font-black text-emerald-600">
-              {reviews.filter((r) => r.rating === 5).length}
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-emerald-50/60 group"
+            onClick={() => handleOpenReviewKpi("Danh sách đánh giá 5 sao tuyệt đối", fiveStarReviews)}
+          >
+            <Statistic
+              title={<span className="text-xs font-bold uppercase text-emerald-700">Đánh giá 5 sao</span>}
+              value={fiveStarReviews.length}
+              suffix={<span className="text-xs text-gray-400 font-normal">lượt</span>}
+              prefix={<StarOutlined className="text-emerald-500 mr-1" />}
+              styles={{ content: { fontWeight: 900, color: "#065f46" } }}
+            />
+            <div className="mt-2 text-xs text-emerald-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Khách hàng cực kỳ hài lòng</span>
+              <EyeOutlined />
             </div>
-            <div className="text-xs text-gray-500">Đánh giá 5 sao tuyệt đối</div>
           </Card>
         </Col>
-        <Col xs={12} sm={6}>
-          <Card className="rounded-xl border-gray-100 shadow-sm">
-            <div className="text-2xl mb-1">👍</div>
-            <div className="text-xl font-black text-purple-700">
-              {reviews.length > 0
-                ? Math.round((reviews.filter((r) => (r.rating || 5) >= 4).length / reviews.length) * 100)
-                : 100}
-              %
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-purple-50/60 group"
+            onClick={() => handleOpenReviewKpi("Danh sách phản hồi tích cực (4-5 sao)", positiveReviews)}
+          >
+            <Statistic
+              title={<span className="text-xs font-bold uppercase text-purple-700">Tỉ lệ hài lòng</span>}
+              value={positiveRate}
+              suffix={<span className="text-xs text-purple-400 font-normal">%</span>}
+              prefix={<LikeOutlined className="text-purple-500 mr-1" />}
+              styles={{ content: { fontWeight: 900, color: "#581c87" } }}
+            />
+            <div className="mt-2 text-xs text-purple-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Đánh giá từ 4★ đến 5★</span>
+              <EyeOutlined />
             </div>
-            <div className="text-xs text-gray-500">Tỉ lệ phản hồi tích cực (4-5★)</div>
           </Card>
         </Col>
       </Row>
@@ -213,6 +276,53 @@ export default function AdminReviewsView({
           ]}
         />
       </Card>
+
+      {/* ── MODAL: KPI REVIEWS DRILL-DOWN ────────────────────── */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 font-bold text-gray-800">
+            <StarOutlined className="text-amber-500" />
+            <span>{kpiReviewModalTitle} ({kpiReviewModalList.length})</span>
+          </div>
+        }
+        open={kpiReviewModalOpen}
+        onCancel={() => setKpiReviewModalOpen(false)}
+        footer={null}
+        width={800}
+        centered
+        destroyOnHidden
+      >
+        <div className="mt-4">
+          <Table
+            dataSource={kpiReviewModalList}
+            rowKey={(r) => r.id || `${r.productId}-${r.createdAt}`}
+            size="small"
+            pagination={{ pageSize: 6 }}
+            columns={[
+              {
+                title: "Sản phẩm",
+                dataIndex: "productName",
+                render: (v) => <span className="font-bold text-xs text-gray-900">{v || "Sản phẩm Shop"}</span>,
+              },
+              {
+                title: "Khách hàng",
+                dataIndex: "userName",
+                render: (v) => <span className="text-xs text-gray-600">{v || "Khách ẩn danh"}</span>,
+              },
+              {
+                title: "Số sao",
+                dataIndex: "rating",
+                render: (v) => <Rate disabled value={v || 5} allowHalf className="text-xs text-amber-500" />,
+              },
+              {
+                title: "Nội dung",
+                dataIndex: "reviewContent",
+                render: (v) => <span className="text-xs text-gray-700 line-clamp-2">{v || "—"}</span>,
+              },
+            ]}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

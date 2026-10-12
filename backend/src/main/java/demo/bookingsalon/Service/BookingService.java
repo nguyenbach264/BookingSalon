@@ -85,13 +85,15 @@ public class BookingService {
 
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<BookingResponse> getBookingByDate(LocalDate date, UUID salonId) {
-        List<BookingResponse> bookings = getBookingBySalonId(salonId);
-        if (date == null) return bookings;
-
-        List<BookingResponse> result = bookings.stream()
-                .filter(item -> item.getStartTime().toLocalDate().equals(date))
+        if (date == null) {
+            return getBookingBySalonId(salonId);
+        }
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+        return bookingRepository.findBySalonIdAndDate(salonId, startOfDay, endOfDay).stream()
+                .map(booking -> bookingMapper.toBookingResponse(booking))
+                .sorted(Comparator.comparing(BookingResponse::getStartTime))
                 .toList();
-        return result;
     }
 
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)

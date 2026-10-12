@@ -11,12 +11,25 @@ export function injectAuthContext(authContext) {
   _authContext = authContext;
 }
 
+function getCookie(name) {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp("(^|;\\s*)(" + name + ")=([^;]*)"));
+  return match ? decodeURIComponent(match[3]) : null;
+}
+
 api.interceptors.request.use(
   (config) => {
     const token = _authContext?.getToken?.();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Gửi CSRF token từ XSRF-TOKEN cookie nếu có
+    const xsrfToken = getCookie("XSRF-TOKEN");
+    if (xsrfToken) {
+      config.headers["X-XSRF-TOKEN"] = xsrfToken;
+    }
+
     return config;
   },
   (error) => Promise.reject(error)

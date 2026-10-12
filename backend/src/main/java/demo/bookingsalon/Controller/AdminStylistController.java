@@ -85,8 +85,24 @@ public class AdminStylistController {
     }
 
     @GetMapping("/eligible-users")
-    public ResponseEntity<List<User>> getEligibleUsersForPromotion(
+    public ResponseEntity<List<EligibleUserResponse>> getEligibleUsersForPromotion(
             @RequestParam(required = false) String search) {
         return ResponseEntity.ok(adminStylistService.getEligibleUsersForPromotion(search));
+    }
+
+    @PutMapping("/{id}/salon")
+    public ResponseEntity<AdminStylistResponse> assignSalon(
+            @PathVariable UUID id,
+            @RequestBody Map<String, UUID> body) {
+        UUID salonId = body != null ? body.get("salonId") : null;
+        if (salonId == null) {
+            return ResponseEntity.ok(adminStylistService.removeStylistFromSalon(id));
+        }
+        return ResponseEntity.ok(adminStylistService.assignStylistToSalon(id, salonId));
+    }
+
+    @DeleteMapping("/{id}/salon")
+    public ResponseEntity<AdminStylistResponse> removeSalon(@PathVariable UUID id) {
+        return ResponseEntity.ok(adminStylistService.removeStylistFromSalon(id));
     }
 }

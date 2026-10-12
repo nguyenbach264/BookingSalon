@@ -40,6 +40,15 @@ public class PaymentControllerTest {
     private PaymentApplicationService paymentApplicationService;
 
     @MockitoBean
+    private demo.bookingsalon.Service.PaymentWebhookService paymentWebhookService;
+
+    @MockitoBean
+    private demo.bookingsalon.Configuration.VnPayConfig vnPayConfig;
+
+    @MockitoBean
+    private demo.bookingsalon.Repository.OrderRepository orderRepository;
+
+    @MockitoBean
     private JwtDecoder jwtDecoder;
 
     private CreatePaymentRequest createPaymentRequest;

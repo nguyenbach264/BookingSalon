@@ -14,11 +14,17 @@ import {
   Select,
   Switch,
   Rate,
+  Statistic,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
+  EyeOutlined,
+  ShoppingOutlined,
+  CheckCircleOutlined,
+  WarningOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -41,27 +47,103 @@ export default function AdminProductsView({
 }) {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
 
+  // Detail Modal for Products KPI Cards
+  const [kpiProductModalTitle, setKpiProductModalTitle] = useState("");
+  const [kpiProductModalOpen, setKpiProductModalOpen] = useState(false);
+  const [kpiProductModalList, setKpiProductModalList] = useState([]);
+
+  const handleOpenProductKpi = (title, list) => {
+    setKpiProductModalTitle(title);
+    setKpiProductModalList(list);
+    setKpiProductModalOpen(true);
+  };
+
+  const totalProducts = (products || []).length;
+  const activeProducts = (products || []).filter((p) => p.active !== false);
+  const outOfStockProducts = (products || []).filter((p) => (p.stockQuantity || 0) <= 0);
+  const topSellersProducts = productStats?.topSellers || (products || []).filter((p) => (p.soldCount || 0) > 0);
+  const totalRev = productStats?.totalRevenue || (products || []).reduce((sum, p) => sum + ((p.soldCount || 0) * (p.price || 0)), 0);
+
   return (
     <div className="space-y-6">
-      {/* Stats Row */}
-      {productStats && (
-        <Row gutter={[16, 16]}>
-          {[
-            { label: "Tổng sản phẩm", value: productStats.total, color: "text-blue-700", icon: "📦" },
-            { label: "Đang bán", value: productStats.active, color: "text-green-700", icon: "✅" },
-            { label: "Hết hàng", value: productStats.outOfStock, color: "text-red-700", icon: "⚠️" },
-            { label: "Tổng doanh thu (ước tính)", value: formatCurrency(productStats.totalRevenue), color: "text-purple-700", icon: "💰" },
-          ].map(({ label, value, color, icon }) => (
-            <Col xs={12} sm={6} key={label}>
-              <Card className="rounded-xl border-gray-100 shadow-sm">
-                <div className="text-2xl mb-1">{icon}</div>
-                <div className={`text-xl font-black ${color}`}>{value}</div>
-                <div className="text-xs text-gray-500">{label}</div>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      )}
+      {/* ── TOP KPI STATS CARDS WITH DRILL-DOWN ── */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-blue-50/60 group"
+            onClick={() => handleOpenProductKpi("Tất cả sản phẩm trong hệ thống", products || [])}
+          >
+            <Statistic
+              title={<span className="text-xs font-bold uppercase text-blue-700">Tổng sản phẩm</span>}
+              value={totalProducts}
+              suffix={<span className="text-xs text-gray-400 font-normal">mặt hàng</span>}
+              prefix={<ShoppingOutlined className="text-blue-500 mr-1" />}
+              styles={{ content: { fontWeight: 900, color: "#1e3a8a" } }}
+            />
+            <div className="mt-2 text-xs text-blue-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Đang mở bán: {activeProducts.length}</span>
+              <EyeOutlined />
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-emerald-50/60 group"
+            onClick={() => handleOpenProductKpi("Danh sách sản phẩm đang kinh doanh", activeProducts)}
+          >
+            <Statistic
+              title={<span className="text-xs font-bold uppercase text-emerald-700">Đang kinh doanh</span>}
+              value={activeProducts.length}
+              suffix={<span className="text-xs text-gray-400 font-normal">mặt hàng</span>}
+              prefix={<CheckCircleOutlined className="text-emerald-500 mr-1" />}
+              styles={{ content: { fontWeight: 900, color: "#065f46" } }}
+            />
+            <div className="mt-2 text-xs text-emerald-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Khách có thể đặt ngay</span>
+              <EyeOutlined />
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-rose-50/60 group"
+            onClick={() => handleOpenProductKpi("Danh sách sản phẩm hết hàng hoặc tồn kho = 0", outOfStockProducts)}
+          >
+            <Statistic
+              title={<span className="text-xs font-bold uppercase text-rose-700">Hết hàng / Tồn = 0</span>}
+              value={outOfStockProducts.length}
+              suffix={<span className="text-xs text-gray-400 font-normal">mặt hàng</span>}
+              prefix={<WarningOutlined className="text-rose-500 mr-1" />}
+              styles={{ content: { fontWeight: 900, color: "#9f1239" } }}
+            />
+            <div className="mt-2 text-xs text-rose-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Cần bổ sung kho</span>
+              <EyeOutlined />
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-purple-50/60 group"
+            onClick={() => handleOpenProductKpi("Danh sách sản phẩm bán chạy nhất", topSellersProducts)}
+          >
+            <Statistic
+              title={<span className="text-xs font-bold uppercase text-purple-700">Doanh thu Shop (ước tính)</span>}
+              value={totalRev}
+              formatter={(v) => formatCurrency(v)}
+              prefix={<DollarOutlined className="text-purple-500 mr-1" />}
+              styles={{ content: { fontWeight: 900, color: "#581c87" } }}
+            />
+            <div className="mt-2 text-xs text-purple-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Xem Top sản phẩm bán chạy</span>
+              <EyeOutlined />
+            </div>
+          </Card>
+        </Col>
+      </Row>
 
       {/* Top Sellers */}
       {productStats?.topSellers?.length > 0 && (
@@ -280,6 +362,74 @@ export default function AdminProductsView({
             </Button>
           </div>
         </Form>
+      </Modal>
+
+      {/* ── MODAL: KPI PRODUCTS DRILL-DOWN ────────────────────── */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 font-bold text-gray-800">
+            <ShoppingOutlined className="text-blue-600" />
+            <span>{kpiProductModalTitle} ({kpiProductModalList.length})</span>
+          </div>
+        }
+        open={kpiProductModalOpen}
+        onCancel={() => setKpiProductModalOpen(false)}
+        footer={null}
+        width={850}
+        centered
+        destroyOnHidden
+      >
+        <div className="mt-4">
+          <Table
+            dataSource={kpiProductModalList}
+            rowKey="id"
+            size="small"
+            pagination={{ pageSize: 6 }}
+            columns={[
+              {
+                title: "Sản phẩm",
+                dataIndex: "name",
+                render: (v, r) => (
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={r.imageUrl}
+                      alt={v}
+                      className="w-9 h-9 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                    />
+                    <div>
+                      <div className="font-bold text-xs text-gray-900">{v}</div>
+                      <div className="text-[10px] text-gray-400">ID: {r.id}</div>
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                title: "Giá",
+                dataIndex: "price",
+                render: (v) => <span className="font-bold text-xs text-blue-700">{formatCurrency(v)}đ</span>,
+              },
+              {
+                title: "Tồn kho",
+                dataIndex: "stockQuantity",
+                render: (v) => (
+                  <Tag color={v <= 0 ? "error" : v < 10 ? "warning" : "success"}>
+                    {v} cái
+                  </Tag>
+                ),
+              },
+              {
+                title: "Đã bán",
+                dataIndex: "soldCount",
+                render: (v) => <span className="font-semibold text-xs">{v || 0} cái</span>,
+              },
+              {
+                title: "Trạng thái",
+                dataIndex: "active",
+                render: (v) => <Tag color={v !== false ? "success" : "default"}>{v !== false ? "Đang bán" : "Tạm ẩn"}</Tag>,
+              },
+            ]}
+          />
+        </div>
       </Modal>
     </div>
   );

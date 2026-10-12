@@ -184,11 +184,14 @@ const CheckoutPage = () => {
         }
 
         if (redirectUrl) {
-          message.loading('Đang chuyển hướng đến cổng thanh toán VNPay...', 2);
+          if (redirectUrl.includes('sandbox.vnpayment.vn')) {
+            redirectUrl = redirectUrl.replace('https://sandbox.vnpayment.vn/paymentv2/vpcpay.html', '/payment/vnpay-sandbox-simulator');
+          }
+          message.loading('Đang chuyển hướng đến cổng thanh toán VNPay Sandbox...', 1.5);
           dispatch(clearCart());
           setTimeout(() => {
             window.location.href = redirectUrl;
-          }, 1200);
+          }, 1000);
         } else {
           message.success("Đặt hàng thành công! Mã đơn: " + orderResponse.orderCode);
           dispatch(clearCart());
@@ -378,11 +381,12 @@ const CheckoutPage = () => {
                     <div className="flex items-center justify-between flex-1 gap-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900 text-sm">Thanh toán qua VNPay</span>
+                          <span className="font-bold text-gray-900 text-sm">Thanh toán qua VNPay (Sandbox / Thẻ & Tài khoản ngân hàng)</span>
+                          <span className="bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Sandbox Giả lập</span>
                           <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Khuyên dùng</span>
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          Thanh toán an toàn qua cổng VNPay — ATM, thẻ Visa/Master, QR Banking, ví điện tử. Xác nhận tức thì.
+                          Cổng giả lập VNPay Sandbox — Hỗ trợ quét mã VNPAY-QR, Thẻ ATM/Tài khoản ngân hàng nội địa, Thẻ Visa/Mastercard. Xác nhận tức thì.
                         </div>
                       </div>
                       <img src="https://vnpay.vn/s1/statics/img/logo2-QkCiDMRl.png" alt="VNPay" className="h-7 object-contain" onError={e => e.target.style.display='none'} />

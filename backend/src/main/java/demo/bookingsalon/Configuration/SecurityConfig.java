@@ -23,6 +23,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import demo.bookingsalon.Service.BffSessionService;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -36,8 +40,26 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
 
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        // Giữ nguyên thuộc tính tên token để CsrfCookieFilter có thể đọc được
+        requestHandler.setCsrfRequestAttributeName(null);
+
         http
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(requestHandler)
+                .ignoringRequestMatchers(
+                    "/api/payments/webhook/**",
+                    "/api/v1/payments/webhook/**",
+                    "/api/v1/payments/simulator/**",
+                    "/webhooks/**",
+                    "/api/auth/**",
+                    "/ws/**",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
+                )
+            )
+            .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
             .cors(Customizer.withDefaults())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -55,8 +77,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/refresh-token").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/payments/webhook/**", "/api/v1/payments/webhook/**", "/webhooks/**").permitAll()
-                .requestMatchers(HttpMethod.GET,  "/webhooks/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/payments/webhook/**", "/api/v1/payments/webhook/**", "/webhooks/**", "/api/v1/payments/simulator/**").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/webhooks/**", "/api/v1/payments/simulator/**").permitAll()
                 .requestMatchers(HttpMethod.GET,  "/api/v1/payments/webhook/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/products", "/api/product-categories/**", "/api/product-categories").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/salons/**", "/api/salon/**", "/api/salon", "/api/salons").permitAll()
@@ -106,6 +128,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST,   "/api/categories/**", "/api/category/**", "/api/categories", "/api/category").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/api/categories/**", "/api/category/**", "/api/categories", "/api/category").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/categories/**", "/api/category/**", "/api/categories", "/api/category").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/stylists/*/avatar", "/api/stylists/me/avatar").hasAnyRole("ADMIN", "STYLIST")
                 .requestMatchers(HttpMethod.POST,   "/api/stylists/**", "/api/stylists").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/api/stylists/**", "/api/stylists").hasAnyRole("ADMIN", "STYLIST")
                 .requestMatchers(HttpMethod.DELETE, "/api/stylists/**", "/api/stylists").hasRole("ADMIN")

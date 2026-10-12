@@ -8,7 +8,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Getter
 @Component
 public class BankWebClientConfig {
-    // Thằng này tạm thời chưa có hàm nào dùng nó
+    @Bean
+    public WebClient.Builder webClientBuilder() {
+        return WebClient.builder();
+    }
+
     @Bean
     public WebClient bankWebClient(SepayConfig sepayConfig) {
         return WebClient.builder()

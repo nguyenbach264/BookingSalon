@@ -403,7 +403,7 @@ public class OrderService {
 
         String queryString = VnPaySignatureUtil.buildQueryString(params);
         String secureHash = VnPaySignatureUtil.hmacSHA512(vnPayConfig.getSecretKey(), queryString);
-        return vnPayConfig.getPayUrl() + "?" + queryString + "&vnp_SecureHash=" + secureHash;
+        return vnPayConfig.getEffectivePayUrl() + "?" + queryString + "&vnp_SecureHash=" + secureHash;
     }
 }
 

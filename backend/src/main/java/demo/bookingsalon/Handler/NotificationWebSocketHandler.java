@@ -36,33 +36,21 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         allSessions.add(session);
         log.info("WebSocket client connected: {}", session.getId());
 
-        // Parse query params (e.g. /ws/notifications?userId=... or ?stylistId=...)
-        URI uri = session.getUri();
-        if (uri != null && uri.getQuery() != null) {
-            Map<String, String> queryParams = parseQueryParams(uri.getQuery());
+        // Ưu tiên danh tính đã được xác thực an toàn qua WebSocketAuthInterceptor
+        UUID authUserId = (UUID) session.getAttributes().get("userId");
+        UUID authStylistId = (UUID) session.getAttributes().get("stylistId");
 
-            if (queryParams.containsKey("userId")) {
-                try {
-                    UUID userId = UUID.fromString(queryParams.get("userId"));
-                    userSessions.computeIfAbsent(userId, k -> new CopyOnWriteArraySet<>()).add(session);
-                    session.getAttributes().put("userId", userId);
-                    log.info("Registered user {} with WebSocket session {}", userId, session.getId());
-                } catch (Exception e) {
-                    log.warn("Invalid userId in WebSocket query: {}", queryParams.get("userId"));
-                }
-            }
-
-            if (queryParams.containsKey("stylistId")) {
-                try {
-                    UUID stylistId = UUID.fromString(queryParams.get("stylistId"));
-                    stylistSessions.computeIfAbsent(stylistId, k -> new CopyOnWriteArraySet<>()).add(session);
-                    session.getAttributes().put("stylistId", stylistId);
-                    log.info("Registered stylist {} with WebSocket session {}", stylistId, session.getId());
-                } catch (Exception e) {
-                    log.warn("Invalid stylistId in WebSocket query: {}", queryParams.get("stylistId"));
-                }
-            }
+        if (authUserId != null) {
+            userSessions.computeIfAbsent(authUserId, k -> new CopyOnWriteArraySet<>()).add(session);
+            log.info("Registered authenticated user {} with WebSocket session {}", authUserId, session.getId());
         }
+
+        if (authStylistId != null) {
+            stylistSessions.computeIfAbsent(authStylistId, k -> new CopyOnWriteArraySet<>()).add(session);
+            log.info("Registered authenticated stylist {} with WebSocket session {}", authStylistId, session.getId());
+        }
+
+        // Với public path như /ws/reviews, query params / client-sent IDs không được gán đè quyền nhận tin riêng tư
     }
 
     // RECEIVE MESSAGE (CLIENT REGISTER / PING)
@@ -72,21 +60,36 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
             JsonNode node = objectMapper.readTree(message.getPayload());
             String type = node.path("type").asText("");
 
-            if ("REGISTER".equalsIgnoreCase(type) || "AUTH".equalsIgnoreCase(type)) {
-                if (node.hasNonNull("userId")) {
-                    UUID userId = UUID.fromString(node.get("userId").asText());
-                    userSessions.computeIfAbsent(userId, k -> new CopyOnWriteArraySet<>()).add(session);
-                    session.getAttributes().put("userId", userId);
-                    log.info("Session {} registered via payload for user {}", session.getId(), userId);
-                }
-                if (node.hasNonNull("stylistId")) {
-                    UUID stylistId = UUID.fromString(node.get("stylistId").asText());
-                    stylistSessions.computeIfAbsent(stylistId, k -> new CopyOnWriteArraySet<>()).add(session);
-                    session.getAttributes().put("stylistId", stylistId);
-                    log.info("Session {} registered via payload for stylist {}", session.getId(), stylistId);
-                }
-            } else if ("PING".equalsIgnoreCase(type)) {
+            if ("PING".equalsIgnoreCase(type)) {
                 session.sendMessage(new TextMessage("{\"type\":\"PONG\"}"));
+            } else if ("REGISTER".equalsIgnoreCase(type) || "AUTH".equalsIgnoreCase(type)) {
+                // Chỉ cho phép đăng ký nếu session đã được xác thực danh tính trùng khớp từ Handshake
+                UUID authUserId = (UUID) session.getAttributes().get("userId");
+                UUID authStylistId = (UUID) session.getAttributes().get("stylistId");
+
+                if (node.hasNonNull("userId") && authUserId != null) {
+                    try {
+                        UUID claimedUserId = UUID.fromString(node.get("userId").asText());
+                        if (authUserId.equals(claimedUserId)) {
+                            userSessions.computeIfAbsent(authUserId, k -> new CopyOnWriteArraySet<>()).add(session);
+                        } else {
+                            log.warn("Session {} attempted to spoof userId {}. Authenticated userId is {}",
+                                    session.getId(), claimedUserId, authUserId);
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                if (node.hasNonNull("stylistId") && authStylistId != null) {
+                    try {
+                        UUID claimedStylistId = UUID.fromString(node.get("stylistId").asText());
+                        if (authStylistId.equals(claimedStylistId)) {
+                            stylistSessions.computeIfAbsent(authStylistId, k -> new CopyOnWriteArraySet<>()).add(session);
+                        } else {
+                            log.warn("Session {} attempted to spoof stylistId {}. Authenticated stylistId is {}",
+                                    session.getId(), claimedStylistId, authStylistId);
+                        }
+                    } catch (Exception ignored) {}
+                }
             }
         } catch (Exception e) {
             log.debug("Non-JSON message received from session {}: {}", session.getId(), message.getPayload());
