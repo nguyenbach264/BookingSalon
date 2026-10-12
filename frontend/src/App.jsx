@@ -3,6 +3,8 @@ import { ConfigProvider } from "antd";
 import AppRoutes from "./pages/Routes/AppRoutes";
 import AuthAxiosInjector from "./service/api/AuthAxiosInjector";
 import ScrollToTop from "./pages/components/ScrollToTop";
+import ErrorBoundary from "./pages/components/ErrorBoundary";
+import PageTitleManager from "./pages/components/PageTitleManager";
 
 function App() {
   return (
@@ -16,8 +18,11 @@ function App() {
     >
       <AuthAxiosInjector />
       <BrowserRouter>
-        <ScrollToTop />
-        <AppRoutes />
+        <ErrorBoundary>
+          <PageTitleManager />
+          <ScrollToTop />
+          <AppRoutes />
+        </ErrorBoundary>
       </BrowserRouter>
     </ConfigProvider>
   );

@@ -60,7 +60,7 @@ public class VnPayStrategy implements PaymentStrategy {
 
         String query = VnPaySignatureUtil.buildQueryString(params);
         String secureHash = VnPaySignatureUtil.hmacSHA512(config.getSecretKey(), query);
-        String paymentUrl = config.getPayUrl() + "?" + query + "&vnp_SecureHash=" + secureHash;
+        String paymentUrl = config.getEffectivePayUrl() + "?" + query + "&vnp_SecureHash=" + secureHash;
 
         // Generate QR Code từ payment URL
         String qrCodeData = qrCodeGenerator.generateQRCodeAsBase64(paymentUrl);

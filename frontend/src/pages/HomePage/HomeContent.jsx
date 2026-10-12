@@ -193,30 +193,32 @@ const HomeContent = () => {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-                <div className="absolute inset-0 flex flex-col justify-center pl-8 md:pl-20">
-                  <span className="inline-flex items-center gap-2 text-amber-400 font-semibold text-sm mb-3 tracking-wider">
-                    <Scissors size={16} />
-                    BACHBARBER PREMIUM
-                  </span>
-                  <h1 className="text-white text-3xl md:text-5xl font-black leading-tight mb-3 max-w-xl">
-                    {slide.title}
-                  </h1>
-                  <p className="text-white/80 text-base md:text-lg mb-6 max-w-md">
-                    {slide.sub}
-                  </p>
-                  <button
-                    onClick={() => {
-                      if (slide.cta?.toLowerCase().includes('lịch')) {
-                        handleBookingClick();
-                      } else {
-                        navigate('/service');
-                      }
-                    }}
-                    className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 px-7 rounded-full transition-all duration-300 w-fit text-sm cursor-pointer shadow-md"
-                  >
-                    {slide.cta}
-                    <ArrowRight size={16} />
-                  </button>
+                <div className="absolute inset-0 flex items-center">
+                  <div className="max-w-[1280px] mx-auto px-4 w-full flex flex-col justify-center">
+                    <span className="inline-flex items-center gap-2 text-amber-400 font-semibold text-sm mb-3 tracking-wider">
+                      <Scissors size={16} />
+                      BACHBARBER PREMIUM
+                    </span>
+                    <h1 className="text-white text-3xl md:text-5xl font-black leading-tight mb-3 max-w-xl">
+                      {slide.title}
+                    </h1>
+                    <p className="text-white/80 text-base md:text-lg mb-6 max-w-md">
+                      {slide.sub}
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (slide.cta?.toLowerCase().includes('lịch')) {
+                          handleBookingClick();
+                        } else {
+                          navigate('/service');
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 px-7 rounded-full transition-all duration-300 w-fit text-sm cursor-pointer shadow-md"
+                    >
+                      {slide.cta}
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -226,7 +228,7 @@ const HomeContent = () => {
 
       {/* ── FEATURE STRIP ──────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-100 py-6">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="max-w-[1280px] mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4">
           {FEATURE_CARDS.map((f, i) => (
             <div key={i} className="flex items-center gap-3 p-3">
               <span className="text-3xl">{f.icon}</span>
@@ -240,7 +242,7 @@ const HomeContent = () => {
       </div>
 
       {/* ── SERVICES SECTION ───────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-12">
+      <div className="max-w-[1280px] mx-auto w-full px-4 py-12">
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center gap-2 text-amber-500 font-semibold text-sm mb-1 tracking-wider">
@@ -290,7 +292,7 @@ const HomeContent = () => {
 
       {/* ── SALONS SECTION ─────────────────────────────────────────── */}
       <div className="bg-white py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-[1280px] mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div>
               <div className="flex items-center gap-2 text-amber-500 font-semibold text-sm mb-1 tracking-wider">

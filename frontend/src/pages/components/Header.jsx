@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Modal, Badge, Dropdown, Avatar, Tag, Popover, Empty, Button, Spin } from 'antd';
 import {
@@ -16,9 +16,11 @@ import {
   PackageCheck,
   AlertTriangle,
   CheckCheck,
+  Clock,
 } from 'lucide-react';
 import { useNotification } from '../../service/context/NotificationContext';
 import { useAuth } from '../../auth/authProvider';
+import { getServiceOfferings } from '../../service/api/serviceApi';
 import HeaderSkeleton from './HeaderSkeleton';
 
 const formatTimeAgo = (dateStr) => {
@@ -47,6 +49,42 @@ const Header = ({ onLoginClick }) => {
   const [searchValue, setSearchValue] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [allServices, setAllServices] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  useEffect(() => {
+    getServiceOfferings()
+      .then((data) => {
+        if (Array.isArray(data)) setAllServices(data);
+      })
+      .catch((err) => console.warn('Could not load services for suggestions:', err));
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredSuggestions = useMemo(() => {
+    const q = searchValue.trim().toLowerCase();
+    if (!q) return [];
+    return allServices
+      .filter((s) => (s.name || '').toLowerCase().includes(q) || (s.categoryName || '').toLowerCase().includes(q))
+      .slice(0, 6);
+  }, [allServices, searchValue]);
+
+  const handleSelectService = (service) => {
+    setShowSuggestions(false);
+    setMobileSearchOpen(false);
+    setSearchValue(service.name);
+    navigate(`/service?search=${encodeURIComponent(service.name)}`);
+  };
 
   const handleNotificationClick = (notif) => {
     setNotificationOpen(false);
@@ -66,6 +104,7 @@ const Header = ({ onLoginClick }) => {
     } else {
       setSearchValue('');
       setMobileSearchOpen(false);
+      setShowSuggestions(false);
     }
   }, [location.pathname, location.search]);
 
@@ -87,6 +126,7 @@ const Header = ({ onLoginClick }) => {
     e?.preventDefault();
     const query = searchValue.trim();
     if (!query) return;
+    setShowSuggestions(false);
     setMobileSearchOpen(false);
     navigate(`/service?search=${encodeURIComponent(query)}`);
   };
@@ -339,7 +379,7 @@ const Header = ({ onLoginClick }) => {
         </div>
 
         {/* ── 2. CENTER SEARCH BAR (Desktop & Tablet) ────── */}
-        <div className="hidden sm:flex flex-1 max-w-xs md:max-w-sm lg:max-w-md mx-2 justify-center">
+        <div ref={searchContainerRef} className="hidden sm:flex flex-1 max-w-xs md:max-w-sm lg:max-w-md mx-2 justify-center relative">
           <form
             onSubmit={handleSearchSubmit}
             className="relative flex items-center w-full bg-gray-50 hover:bg-white focus-within:bg-white border border-gray-200 focus-within:border-[#60a5fa] focus-within:ring-2 focus-within:ring-[#60a5fa]/20 rounded-full transition-all duration-200 shadow-inner"
@@ -347,7 +387,11 @@ const Header = ({ onLoginClick }) => {
             <input
               type="text"
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              onChange={(e) => {
+                setSearchValue(e.target.value);
+                setShowSuggestions(true);
+              }}
               placeholder="Tìm dịch vụ cắt, uốn, nhuộm..."
               className="w-full bg-transparent text-gray-800 text-xs sm:text-sm pl-4 pr-10 py-[7px] focus:outline-none placeholder:text-gray-400"
             />
@@ -359,6 +403,49 @@ const Header = ({ onLoginClick }) => {
               <Search size={13} />
             </button>
           </form>
+
+          {/* Autocomplete Dropdown */}
+          {showSuggestions && searchValue.trim() && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-[100] divide-y divide-gray-50">
+              <div className="px-3 py-2 bg-gray-50/80 text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center justify-between">
+                <span>Gợi ý dịch vụ</span>
+                <span className="text-[10px] text-blue-600 font-semibold">{filteredSuggestions.length} kết quả</span>
+              </div>
+              {filteredSuggestions.length > 0 ? (
+                filteredSuggestions.map((service) => (
+                  <div
+                    key={service.id || service.serviceId}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelectService(service);
+                    }}
+                    className="px-3.5 py-2.5 hover:bg-blue-50/80 cursor-pointer flex items-center justify-between gap-3 transition-colors group"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-7 h-7 rounded-lg bg-blue-50 group-hover:bg-blue-100 text-[#60a5fa] flex items-center justify-center shrink-0">
+                        <Scissors size={14} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-gray-800 group-hover:text-blue-600 truncate mb-0">
+                          {service.name}
+                        </p>
+                        <span className="text-[10px] text-gray-400">
+                          {service.categoryName || 'Dịch vụ Salon'} • {service.duration || 30} phút
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-blue-600 shrink-0">
+                      {new Intl.NumberFormat('vi-VN').format(service.price || 0)}đ
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="p-3 text-center text-xs text-gray-400">
+                  Không tìm thấy dịch vụ nào cho "{searchValue}"
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── 3. RIGHT ACTIONS: BELL & USER PROFILE ────── */}
@@ -446,32 +533,49 @@ const Header = ({ onLoginClick }) => {
 
       {/* ── MOBILE SEARCH OVERLAY ─────────────────────────────────────── */}
       {mobileSearchOpen && (
-        <div className="sm:hidden absolute inset-0 bg-white z-50 px-4 flex items-center gap-2 shadow-md">
-          <form onSubmit={handleSearchSubmit} className="flex-1 relative flex items-center">
-            <input
-              type="text"
-              autoFocus
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Tìm dịch vụ cắt, uốn, nhuộm..."
-              className="w-full bg-gray-100 text-gray-800 text-sm pl-4 pr-10 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-[#60a5fa]"
-            />
+        <div className="sm:hidden absolute inset-0 bg-white z-50 px-4 py-3 flex flex-col justify-start shadow-md max-h-96">
+          <div className="flex items-center gap-2">
+            <form onSubmit={handleSearchSubmit} className="flex-1 relative flex items-center">
+              <input
+                type="text"
+                autoFocus
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                placeholder="Tìm dịch vụ cắt, uốn, nhuộm..."
+                className="w-full bg-gray-100 text-gray-800 text-sm pl-4 pr-10 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-[#60a5fa]"
+              />
+              <button
+                type="submit"
+                aria-label="Tìm kiếm"
+                className="absolute right-1.5 w-7 h-7 flex items-center justify-center rounded-full bg-[#60a5fa] hover:bg-blue-500 text-white"
+              >
+                <Search size={14} />
+              </button>
+            </form>
             <button
-              type="submit"
-              aria-label="Tìm kiếm"
-              className="absolute right-1.5 w-7 h-7 flex items-center justify-center rounded-full bg-[#60a5fa] hover:bg-blue-500 text-white"
+              type="button"
+              onClick={() => setMobileSearchOpen(false)}
+              aria-label="Đóng tìm kiếm"
+              className="p-1.5 text-gray-500 hover:text-gray-800 rounded-full hover:bg-gray-100"
             >
-              <Search size={14} />
+              <X size={20} />
             </button>
-          </form>
-          <button
-            type="button"
-            onClick={() => setMobileSearchOpen(false)}
-            aria-label="Đóng tìm kiếm"
-            className="p-1.5 text-gray-500 hover:text-gray-800 rounded-full hover:bg-gray-100"
-          >
-            <X size={20} />
-          </button>
+          </div>
+
+          {searchValue.trim() && filteredSuggestions.length > 0 && (
+            <div className="mt-2 bg-white rounded-xl border border-gray-100 overflow-y-auto divide-y divide-gray-50">
+              {filteredSuggestions.map((service) => (
+                <div
+                  key={service.id || service.serviceId}
+                  onClick={() => handleSelectService(service)}
+                  className="px-3 py-2 flex items-center justify-between text-xs hover:bg-blue-50"
+                >
+                  <span className="font-semibold text-gray-800 truncate">{service.name}</span>
+                  <span className="font-bold text-blue-600 shrink-0 ml-2">{new Intl.NumberFormat('vi-VN').format(service.price || 0)}đ</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

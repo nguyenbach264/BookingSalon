@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   Avatar,
@@ -13,6 +13,7 @@ import {
   Row,
   Col,
   Descriptions,
+  Tooltip,
 } from 'antd';
 import {
   UserOutlined,
@@ -28,6 +29,9 @@ import {
   CrownOutlined,
   CalendarOutlined,
   SendOutlined,
+  CameraOutlined,
+  UploadOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../auth/authProvider';
 import {
@@ -35,14 +39,18 @@ import {
   updateMyProfile,
   sendVerifyEmailOtp,
   verifyEmailOtp,
+  uploadUserAvatar,
 } from '../../service/api/userApi';
 
 const { Option } = Select;
 
 export default function UserProfilePage() {
-  const { userInfo } = useAuth();
+  const { userInfo, checkCurrentSession } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef(null);
+  const editAvatarInputRef = useRef(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -113,6 +121,41 @@ export default function UserProfilePage() {
     }
     return () => clearTimeout(timer);
   }, [countdown]);
+
+  const handleUploadAvatar = async (file) => {
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      message.error('Vui lòng chọn tệp hình ảnh hợp lệ (JPG, PNG, WEBP)!');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      message.error('Dung lượng hình ảnh không được vượt quá 10MB!');
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const res = await uploadUserAvatar(file);
+      const newAvatarUrl = res.avatarUrl;
+
+      setProfile((prev) => (prev ? { ...prev, avatarUrl: newAvatarUrl } : { avatarUrl: newAvatarUrl }));
+      setFormData((prev) => ({ ...prev, avatarUrl: newAvatarUrl }));
+      message.success('Cập nhật ảnh đại diện thành công!');
+
+      if (checkCurrentSession) {
+        await checkCurrentSession();
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải ảnh đại diện:', err);
+      message.error(err.response?.data?.message || 'Không thể tải lên ảnh đại diện. Vui lòng thử lại!');
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+      if (editAvatarInputRef.current) editAvatarInputRef.current.value = '';
+    }
+  };
 
   const handleSaveProfile = async () => {
     try {
@@ -217,12 +260,55 @@ export default function UserProfilePage() {
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-8">
         <div className="h-32 bg-gradient-to-r from-blue-400 via-[#60a5fa] to-indigo-400 relative">
           <div className="absolute -bottom-12 left-8 flex items-end gap-5">
-            <Avatar
-              size={96}
-              src={profile?.avatarUrl}
-              icon={<UserOutlined />}
-              className="border-4 border-white shadow-md bg-[#60a5fa] text-white"
-            />
+            <div className="relative group">
+              <div
+                className="relative cursor-pointer"
+                onClick={() => !uploadingAvatar && avatarInputRef.current?.click()}
+              >
+                <Avatar
+                  size={96}
+                  src={profile?.avatarUrl}
+                  icon={<UserOutlined />}
+                  className="border-4 border-white shadow-md bg-[#60a5fa] text-white transition-transform duration-200 group-hover:scale-105"
+                />
+                {uploadingAvatar ? (
+                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                    <Spin indicator={<LoadingOutlined style={{ fontSize: 26, color: '#fff' }} spin />} />
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[11px] font-semibold">
+                    <CameraOutlined className="text-base mb-0.5" />
+                    <span>Đổi ảnh</span>
+                  </div>
+                )}
+                <Tooltip title="Chọn ảnh từ máy tính hoặc điện thoại">
+                  <button
+                    type="button"
+                    aria-label="Cập nhật ảnh đại diện"
+                    disabled={uploadingAvatar}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      avatarInputRef.current?.click();
+                    }}
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-md hover:bg-blue-600 transition-colors border-2 border-white cursor-pointer"
+                  >
+                    <CameraOutlined className="text-xs" />
+                  </button>
+                </Tooltip>
+              </div>
+
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadAvatar(file);
+                }}
+              />
+            </div>
+
             <div className="mb-2">
               <h1 className="text-2xl font-black text-gray-900 mb-0">
                 {profile?.fullName || profile?.username || 'Khách hàng'}
@@ -461,14 +547,45 @@ export default function UserProfilePage() {
 
                 <Col xs={24}>
                   <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">
-                    Ảnh đại diện URL
+                    Ảnh đại diện
                   </label>
-                  <Input
-                    value={formData.avatarUrl}
-                    onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                    placeholder="https://..."
-                    className="rounded-xl h-11"
-                  />
+                  <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border border-gray-200 rounded-2xl bg-gray-50/50">
+                    <Avatar
+                      size={64}
+                      src={formData.avatarUrl || profile?.avatarUrl}
+                      icon={<UserOutlined />}
+                      className="border-2 border-blue-400 shrink-0 shadow-sm"
+                    />
+                    <div className="flex-1 w-full space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          icon={<UploadOutlined />}
+                          loading={uploadingAvatar}
+                          onClick={() => editAvatarInputRef.current?.click()}
+                          className="rounded-xl font-medium text-xs h-9 bg-white hover:border-blue-400"
+                        >
+                          Tải ảnh từ máy tính / điện thoại
+                        </Button>
+                        <input
+                          ref={editAvatarInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadAvatar(file);
+                          }}
+                        />
+                        <span className="text-xs text-gray-400">JPG, PNG, WEBP (Tối đa 10MB)</span>
+                      </div>
+                      <Input
+                        value={formData.avatarUrl}
+                        onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
+                        placeholder="Hoặc nhập đường dẫn ảnh (URL) tại đây..."
+                        className="rounded-xl h-10 text-xs"
+                      />
+                    </div>
+                  </div>
                 </Col>
               </Row>
             </div>

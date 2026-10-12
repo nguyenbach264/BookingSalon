@@ -20,6 +20,13 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     List<Booking> getBookingBySalonId(UUID salonId);
 
+    @Query("SELECT b FROM Booking b WHERE b.salon.id = :salonId " +
+           "AND b.startTime >= :startOfDay AND b.startTime < :endOfDay " +
+           "ORDER BY b.startTime ASC")
+    List<Booking> findBySalonIdAndDate(@Param("salonId") UUID salonId,
+                                       @Param("startOfDay") LocalDateTime startOfDay,
+                                       @Param("endOfDay") LocalDateTime endOfDay);
+
     List<Booking> findByStylistId(UUID stylistId);
 
     List<Booking> findByStylistIdAndStatus(UUID stylistId, BookingStatus status);

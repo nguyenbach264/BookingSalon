@@ -13,6 +13,7 @@ import {
   Popconfirm,
   Progress,
   message,
+  Tooltip,
 } from "antd";
 import {
   UserOutlined,
@@ -29,9 +30,76 @@ import {
   ScissorOutlined,
   CheckSquareOutlined,
   MenuOutlined,
+  LeftOutlined,
+  RightOutlined,
 } from "@ant-design/icons";
+import SidebarAccountCard from "../components/SidebarAccountCard";
 import { useAuth } from "../../auth/authProvider";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+
+const TAB_TO_KEY = {
+  overview: "overview",
+  "tong-quan": "overview",
+
+  schedule: "bookings",
+  bookings: "bookings",
+  "lich-hen": "bookings",
+
+  user: "users",
+  users: "users",
+  "khach-hang": "users",
+
+  stylist: "stylists",
+  stylists: "stylists",
+  tho: "stylists",
+
+  service: "services",
+  services: "services",
+  "dich-vu": "services",
+
+  salon: "salons",
+  salons: "salons",
+  "chi-nhanh": "salons",
+
+  voucher: "vouchers",
+  vouchers: "vouchers",
+  "uu-dai": "vouchers",
+
+  stats: "stats",
+  analytics: "stats",
+  "bao-cao": "stats",
+
+  product: "products",
+  products: "products",
+  "san-pham": "products",
+
+  order: "orders",
+  orders: "orders",
+  "don-hang": "orders",
+
+  review: "reviews",
+  reviews: "reviews",
+  "danh-gia": "reviews",
+
+  setting: "settings",
+  settings: "settings",
+  "cai-dat": "settings",
+};
+
+const KEY_TO_TAB = {
+  overview: "overview",
+  bookings: "schedule",
+  users: "user",
+  stylists: "stylist",
+  services: "service",
+  salons: "salon",
+  vouchers: "voucher",
+  stats: "stats",
+  products: "product",
+  orders: "order",
+  reviews: "review",
+  settings: "settings",
+};
 import { getGlobalStatistics, getAllBookings } from "../../service/api/bookingApi";
 import { getUsers, getStylists, updateBookingStatus, getStylistServices } from "../../service/api/adminApi";
 import { getSalons } from "../../service/api/salonApi";
@@ -106,6 +174,7 @@ const STATUS_LABELS = {
 export default function AdminDashboard() {
   const { userInfo, logout } = useAuth();
   const navigate = useNavigate();
+  const { tab } = useParams();
 
   const [stats, setStats] = useState(null);
   const [bookings, setBookings] = useState([]);
@@ -116,7 +185,33 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("overview");
+
+  // Khởi tạo activeSection theo param tab trên URL
+  const initialSection = useMemo(() => {
+    if (tab && TAB_TO_KEY[tab.toLowerCase()]) {
+      return TAB_TO_KEY[tab.toLowerCase()];
+    }
+    return "overview";
+  }, []);
+
+  const [activeSection, setActiveSection] = useState(initialSection);
+
+  // Đồng bộ activeSection khi URL thay đổi (Back / Forward / gõ trực tiếp URL)
+  useEffect(() => {
+    if (tab && TAB_TO_KEY[tab.toLowerCase()]) {
+      setActiveSection(TAB_TO_KEY[tab.toLowerCase()]);
+    } else if (!tab) {
+      setActiveSection("overview");
+    }
+  }, [tab]);
+
+  // Hàm chuyển section kèm cập nhật URL riêng biệt cho từng navbar
+  const handleSelectSection = (key) => {
+    setActiveSection(key);
+    const tabSlug = KEY_TO_TAB[key] || key;
+    navigate(`/admin/dashboard/${tabSlug}`);
+    setMobileOpen(false);
+  };
 
   // Filter & Search states for bookings
   const [bookingSearch, setBookingSearch] = useState("");
@@ -212,8 +307,16 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (activeSection === "products" || activeSection === "orders" || activeSection === "reviews") {
+    loadData();
+    loadProductsAndOrders();
+  }, []);
+
+  useEffect(() => {
+    if (activeSection === "products" || activeSection === "orders" || activeSection === "reviews" || activeSection === "overview" || activeSection === "stats" || activeSection === "users") {
       loadProductsAndOrders();
+    }
+    if (activeSection === "users") {
+      loadDataQuietly();
     }
   }, [activeSection]);
 
@@ -307,12 +410,26 @@ export default function AdminDashboard() {
   };
 
   const handleUpdateOrderStatus = async (orderId, status) => {
+    // Optimistic update để các chỉ số doanh thu, trạng thái cập nhật tức thì
+    setOrders((prev) =>
+      prev.map((o) =>
+        (o.id === orderId || o.orderId === orderId)
+          ? {
+              ...o,
+              status,
+              paymentStatus: status === "DELIVERED" ? "SUCCESS" : o.paymentStatus,
+            }
+          : o
+      )
+    );
+
     try {
       await updateAdminOrderStatus(orderId, status);
       message.success("Đã cập nhật trạng thái đơn hàng!");
-      loadProductsAndOrders();
+      await Promise.allSettled([loadProductsAndOrders(), loadDataQuietly()]);
     } catch {
       message.error("Cập nhật thất bại!");
+      loadProductsAndOrders();
     }
   };
 
@@ -381,12 +498,16 @@ export default function AdminDashboard() {
     }
   };
 
-  // Calculations
+  // Calculations: Total Revenue across both Salon bookings and Shop orders
   const totalRevenue = useMemo(() => {
-    return bookings
+    const bookingRev = bookings
       .filter((b) => b.status === "COMPLETED")
       .reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
-  }, [bookings]);
+    const shopRev = orders
+      .filter((o) => o.status === "DELIVERED" || o.paymentStatus === "SUCCESS" || o.paymentStatus === "PAID")
+      .reduce((sum, o) => sum + (Number(o.finalAmount ?? o.totalAmount) || 0), 0);
+    return bookingRev + shopRev;
+  }, [bookings, orders]);
 
   const pendingCount = useMemo(
     () => stats?.pending ?? stats?.pendingCount ?? bookings.filter((b) => b.status === "PENDING").length,
@@ -445,12 +566,15 @@ export default function AdminDashboard() {
     });
 
     const completedBookings = periodBookings.filter((b) => b.status === "COMPLETED");
-    const validOrders = periodOrders.filter(
-      (o) => o.paymentStatus === "PAID" || o.orderStatus === "DELIVERED" || o.orderStatus === "COMPLETED"
-    );
+    const isOrderPaidOrDelivered = (o) => {
+      const st = String(o.status || o.orderStatus || "").toUpperCase();
+      const ps = String(o.paymentStatus || "").toUpperCase();
+      return st === "DELIVERED" || st === "COMPLETED" || ps === "SUCCESS" || ps === "PAID";
+    };
+    const validOrders = periodOrders.filter(isOrderPaidOrDelivered);
 
     const bookingRevenue = completedBookings.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
-    const orderRev = validOrders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+    const orderRev = validOrders.reduce((sum, o) => sum + (Number(o.finalAmount ?? o.totalAmount) || 0), 0);
     const totalRev = bookingRevenue + orderRev;
 
     const chartData = [];
@@ -467,7 +591,7 @@ export default function AdminDashboard() {
           return d && d.getHours() >= h && d.getHours() < h + 2;
         });
         const bRev = slotBookings.reduce((s, b) => s + (Number(b.totalAmount) || 0), 0);
-        const oRev = slotOrders.reduce((s, o) => s + (Number(o.totalAmount) || 0), 0);
+        const oRev = slotOrders.reduce((s, o) => s + (Number(o.finalAmount ?? o.totalAmount) || 0), 0);
         const bCount = slotBookings.length;
         const oCount = slotOrders.length;
         chartData.push({
@@ -498,7 +622,7 @@ export default function AdminDashboard() {
         });
 
         const bRev = dayBookings.reduce((s, b) => s + (Number(b.totalAmount) || 0), 0);
-        const oRev = dayOrders.reduce((s, o) => s + (Number(o.totalAmount) || 0), 0);
+        const oRev = dayOrders.reduce((s, o) => s + (Number(o.finalAmount ?? o.totalAmount) || 0), 0);
         const bCount = dayBookings.length;
         const oCount = dayOrders.length;
 
@@ -536,7 +660,7 @@ export default function AdminDashboard() {
         });
 
         const bRev = chunkBookings.reduce((s, b) => s + (Number(b.totalAmount) || 0), 0);
-        const oRev = chunkOrders.reduce((s, o) => s + (Number(o.totalAmount) || 0), 0);
+        const oRev = chunkOrders.reduce((s, o) => s + (Number(o.finalAmount ?? o.totalAmount) || 0), 0);
         const bCount = chunkBookings.length;
         const oCount = chunkOrders.length;
 
@@ -563,7 +687,7 @@ export default function AdminDashboard() {
         });
 
         const bRev = monthBookings.reduce((s, b) => s + (Number(b.totalAmount) || 0), 0);
-        const oRev = monthOrders.reduce((s, o) => s + (Number(o.totalAmount) || 0), 0);
+        const oRev = monthOrders.reduce((s, o) => s + (Number(o.finalAmount ?? o.totalAmount) || 0), 0);
         const bCount = monthBookings.length;
         const oCount = monthOrders.length;
 
@@ -912,61 +1036,78 @@ export default function AdminDashboard() {
   ];
 
   const sidebarContent = (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-col items-center py-6 px-4 border-b border-gray-100 bg-white">
-        <div className="w-12 h-12 bg-gradient-to-br from-amber-600 to-amber-500 rounded-2xl flex items-center justify-center mb-2.5 shadow-md">
-          <BankOutlined className="text-white text-2xl" />
+    <div className="flex flex-col h-full bg-white select-none">
+      {/* ── TOP HEADER: Brand Title 'BachBarber' + Toggle '<' button ── */}
+      <div className="flex items-center justify-between px-3.5 py-3.5 border-b border-gray-100 bg-white shrink-0">
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+            <ScissorOutlined />
+          </div>
+          {!collapsed && (
+            <span className="font-extrabold text-base tracking-tight text-gray-900 truncate">
+              BachBarber
+            </span>
+          )}
         </div>
-        <span className="text-gray-900 font-black text-sm tracking-widest uppercase">
-          ADMIN PORTAL
-        </span>
-        <span className="text-gray-400 text-xs font-semibold">BachBarber Hair Salon</span>
+
+        {/* Toggle Collapse Button '<' */}
+        <Tooltip title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}>
+          <Button
+            type="text"
+            size="small"
+            icon={collapsed ? <RightOutlined /> : <LeftOutlined />}
+            onClick={() => {
+              if (mobileOpen) {
+                setMobileOpen(false);
+              } else {
+                setCollapsed(!collapsed);
+              }
+            }}
+            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg w-7 h-7 flex items-center justify-center shrink-0"
+          />
+        </Tooltip>
       </div>
 
-      <div className="flex items-center gap-3 p-4 border-b border-gray-100 bg-slate-50/60">
-        <Avatar
-          size={44}
-          src={userInfo?.avatarUrl}
-          icon={!userInfo?.avatarUrl ? <UserOutlined /> : null}
-          className="border-2 border-amber-500"
+      {/* ── MIDDLE MENU: Navigation Navbar Items ── */}
+      <div className="flex-1 overflow-y-auto no-scrollbar py-2">
+        <Menu
+          mode="inline"
+          selectedKeys={[activeSection]}
+          items={menuItems}
+          onClick={({ key }) => {
+            if (key === "logout") {
+              handleLogout();
+            } else {
+              handleSelectSection(key);
+            }
+          }}
+          className="border-none"
         />
-        <div className="overflow-hidden">
-          <p className="font-bold text-gray-800 text-xs truncate mb-0.5">
-            {userInfo?.fullName || userInfo?.username || "Quản trị viên"}
-          </p>
-          <Tag color="gold" className="text-[10px] font-bold px-1.5 py-0 leading-none">
-            QUẢN TRỊ VIÊN
-          </Tag>
-        </div>
       </div>
 
-      <Menu
-        mode="inline"
-        selectedKeys={[activeSection]}
-        items={menuItems}
-        onClick={({ key }) => {
-          if (key === "logout") {
-            handleLogout();
-          } else {
-            setActiveSection(key);
-            setMobileOpen(false);
-          }
-        }}
-        className="border-none pt-2 flex-1"
+      {/* ── BOTTOM ACCOUNT CARD: User Info & Popover Edit/Logout (ChatGPT style) ── */}
+      <SidebarAccountCard
+        user={userInfo}
+        roleLabel="Quản trị viên"
+        collapsed={collapsed}
+        onLogout={handleLogout}
+        onProfileUpdated={loadDataQuietly}
       />
     </div>
   );
 
   return (
-    <Layout className="min-h-screen bg-gray-50">
-      {/* Desktop Sider */}
+    <Layout className="h-screen overflow-hidden bg-gray-50">
+      {/* Desktop Sider: sticky full height, scrolls independently */}
       <Sider
         width={250}
+        collapsedWidth={76}
         collapsible
+        trigger={null}
         collapsed={collapsed}
         onCollapse={setCollapsed}
         theme="light"
-        className="shadow-md border-r border-gray-100 hidden lg:block"
+        className="shadow-md border-r border-gray-100 hidden lg:block h-screen sticky top-0 left-0 overflow-hidden"
       >
         {sidebarContent}
       </Sider>
@@ -976,17 +1117,17 @@ export default function AdminDashboard() {
         placement="left"
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
         width={260}
         className="lg:hidden"
       >
         {sidebarContent}
       </Drawer>
 
-      {/* Main Content Area */}
-      <Layout>
-        {/* Header */}
-        <Header className="bg-white px-4 sm:px-6 md:px-8 flex items-center justify-between shadow-sm border-b border-gray-100 h-16 sticky top-0 z-30">
+      {/* Main Content Area: flex-1 h-screen flex-col overflow-hidden */}
+      <Layout className="flex-1 h-screen flex flex-col overflow-hidden">
+        {/* Header: sticky top-0 shrink-0 */}
+        <Header className="bg-white px-4 sm:px-6 md:px-8 flex items-center justify-between shadow-sm border-b border-gray-100 h-16 shrink-0 z-30">
           <div className="flex items-center gap-2 sm:gap-3">
             <Button
               type="text"
@@ -1032,8 +1173,8 @@ export default function AdminDashboard() {
           </div>
         </Header>
 
-        {/* Content */}
-        <Content className="p-4 sm:p-6 md:p-8 overflow-y-auto">
+        {/* Content: independently scrollable */}
+        <Content className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center py-32">
               <Spin size="large" tip="Đang tải dữ liệu hệ thống..." />
@@ -1051,13 +1192,15 @@ export default function AdminDashboard() {
                   users={users}
                   salons={salons}
                   stylists={stylists}
+                  services={services}
+                  orders={orders}
                   adminTrendPeriod={adminTrendPeriod}
                   setAdminTrendPeriod={setAdminTrendPeriod}
                   adminTrendMetrics={adminTrendMetrics}
                   completionRate={completionRate}
                   bookings={bookings}
                   BOOKING_COLUMNS={BOOKING_COLUMNS}
-                  setActiveSection={setActiveSection}
+                  setActiveSection={handleSelectSection}
                 />
               )}
 
@@ -1086,7 +1229,9 @@ export default function AdminDashboard() {
                   setUserTierFilter={setUserTierFilter}
                   filteredUsers={filteredUsers}
                   users={users}
-                  USER_COLUMNS={USER_COLUMNS}
+                  bookings={bookings}
+                  orders={orders}
+                  onReloadUsers={loadDataQuietly}
                 />
               )}
 
@@ -1099,6 +1244,8 @@ export default function AdminDashboard() {
                   salons={salons}
                   stylists={stylists}
                   bookings={bookings}
+                  onReloadSalons={loadDataQuietly}
+                  onOpenAddStylistModal={() => handleSelectSection("stylists")}
                 />
               )}
 
@@ -1120,6 +1267,11 @@ export default function AdminDashboard() {
                   setStatsRange={setStatsRange}
                   topServicesData={topServicesData}
                   stylists={stylists}
+                  salons={salons}
+                  bookings={bookings}
+                  orders={orders}
+                  products={products}
+                  productStats={productStats}
                   formatCurrency={formatCurrency}
                 />
               )}

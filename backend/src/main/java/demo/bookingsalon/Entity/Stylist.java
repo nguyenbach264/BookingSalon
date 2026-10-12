@@ -121,7 +121,7 @@ public class Stylist extends BaseUser {
 
     // Thợ làm việc tại Salon nào
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "salon_id", nullable = false)
+    @JoinColumn(name = "salon_id", nullable = true)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private Salon salon;

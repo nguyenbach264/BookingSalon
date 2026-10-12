@@ -25,6 +25,7 @@ import demo.bookingsalon.Entity.User;
 import demo.bookingsalon.Enum.BookingStatus;
 import demo.bookingsalon.Exception.NotFoundException;
 import demo.bookingsalon.Payload.Admin.AdminStylistResponse;
+import demo.bookingsalon.Payload.Admin.EligibleUserResponse;
 import demo.bookingsalon.Payload.Admin.PayrollBookingDetailDTO;
 import demo.bookingsalon.Payload.Admin.PromoteUserToStylistRequest;
 import demo.bookingsalon.Payload.Admin.StylistPayrollDTO;
@@ -134,12 +135,23 @@ public class AdminStylistService {
             }
         }
 
+        // Cập nhật trạng thái người dùng trong database
+        user.setStatus("PROMOTED_TO_STYLIST");
+        userRepository.save(user);
+
+        // Cập nhật vai trò trong Keycloak
         if (user.getKeycloakId() != null) {
             try {
                 roleService.assignRealmRole(user.getKeycloakId(), "STYLIST");
                 log.info("Keycloak role 'STYLIST' assigned to user {}", user.getKeycloakId());
             } catch (Exception e) {
-                log.warn("Không thể cập nhật role Keycloak cho user {}: {}", user.getKeycloakId(), e.getMessage());
+                log.warn("Không thể gán role STYLIST trên Keycloak cho user {}: {}", user.getKeycloakId(), e.getMessage());
+            }
+            try {
+                roleService.removeRealmRole(user.getKeycloakId(), "USER");
+                log.info("Keycloak role 'USER' removed for user {}", user.getKeycloakId());
+            } catch (Exception e) {
+                log.debug("Không thể bỏ role USER trên Keycloak (có thể user không có role này): {}", e.getMessage());
             }
         }
 
@@ -238,6 +250,30 @@ public class AdminStylistService {
         return mapToAdminStylistResponse(updated);
     }
 
+    @Transactional
+    public AdminStylistResponse assignStylistToSalon(UUID stylistId, UUID salonId) {
+        Stylist stylist = stylistRepository.findById(stylistId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy stylist với ID: " + stylistId));
+        Salon salon = salonRepository.findById(salonId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy Salon với ID: " + salonId));
+
+        stylist.setSalon(salon);
+        Stylist saved = stylistRepository.save(stylist);
+        log.info("Assigned stylist {} to salon {}", stylistId, salonId);
+        return mapToAdminStylistResponse(saved);
+    }
+
+    @Transactional
+    public AdminStylistResponse removeStylistFromSalon(UUID stylistId) {
+        Stylist stylist = stylistRepository.findById(stylistId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy stylist với ID: " + stylistId));
+
+        stylist.setSalon(null);
+        Stylist saved = stylistRepository.save(stylist);
+        log.info("Removed stylist {} from salon", stylistId);
+        return mapToAdminStylistResponse(saved);
+    }
+
     @Transactional(readOnly = true)
     public StylistPayrollDTO calculatePayroll(UUID stylistId, LocalDate startDate, LocalDate endDate) {
         Stylist stylist = stylistRepository.findById(stylistId)
@@ -310,7 +346,7 @@ public class AdminStylistService {
     }
 
     @Transactional(readOnly = true)
-    public List<User> getEligibleUsersForPromotion(String search) {
+    public List<EligibleUserResponse> getEligibleUsersForPromotion(String search) {
         String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim().toLowerCase() : "";
         List<User> users = userRepository.findAll();
         Set<UUID> existingStylistKeycloakIds = stylistRepository.findAll().stream()
@@ -320,12 +356,23 @@ public class AdminStylistService {
 
         return users.stream()
                 .filter(u -> !u.isDeleted() && u.isEnabled())
+                .filter(u -> !"PROMOTED_TO_STYLIST".equalsIgnoreCase(u.getStatus()))
                 .filter(u -> u.getKeycloakId() == null || !existingStylistKeycloakIds.contains(u.getKeycloakId()))
                 .filter(u -> cleanSearch.isEmpty() ||
                         (u.getFullName() != null && u.getFullName().toLowerCase().contains(cleanSearch)) ||
                         (u.getPhoneNumber() != null && u.getPhoneNumber().contains(cleanSearch)) ||
                         (u.getEmail() != null && u.getEmail().toLowerCase().contains(cleanSearch)))
                 .limit(50)
+                .map(u -> EligibleUserResponse.builder()
+                        .id(u.getId())
+                        .keycloakId(u.getKeycloakId())
+                        .username(u.getUsername())
+                        .fullName(u.getFullName())
+                        .email(u.getEmail())
+                        .phoneNumber(u.getPhoneNumber())
+                        .avatarUrl(u.getAvatarUrl())
+                        .status(u.getStatus())
+                        .build())
                 .collect(Collectors.toList());
     }
 

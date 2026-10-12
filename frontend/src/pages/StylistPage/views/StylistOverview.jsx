@@ -14,6 +14,7 @@ import {
   Empty,
   Input,
   Tooltip,
+  Modal,
 } from "antd";
 import {
   ClockCircleOutlined,
@@ -25,6 +26,7 @@ import {
   SmileOutlined,
   FireOutlined,
   CalendarOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -87,60 +89,97 @@ export default function StylistOverview({
 }) {
   const [tablePage, setTablePage] = useState({ current: 1, pageSize: 5 });
 
+  // Detail Modal for Stylist Overview KPI Cards
+  const [kpiStylistModalTitle, setKpiStylistModalTitle] = useState("");
+  const [kpiStylistModalOpen, setKpiStylistModalOpen] = useState(false);
+  const [kpiStylistModalList, setKpiStylistModalList] = useState([]);
+
+  const handleOpenStylistKpi = (title, list) => {
+    setKpiStylistModalTitle(title);
+    setKpiStylistModalList(list);
+    setKpiStylistModalOpen(true);
+  };
+
+  const pendingBookings = (allStylistBookings || []).filter((b) => b.status === "PENDING");
+  const confirmedBookings = (allStylistBookings || []).filter((b) => b.status === "CONFIRMED" || b.status === "IN_PROGRESS");
+  const completedBookings = (allStylistBookings || []).filter((b) => b.status === "COMPLETED");
+
   return (
     <div className="space-y-6">
-      {/* KPI Stat Cards */}
+      {/* KPI Stat Cards with Drill-Down */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="rounded-2xl border-gray-100 shadow-sm bg-gradient-to-br from-yellow-50/70 to-white">
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-amber-50/60 group"
+            onClick={() => handleOpenStylistKpi("Danh sách Lịch hẹn Chờ xác nhận", pendingBookings)}
+          >
             <Statistic
               title={<span className="text-xs font-bold uppercase text-amber-700 tracking-wider">Chờ xác nhận</span>}
               value={pendingCount}
               suffix={<span className="text-xs text-gray-400 font-normal">lịch</span>}
               prefix={<ClockCircleOutlined className="text-amber-500 mr-1" />}
-              valueStyle={{ fontWeight: 900, color: "#78350f" }}
+              styles={{ content: { fontWeight: 900, color: "#78350f" } }}
             />
-            <div className="mt-2 text-[11px] text-gray-400">Khách vừa đặt cần xác nhận</div>
+            <div className="mt-2 text-xs text-amber-700 font-medium flex items-center justify-between group-hover:underline">
+              <span>Khách vừa đặt cần xác nhận</span>
+              <EyeOutlined />
+            </div>
           </Card>
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <Card className="rounded-2xl border-gray-100 shadow-sm bg-gradient-to-br from-blue-50/70 to-white">
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-blue-50/60 group"
+            onClick={() => handleOpenStylistKpi("Danh sách Lịch đón tiếp & Cắt tóc", confirmedBookings)}
+          >
             <Statistic
               title={<span className="text-xs font-bold uppercase text-blue-700 tracking-wider">Lịch cắt tóc</span>}
               value={confirmedCount}
               suffix={<span className="text-xs text-gray-400 font-normal">lịch</span>}
               prefix={<ScissorOutlined className="text-blue-500 mr-1" />}
-              valueStyle={{ fontWeight: 900, color: "#1e3a8a" }}
+              styles={{ content: { fontWeight: 900, color: "#1e3a8a" } }}
             />
-            <div className="mt-2 text-[11px] text-blue-600 font-semibold">Đã lên lịch đón tiếp</div>
+            <div className="mt-2 text-xs text-blue-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Đã lên lịch đón tiếp</span>
+              <EyeOutlined />
+            </div>
           </Card>
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <Card className="rounded-2xl border-gray-100 shadow-sm bg-gradient-to-br from-green-50/70 to-white">
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-emerald-50/60 group"
+            onClick={() => handleOpenStylistKpi("Danh sách Lịch hẹn Đã hoàn thành", completedBookings)}
+          >
             <Statistic
               title={<span className="text-xs font-bold uppercase text-green-700 tracking-wider">Đã hoàn thành</span>}
               value={completedCount}
               suffix={<span className="text-xs text-gray-400 font-normal">lượt</span>}
               prefix={<CheckCircleOutlined className="text-green-500 mr-1" />}
-              valueStyle={{ fontWeight: 900, color: "#14532d" }}
+              styles={{ content: { fontWeight: 900, color: "#14532d" } }}
             />
-            <div className="mt-2 text-[11px] text-green-600 font-semibold">Đã hoàn tất thanh toán</div>
+            <div className="mt-2 text-xs text-emerald-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Đã hoàn tất thanh toán</span>
+              <EyeOutlined />
+            </div>
           </Card>
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <Card className="rounded-2xl border-gray-100 shadow-sm bg-gradient-to-br from-amber-50/70 to-white">
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-purple-50/60 group"
+            onClick={() => handleOpenStylistKpi("Danh sách khách hàng đã phục vụ", completedBookings)}
+          >
             <Statistic
-              title={<span className="text-xs font-bold uppercase text-amber-700 tracking-wider">Đánh giá Stylist</span>}
-              value={profile?.totalReviewsCount > 0 ? Number(profile?.ratingAverage).toFixed(1) : "—"}
-              suffix={<span className="text-xs text-amber-500 font-normal">{profile?.totalReviewsCount > 0 ? "/ 5.0" : ""}</span>}
-              prefix={<StarOutlined className="text-amber-500 mr-1" />}
-              valueStyle={{ fontWeight: 900, color: "#b45309" }}
+              title={<span className="text-xs font-bold uppercase text-purple-700 tracking-wider">Đánh giá Stylist</span>}
+              value={profile?.totalReviewsCount > 0 ? Number(profile?.ratingAverage).toFixed(1) : "5.0"}
+              suffix={<span className="text-xs text-purple-400 font-normal">{profile?.totalReviewsCount > 0 ? "/ 5.0" : ""}</span>}
+              prefix={<StarOutlined className="text-purple-500 mr-1" />}
+              styles={{ content: { fontWeight: 900, color: "#581c87" } }}
             />
-            <div className="mt-2 text-[11px] text-gray-400">
-              {profile?.totalReviewsCount > 0 ? `Dựa trên ${profile?.totalReviewsCount} phản hồi thực tế của khách` : "Chưa có đánh giá nào từ khách"}
+            <div className="mt-2 text-xs text-purple-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>{profile?.totalReviewsCount > 0 ? `${profile?.totalReviewsCount} phản hồi` : "Đánh giá xuất sắc"}</span>
+              <EyeOutlined />
             </div>
           </Card>
         </Col>
@@ -533,6 +572,67 @@ export default function StylistOverview({
           })}
         />
       </Card>
+
+      {/* ── MODAL: KPI BOOKINGS DRILL-DOWN ────────────────────── */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 font-bold text-gray-800">
+            <CalendarOutlined className="text-blue-600" />
+            <span>{kpiStylistModalTitle} ({kpiStylistModalList.length})</span>
+          </div>
+        }
+        open={kpiStylistModalOpen}
+        onCancel={() => setKpiStylistModalOpen(false)}
+        footer={null}
+        width={800}
+        centered
+        destroyOnHidden
+      >
+        <div className="mt-4">
+          <Table
+            dataSource={kpiStylistModalList}
+            rowKey={(r) => r.id || r.bookingCode}
+            size="small"
+            pagination={{ pageSize: 6 }}
+            columns={[
+              {
+                title: "Mã lịch",
+                dataIndex: "bookingCode",
+                render: (v) => <span className="font-bold text-xs text-blue-700">{v || "—"}</span>,
+              },
+              {
+                title: "Khách hàng",
+                dataIndex: "customerName",
+                render: (v, r) => (
+                  <div>
+                    <div className="font-semibold text-xs">{v || r.userName || "Khách vãng lai"}</div>
+                    <div className="text-[10px] text-gray-400">📞 {r.customerPhone || r.userPhone || "—"}</div>
+                  </div>
+                ),
+              },
+              {
+                title: "Dịch vụ",
+                dataIndex: "serviceName",
+                render: (v) => <span className="text-xs text-gray-800">{v || "Cắt tóc"}</span>,
+              },
+              {
+                title: "Tổng tiền",
+                dataIndex: "totalAmount",
+                render: (v) => <span className="font-bold text-xs text-emerald-700">{formatCurrency ? formatCurrency(v) : `${v} đ`}</span>,
+              },
+              {
+                title: "Trạng thái",
+                dataIndex: "status",
+                render: (v) => (
+                  <Tag color={v === "COMPLETED" ? "success" : v === "CONFIRMED" ? "processing" : v === "PENDING" ? "gold" : "default"}>
+                    {v}
+                  </Tag>
+                ),
+              },
+            ]}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

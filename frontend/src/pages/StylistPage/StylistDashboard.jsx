@@ -27,9 +27,41 @@ import {
   PlayCircleOutlined,
   MenuOutlined,
   EditOutlined,
+  LeftOutlined,
+  RightOutlined,
 } from "@ant-design/icons";
+import SidebarAccountCard from "../components/SidebarAccountCard";
 import { useAuth } from "../../auth/authProvider";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+
+const STYLIST_TAB_MAP = {
+  dashboard: "dashboard",
+  overview: "dashboard",
+  "tong-quan": "dashboard",
+
+  haircut: "haircut_schedule",
+  schedule: "haircut_schedule",
+  haircut_schedule: "haircut_schedule",
+  "lich-cat": "haircut_schedule",
+
+  appointments: "appointments",
+  bookings: "appointments",
+  "lich-hen": "appointments",
+
+  services: "services",
+  "dich-vu": "services",
+
+  profile: "profile",
+  "ho-so": "profile",
+};
+
+const STYLIST_KEY_TO_TAB = {
+  dashboard: "overview",
+  haircut_schedule: "schedule",
+  appointments: "appointments",
+  services: "services",
+  profile: "profile",
+};
 import notificationWs from "../../service/websocket/notificationWebSocket";
 import {
   getStylistStatistics,
@@ -106,6 +138,7 @@ const STATUS_LABELS = {
 export default function StylistDashboard() {
   const { userInfo, logout } = useAuth();
   const navigate = useNavigate();
+  const { tab } = useParams();
 
   const stylistId = userInfo?.id;
 
@@ -114,7 +147,31 @@ export default function StylistDashboard() {
   const [services, setServices] = useState([]);
   const [allStylistBookings, setAllStylistBookings] = useState([]);
   const [activeTab, setActiveTab] = useState("PENDING");
-  const [activeSection, setActiveSection] = useState("dashboard");
+
+  const initialSection = useMemo(() => {
+    if (tab && STYLIST_TAB_MAP[tab.toLowerCase()]) {
+      return STYLIST_TAB_MAP[tab.toLowerCase()];
+    }
+    return "dashboard";
+  }, []);
+
+  const [activeSection, setActiveSection] = useState(initialSection);
+
+  useEffect(() => {
+    if (tab && STYLIST_TAB_MAP[tab.toLowerCase()]) {
+      setActiveSection(STYLIST_TAB_MAP[tab.toLowerCase()]);
+    } else if (!tab) {
+      setActiveSection("dashboard");
+    }
+  }, [tab]);
+
+  const handleSelectSection = (key) => {
+    setActiveSection(key);
+    const tabSlug = STYLIST_KEY_TO_TAB[key] || key;
+    navigate(`/stylist/dashboard/${tabSlug}`);
+    setMobileOpen(false);
+  };
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -711,61 +768,80 @@ export default function StylistDashboard() {
   };
 
   const sidebarContent = (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-col items-center py-6 px-4 border-b border-gray-100 bg-white">
-        <div className="w-12 h-12 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl flex items-center justify-center mb-2.5 shadow-md">
-          <ScissorOutlined className="text-white text-2xl" />
+    <div className="flex flex-col h-full bg-white select-none">
+      {/* ── TOP HEADER: Brand Title 'BachBarber' + Toggle '<' button ── */}
+      <div className="flex items-center justify-between px-3.5 py-3.5 border-b border-gray-100 bg-white shrink-0">
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+            <ScissorOutlined />
+          </div>
+          {!collapsed && (
+            <span className="font-extrabold text-base tracking-tight text-gray-900 truncate">
+              BachBarber
+            </span>
+          )}
         </div>
-        <span className="text-slate-900 font-black text-sm tracking-widest uppercase">
-          STYLIST PORTAL
-        </span>
-        <span className="text-gray-400 text-xs font-semibold">BachBarber Pro Staff</span>
+
+        {/* Toggle Collapse Button '<' */}
+        <Tooltip title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}>
+          <Button
+            type="text"
+            size="small"
+            icon={collapsed ? <RightOutlined /> : <LeftOutlined />}
+            onClick={() => {
+              if (mobileOpen) {
+                setMobileOpen(false);
+              } else {
+                setCollapsed(!collapsed);
+              }
+            }}
+            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg w-7 h-7 flex items-center justify-center shrink-0"
+          />
+        </Tooltip>
       </div>
 
-      <div className="flex items-center gap-3 p-4 border-b border-gray-100 bg-slate-50/60">
-        <Avatar
-          size={48}
-          src={profile?.avatarUrl || userInfo?.avatarUrl}
-          icon={<UserOutlined />}
-          className="border-2 border-slate-700"
+      {/* ── MIDDLE MENU: Navigation Navbar Items ── */}
+      <div className="flex-1 overflow-y-auto no-scrollbar py-2">
+        <Menu
+          mode="inline"
+          selectedKeys={[activeSection]}
+          items={menuItems}
+          onClick={({ key }) => {
+            if (key === "logout") {
+              handleLogout();
+            } else {
+              handleSelectSection(key);
+            }
+          }}
+          className="border-none"
         />
-        <div className="overflow-hidden">
-          <p className="font-bold text-gray-900 text-xs truncate mb-0.5">
-            {profile?.fullName || userInfo?.fullName || userInfo?.username || "Stylist"}
-          </p>
-          <Tag color="geekblue" className="text-[10px] font-bold px-1.5 py-0 leading-none">
-            {profile?.levelRank || "SENIOR"} STYLIST
-          </Tag>
-        </div>
       </div>
 
-      <Menu
-        mode="inline"
-        selectedKeys={[activeSection]}
-        items={menuItems}
-        onClick={({ key }) => {
-          if (key === "logout") {
-            handleLogout();
-          } else {
-            setActiveSection(key);
-            setMobileOpen(false);
-          }
-        }}
-        className="border-none pt-2 flex-1"
+      {/* ── BOTTOM ACCOUNT CARD: Stylist Info & Popover Edit/Logout (ChatGPT style) ── */}
+      <SidebarAccountCard
+        user={userInfo}
+        roleLabel={profile?.levelRank ? `${profile.levelRank} Stylist` : "Stylist"}
+        collapsed={collapsed}
+        onLogout={handleLogout}
+        onProfileUpdated={loadAllDataQuietly}
+        isStylist={true}
+        stylistProfile={profile}
       />
     </div>
   );
 
   return (
-    <Layout className="min-h-screen bg-gray-50">
-      {/* Desktop Sider */}
+    <Layout className="h-screen overflow-hidden bg-gray-50">
+      {/* Desktop Sider: sticky full height, scrolls independently */}
       <Sider
         width={250}
+        collapsedWidth={76}
         collapsible
+        trigger={null}
         collapsed={collapsed}
         onCollapse={setCollapsed}
         theme="light"
-        className="shadow-md border-r border-gray-100 hidden lg:block"
+        className="shadow-md border-r border-gray-100 hidden lg:block h-screen sticky top-0 left-0 overflow-hidden"
       >
         {sidebarContent}
       </Sider>
@@ -775,17 +851,17 @@ export default function StylistDashboard() {
         placement="left"
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
         width={260}
         className="lg:hidden"
       >
         {sidebarContent}
       </Drawer>
 
-      {/* Main Content Layout */}
-      <Layout>
+      {/* Main Content Layout: flex-1 h-screen flex-col overflow-hidden */}
+      <Layout className="flex-1 h-screen flex flex-col overflow-hidden">
         {/* Header */}
-        <Header className="bg-white/85 backdrop-blur-md px-4 sm:px-6 md:px-8 flex items-center justify-between shadow-xs border-b border-gray-100 h-16 sticky top-0 z-30">
+        <Header className="bg-white/85 backdrop-blur-md px-4 sm:px-6 md:px-8 flex items-center justify-between shadow-xs border-b border-gray-100 h-16 shrink-0 z-30">
           <div className="flex items-center gap-2 sm:gap-3">
             <Button
               type="text"
@@ -871,7 +947,7 @@ export default function StylistDashboard() {
           </div>
         </Header>
 
-        <Content className="p-4 sm:p-6 md:p-8 overflow-y-auto">
+        <Content className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center py-32">
               <Spin size="large" tip="Đang tải dữ liệu stylist..." />
@@ -945,6 +1021,9 @@ export default function StylistDashboard() {
                   profile={profile}
                   userInfo={userInfo}
                   formatCurrency={formatCurrency}
+                  onAvatarUpdated={(newAvatarUrl) => {
+                    setProfile((prev) => (prev ? { ...prev, avatarUrl: newAvatarUrl } : prev));
+                  }}
                 />
               )}
 

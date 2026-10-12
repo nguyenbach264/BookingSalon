@@ -180,9 +180,12 @@ public class AdminShopController {
         long active = allProducts.stream().filter(p -> p.isActive() && p.getDeletedAt() == null).count();
         long outOfStock = allProducts.stream().filter(p -> p.getDeletedAt() == null && (p.getStockQuantity() == null || p.getStockQuantity() <= 0)).count();
 
-        List<Order> deliveredOrders = orderRepository.findByStatusOrderByCreatedAtDesc(OrderStatus.DELIVERED);
+        List<Order> deliveredOrders = orderRepository.findAll().stream()
+                .filter(o -> o.getStatus() == OrderStatus.DELIVERED ||
+                             (o.getPaymentStatus() != null && o.getPaymentStatus().isPaid()))
+                .toList();
         BigDecimal totalRevenue = deliveredOrders.stream()
-                .map(Order::getFinalAmount)
+                .map(o -> o.getFinalAmount() != null ? o.getFinalAmount() : o.getTotalAmount())
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

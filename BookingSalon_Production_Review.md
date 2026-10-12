@@ -211,7 +211,7 @@ De bi brute-force va DDoS.
 ```properties
 spring.jpa.show-sql=true                               # In SQL ra log production!
 logging.level.demo.bookingsalon.payment=DEBUG          # DEBUG level production!
-```
+``` 
 
 SQL logging va DEBUG level se gay log flood, tiet lo thong tin nhay cam va anh huong performance.
 
@@ -1048,3 +1048,4 @@ phu hop cho salon chain vua va nho (duoi 10 chi nhanh, duoi 500 concurrent users
 *Review duoc thuc hien dua tren phan tich static code, database design spec va cac tai lieu
 thiet ke he thong. Mot so van de co the da duoc xu ly o runtime hoac moi truong deploy
 thuc te.*
+

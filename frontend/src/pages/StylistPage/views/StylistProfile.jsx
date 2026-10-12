@@ -1,18 +1,119 @@
-import React from "react";
-import { Card, Avatar, Tag } from "antd";
-import { UserOutlined } from "@ant-design/icons";
+import React, { useState, useRef } from "react";
+import { Card, Avatar, Tag, Button, message, Spin, Tooltip } from "antd";
+import { UserOutlined, CameraOutlined, UploadOutlined, LoadingOutlined } from "@ant-design/icons";
+import { uploadStylistAvatar } from "../../../service/api/adminApi";
+import { useAuth } from "../../../auth/authProvider";
 
-export default function StylistProfile({ profile, userInfo, formatCurrency }) {
+export default function StylistProfile({ profile, userInfo, formatCurrency, onAvatarUpdated }) {
+  const { checkCurrentSession } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const stylistId = profile?.id || userInfo?.id;
+  const currentAvatar = profile?.avatarUrl || userInfo?.avatarUrl;
+
+  const handleAvatarClick = () => {
+    if (uploading) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      message.error("Vui lòng chọn định dạng file hình ảnh (JPG, PNG, WEBP)!");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      message.error("Kích thước ảnh tối đa là 10MB!");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const res = await uploadStylistAvatar(stylistId, file);
+      const newAvatarUrl = res.avatarUrl;
+
+      message.success("Cập nhật ảnh đại diện Stylist thành công!");
+      if (onAvatarUpdated) {
+        onAvatarUpdated(newAvatarUrl);
+      }
+      if (checkCurrentSession) {
+        await checkCurrentSession();
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải ảnh đại diện stylist:", err);
+      message.error(err?.response?.data?.message || "Tải ảnh đại diện thất bại. Vui lòng thử lại!");
+    } finally {
+      setUploading(false);
+      // Reset input value để cho phép chọn lại cùng 1 file nếu muốn
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <div className="max-w-4xl space-y-6">
       <Card className="rounded-2xl border-gray-100 shadow-sm overflow-hidden p-6">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 border-b border-gray-100">
-          <Avatar
-            size={96}
-            src={profile?.avatarUrl || userInfo?.avatarUrl}
-            icon={<UserOutlined />}
-            className="border-4 border-amber-500 shadow-lg"
-          />
+          {/* Avatar Area with Upload Trigger */}
+          <div className="relative group cursor-pointer flex flex-col items-center">
+            <div className="relative" onClick={handleAvatarClick}>
+              <Avatar
+                size={100}
+                src={currentAvatar}
+                icon={<UserOutlined />}
+                className="border-4 border-amber-500 shadow-lg transition-transform duration-200 group-hover:scale-105"
+              />
+              {uploading ? (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                  <Spin indicator={<LoadingOutlined style={{ fontSize: 28, color: "#fff" }} spin />} />
+                </div>
+              ) : (
+                <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs font-medium">
+                  <CameraOutlined className="text-xl mb-1" />
+                  <span>Đổi ảnh</span>
+                </div>
+              )}
+              <Tooltip title="Chọn ảnh từ máy tính hoặc điện thoại">
+                <button
+                  type="button"
+                  aria-label="Cập nhật ảnh đại diện"
+                  disabled={uploading}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAvatarClick();
+                  }}
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-md hover:bg-amber-600 transition-colors border-2 border-white cursor-pointer"
+                >
+                  <CameraOutlined className="text-sm" />
+                </button>
+              </Tooltip>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+
+            <Button
+              type="link"
+              size="small"
+              icon={<UploadOutlined />}
+              loading={uploading}
+              onClick={handleAvatarClick}
+              className="mt-2 text-xs text-amber-600 font-medium hover:text-amber-700 p-0 h-auto"
+            >
+              {uploading ? "Đang tải ảnh..." : "Tải ảnh từ thiết bị"}
+            </Button>
+          </div>
+
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
               <h2 className="text-2xl font-black text-gray-900 mb-0">

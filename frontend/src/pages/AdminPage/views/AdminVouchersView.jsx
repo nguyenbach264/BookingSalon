@@ -18,7 +18,10 @@ import {
   PlusOutlined,
   PercentageOutlined,
   TagOutlined,
+  EyeOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
+import { Tag } from "antd";
 
 const { Option } = Select;
 
@@ -32,6 +35,21 @@ export default function AdminVouchersView({
   creatingVoucher,
 }) {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 8 });
+
+  // Detail Modal for Voucher KPI Cards
+  const [kpiVoucherModalTitle, setKpiVoucherModalTitle] = useState("");
+  const [kpiVoucherModalOpen, setKpiVoucherModalOpen] = useState(false);
+  const [kpiVoucherModalList, setKpiVoucherModalList] = useState([]);
+
+  const handleOpenVoucherKpi = (title, list) => {
+    setKpiVoucherModalTitle(title);
+    setKpiVoucherModalList(list);
+    setKpiVoucherModalOpen(true);
+  };
+
+  const activeVouchers = (vouchers || []).filter((v) => v.isActive);
+  const usedVouchers = (vouchers || []).filter((v) => (v.usedCount || 0) > 0);
+  const publicVouchers = (vouchers || []).filter((v) => v.isPublic);
 
   return (
     <div className="space-y-6">
@@ -57,44 +75,61 @@ export default function AdminVouchersView({
         </Button>
       </div>
 
-      {/* Summary KPI Cards */}
+      {/* Summary KPI Cards with Drill-Down */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={8}>
-          <Card className="rounded-2xl border-gray-100 shadow-sm bg-gradient-to-br from-purple-50/70 to-white">
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-purple-50/60 group"
+            onClick={() => handleOpenVoucherKpi("Tất cả Voucher trong hệ thống", vouchers || [])}
+          >
             <Statistic
               title={<span className="text-xs font-bold uppercase text-purple-700 tracking-wider">Tổng số Voucher</span>}
-              value={vouchers.length}
+              value={(vouchers || []).length}
+              suffix={<span className="text-xs text-gray-400 font-normal">mã</span>}
               prefix={<GiftOutlined className="text-purple-500 mr-1" />}
-              valueStyle={{ fontWeight: 900, color: "#581c87" }}
+              styles={{ content: { fontWeight: 900, color: "#581c87" } }}
             />
-            <div className="mt-2 text-xs text-purple-600 font-medium">
-              {vouchers.filter((v) => v.isActive).length} voucher đang có hiệu lực
+            <div className="mt-2 text-xs text-purple-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>{activeVouchers.length} voucher đang có hiệu lực</span>
+              <EyeOutlined />
             </div>
           </Card>
         </Col>
+
         <Col xs={24} sm={8}>
-          <Card className="rounded-2xl border-gray-100 shadow-sm bg-gradient-to-br from-rose-50/70 to-white">
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-rose-50/60 group"
+            onClick={() => handleOpenVoucherKpi("Danh sách Voucher đã phát sinh lượt dùng", usedVouchers)}
+          >
             <Statistic
               title={<span className="text-xs font-bold uppercase text-rose-700 tracking-wider">Tổng lượt đã sử dụng</span>}
-              value={vouchers.reduce((sum, v) => sum + (v.usedCount || 0), 0)}
+              value={(vouchers || []).reduce((sum, v) => sum + (v.usedCount || 0), 0)}
+              suffix={<span className="text-xs text-gray-400 font-normal">lượt</span>}
               prefix={<PercentageOutlined className="text-rose-500 mr-1" />}
-              valueStyle={{ fontWeight: 900, color: "#9f1239" }}
+              styles={{ content: { fontWeight: 900, color: "#9f1239" } }}
             />
-            <div className="mt-2 text-xs text-rose-600 font-medium">
-              Áp dụng thành công cho khách hàng
+            <div className="mt-2 text-xs text-rose-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Áp dụng thành công cho khách</span>
+              <EyeOutlined />
             </div>
           </Card>
         </Col>
+
         <Col xs={24} sm={8}>
-          <Card className="rounded-2xl border-gray-100 shadow-sm bg-gradient-to-br from-blue-50/70 to-white">
+          <Card
+            className="rounded-2xl border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer bg-blue-50/60 group"
+            onClick={() => handleOpenVoucherKpi("Danh sách Voucher Công khai", publicVouchers)}
+          >
             <Statistic
               title={<span className="text-xs font-bold uppercase text-blue-700 tracking-wider">Voucher Công khai</span>}
-              value={vouchers.filter((v) => v.isPublic).length}
+              value={publicVouchers.length}
+              suffix={<span className="text-xs text-gray-400 font-normal">mã</span>}
               prefix={<TagOutlined className="text-blue-500 mr-1" />}
-              valueStyle={{ fontWeight: 900, color: "#1e3a8a" }}
+              styles={{ content: { fontWeight: 900, color: "#1e3a8a" } }}
             />
-            <div className="mt-2 text-xs text-blue-600 font-medium">
-              Khách hàng có thể tự chọn tại trang thanh toán
+            <div className="mt-2 text-xs text-blue-600 font-medium flex items-center justify-between group-hover:underline">
+              <span>Khách có thể tự chọn khi đặt chỗ</span>
+              <EyeOutlined />
             </div>
           </Card>
         </Col>
@@ -271,6 +306,32 @@ export default function AdminVouchersView({
             </Button>
           </div>
         </Form>
+      </Modal>
+
+      {/* ── MODAL: KPI VOUCHERS DRILL-DOWN ────────────────────── */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 font-bold text-gray-800">
+            <GiftOutlined className="text-purple-600" />
+            <span>{kpiVoucherModalTitle} ({kpiVoucherModalList.length})</span>
+          </div>
+        }
+        open={kpiVoucherModalOpen}
+        onCancel={() => setKpiVoucherModalOpen(false)}
+        footer={null}
+        width={800}
+        centered
+        destroyOnHidden
+      >
+        <div className="mt-4">
+          <Table
+            dataSource={kpiVoucherModalList}
+            columns={VOUCHER_COLUMNS}
+            rowKey="id"
+            size="small"
+            pagination={{ pageSize: 6 }}
+          />
+        </div>
       </Modal>
     </div>
   );

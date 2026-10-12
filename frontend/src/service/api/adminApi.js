@@ -11,6 +11,18 @@ export const getUsers = () =>
 export const getUserById = (id) =>
   api.get(`/users/${id}`).then((r) => r.data);
 
+export const getUserDetailSummary = (id) =>
+  api.get(`/users/${id}/details`).then((r) => r.data);
+
+export const updateUser = (id, data) =>
+  api.put(`/users/${id}`, data).then((r) => r.data);
+
+export const resetUserPassword = (id, newPassword) =>
+  api.put(`/users/${id}/reset-password`, { newPassword }).then((r) => r.data);
+
+export const deleteUser = (id) =>
+  api.delete(`/users/${id}`).then((r) => r.data);
+
 export const getStylists = () =>
   api.get("/stylists").then((r) => r.data);
 
@@ -22,6 +34,14 @@ export const getStylistServices = (id) =>
 
 export const updateStylistDutyStatus = (id, active) =>
   api.put(`/stylists/${id}/duty-status`, { active }).then((r) => r.data);
+
+export const uploadStylistAvatar = (id, file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post(`/stylists/${id}/avatar`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then((r) => r.data);
+};
 
 export const updateBookingStatus = (bookingId, status) =>
   api.post(`/booking/${bookingId}?status=${status}`).then((r) => r.data);
@@ -82,6 +102,12 @@ export const getStylistPayroll = (id, params = {}) =>
 
 export const getEligibleUsersForPromotion = (params = {}) =>
   api.get('/admin/stylists/eligible-users', { params }).then((r) => r.data);
+
+export const assignStylistToSalon = (stylistId, salonId) =>
+  api.put(`/admin/stylists/${stylistId}/salon`, { salonId }).then((r) => r.data);
+
+export const removeStylistFromSalon = (stylistId) =>
+  api.delete(`/admin/stylists/${stylistId}/salon`).then((r) => r.data);
 
 // ─────────────────────────────────────────────────────────────
 // ADMIN SERVICE MANAGEMENT APIS

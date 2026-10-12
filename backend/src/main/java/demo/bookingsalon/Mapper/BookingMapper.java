@@ -28,6 +28,7 @@ public interface BookingMapper {
     @Mapping(target = "stylistId", source = "stylist.id")
     @Mapping(target = "stylistName", source = "stylist.fullName")
     @Mapping(target = "serviceIds", source = "bookingDetails", qualifiedByName = "mapServiceIds")
+    @Mapping(target = "serviceNames", source = "bookingDetails", qualifiedByName = "mapServiceNames")
     @Mapping(target = "totalServices", source = "bookingDetails", qualifiedByName = "mapTotalServices")
     @Mapping(target = "isReviewed", source = "reviewed")
     @Mapping(target = "createdAt", source = "createdAt")
@@ -40,6 +41,15 @@ public interface BookingMapper {
                 .filter(d -> d.getServiceOffering() != null)
                 .map(d -> d.getServiceOffering().getId())
                 .collect(Collectors.toSet());
+    }
+
+    @Named("mapServiceNames")
+    default List<String> mapServiceNames(List<BookingDetail> details) {
+        if (details == null) return Collections.emptyList();
+        return details.stream()
+                .filter(d -> d.getServiceOffering() != null && d.getServiceOffering().getName() != null)
+                .map(d -> d.getServiceOffering().getName())
+                .collect(Collectors.toList());
     }
 
     @Named("mapTotalServices")

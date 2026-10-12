@@ -75,6 +75,17 @@ const AdminServiceManager = () => {
   const [serviceForm] = Form.useForm();
   const [suspendForm] = Form.useForm();
 
+  // KPI Detail Modal
+  const [kpiServiceModalTitle, setKpiServiceModalTitle] = useState("");
+  const [kpiServiceModalVisible, setKpiServiceModalVisible] = useState(false);
+  const [kpiServiceModalList, setKpiServiceModalList] = useState([]);
+
+  const handleOpenServiceKpi = (title, list) => {
+    setKpiServiceModalTitle(title);
+    setKpiServiceModalList(list);
+    setKpiServiceModalVisible(true);
+  };
+
   const fetchServices = useCallback(async () => {
     setLoading(true);
     try {
@@ -360,33 +371,39 @@ const AdminServiceManager = () => {
     <div className="space-y-6">
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={8}>
-          <Card className="rounded-xl border border-blue-100 shadow-sm bg-gradient-to-br from-blue-50 to-white">
-            <Statistic
-              title={<span className="text-gray-600 font-semibold">Tổng số Dịch vụ</span>}
-              value={totalCount}
-              prefix={<AppstoreOutlined className="text-blue-600 mr-2" />}
-              valueStyle={{ color: "#1d4ed8", fontWeight: "bold" }}
-            />
+          <Card
+            className="rounded-2xl border border-blue-100 shadow-sm bg-blue-50/40 cursor-pointer hover:shadow-md transition-all group"
+            onClick={() => handleOpenServiceKpi("Tất cả Dịch vụ trong hệ thống", services)}
+          >
+            <div className="text-xs font-semibold text-gray-500 mb-2">Tổng số Dịch vụ</div>
+            <div className="flex items-center gap-3">
+              <AppstoreOutlined className="text-blue-600 text-2xl" />
+              <span className="text-3xl font-black text-blue-700">{totalCount}</span>
+            </div>
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card className="rounded-xl border border-emerald-100 shadow-sm bg-gradient-to-br from-emerald-50 to-white">
-            <Statistic
-              title={<span className="text-gray-600 font-semibold">Đang hoạt động bình thường</span>}
-              value={activeCount}
-              prefix={<PlayCircleOutlined className="text-emerald-600 mr-2" />}
-              valueStyle={{ color: "#047857", fontWeight: "bold" }}
-            />
+          <Card
+            className="rounded-2xl border border-emerald-100 shadow-sm bg-emerald-50/40 cursor-pointer hover:shadow-md transition-all group"
+            onClick={() => handleOpenServiceKpi("Dịch vụ Đang hoạt động bình thường", services.filter(s => !s.isCurrentlySuspended))}
+          >
+            <div className="text-xs font-semibold text-gray-500 mb-2">Đang hoạt động bình thường</div>
+            <div className="flex items-center gap-3">
+              <PlayCircleOutlined className="text-emerald-600 text-2xl" />
+              <span className="text-3xl font-black text-emerald-700">{activeCount}</span>
+            </div>
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card className="rounded-xl border border-amber-100 shadow-sm bg-gradient-to-br from-amber-50 to-white">
-            <Statistic
-              title={<span className="text-gray-600 font-semibold">Đang tạm dừng theo lịch</span>}
-              value={suspendedCount}
-              prefix={<PauseCircleOutlined className="text-amber-600 mr-2" />}
-              valueStyle={{ color: "#b45309", fontWeight: "bold" }}
-            />
+          <Card
+            className="rounded-2xl border border-amber-100 shadow-sm bg-amber-50/40 cursor-pointer hover:shadow-md transition-all group"
+            onClick={() => handleOpenServiceKpi("Dịch vụ Đang tạm dừng theo lịch", services.filter(s => s.isCurrentlySuspended))}
+          >
+            <div className="text-xs font-semibold text-gray-500 mb-2">Đang tạm dừng theo lịch</div>
+            <div className="flex items-center gap-3">
+              <PauseCircleOutlined className="text-amber-600 text-2xl" />
+              <span className="text-3xl font-black text-amber-700">{suspendedCount}</span>
+            </div>
           </Card>
         </Col>
       </Row>
@@ -740,6 +757,52 @@ const AdminServiceManager = () => {
             },
           ]}
         />
+      </Modal>
+
+      {/* ── KPI SERVICES LIST DRILL-DOWN MODAL ── */}
+      <Modal
+        title={<span className="font-bold text-gray-800">{kpiServiceModalTitle} ({kpiServiceModalList.length})</span>}
+        open={kpiServiceModalVisible}
+        onCancel={() => setKpiServiceModalVisible(false)}
+        footer={null}
+        width={800}
+        centered
+        destroyOnClose
+      >
+        <div className="mt-4">
+          <Table
+            dataSource={kpiServiceModalList}
+            rowKey={(r) => r.id || r.serviceName}
+            size="small"
+            pagination={{ pageSize: 6 }}
+            columns={[
+              {
+                title: "Tên Dịch vụ",
+                dataIndex: "serviceName",
+                render: (v) => <span className="font-bold text-xs text-gray-900">{v}</span>,
+              },
+              {
+                title: "Thời lượng",
+                dataIndex: "duration",
+                render: (v) => <span className="text-xs text-gray-600">{v ? `${v} phút` : "30 phút"}</span>,
+              },
+              {
+                title: "Giá dịch vụ",
+                dataIndex: "price",
+                render: (v) => <span className="font-bold text-xs text-amber-700">{Number(v || 0).toLocaleString("vi-VN")} ₫</span>,
+              },
+              {
+                title: "Trạng thái",
+                dataIndex: "isCurrentlySuspended",
+                render: (v) => (
+                  <Tag color={v ? "warning" : "success"}>
+                    {v ? "Đang tạm dừng" : "Đang hoạt động"}
+                  </Tag>
+                ),
+              },
+            ]}
+          />
+        </div>
       </Modal>
     </div>
   );

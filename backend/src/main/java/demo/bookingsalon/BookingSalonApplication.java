@@ -12,12 +12,6 @@ import jakarta.annotation.PostConstruct;
 import java.util.TimeZone;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {
-        "demo.bookingsalon",
-        "demo.bookingsalon.Enum",
-        "demo.bookingsalon.Configuration",
-        "demo.bookingsalon.Controller"
-})
 @EnableScheduling
 @EnableRetry
 @EnableTransactionManagement

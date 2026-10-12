@@ -138,6 +138,7 @@ public class PaymentWebhookService {
         log.info("Processing VNPay callback for Shop Order: txnRef={}, responseCode={}", txnRef, responseCode);
 
         Order order = orderRepository.findByVnpayTxnRef(txnRef)
+                .or(() -> orderRepository.findByOrderCode(txnRef))
                 .orElseThrow(() -> new NotFoundException("Shop order not found with VNPay txnRef: " + txnRef));
 
         if (order.getPaymentStatus() != null && order.getPaymentStatus().isPaid()) {
@@ -146,24 +147,24 @@ public class PaymentWebhookService {
         }
 
         if ("00".equals(responseCode)) {
-            // Thanh toán thành công
+            // Thanh toán thành công -> Chuyển thẳng sang trạng thái Đang giao hàng (SHIPPING)
             order.setPaymentStatus(PaymentStatus.SUCCESS);
-            order.setStatus(OrderStatus.CONFIRMED);
+            order.setStatus(OrderStatus.SHIPPING);
             orderRepository.save(order);
-            log.info("Shop order {} paid successfully via VNPay, txnRef={}", order.getOrderCode(), txnRef);
+            log.info("Shop order {} paid successfully via VNPay, set status to SHIPPING, txnRef={}", order.getOrderCode(), txnRef);
 
             // Real-time notification via WebSocket
             try {
                 notificationWebSocketHandler.sendToUser(order.getUser().getId(), Map.of(
-                        "type", "ORDER_PAID",
+                        "type", "ORDER_SHIPPING",
                         "orderCode", order.getOrderCode(),
-                        "message", "Thanh toán VNPay thành công cho đơn hàng " + order.getOrderCode()
+                        "message", "Thanh toán VNPay thành công cho đơn hàng #" + order.getOrderCode() + ". Đơn hàng đang được chuẩn bị và chuyển sang trạng thái Đang giao hàng!"
                 ));
             } catch (Exception e) {
                 log.warn("Failed to send WebSocket notification for order {}: {}", order.getOrderCode(), e.getMessage());
             }
 
-            return buildResponse(1, "Order payment successful");
+            return buildResponse(1, "Order payment successful - Order set to SHIPPING");
         } else {
             // Thanh toán thất bại
             order.setPaymentStatus(PaymentStatus.FAILED);

@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import ShopPage from "../ShopPage/main";
 import ProductDetailPage from '../ShopPage/ProductDetailPage';
 import CheckoutPage from "../CheckoutPage/main";
@@ -16,12 +16,15 @@ import ProtectedRoute from "./ProtectedRoute";
 import OAuth2CallbackPage from "../Auth/OAuth2CallbackPage";
 import StylistDashboard from "../StylistPage/StylistDashboard";
 import AdminDashboard from "../AdminPage/AdminDashboard";
+import SalonDetailPage from "../AdminPage/views/SalonDetailPage";
 import LoginPage from "../ShopPage/LoginPage";
 import RegisterPage from "../ShopPage/RegisterPage";
 import UserProfilePage from "../UserPage/UserProfilePage";
 import MyBookingsPage from "../UserPage/MyBookingsPage";
 import MyOrdersPage from "../UserPage/MyOrdersPage";
 import PaymentResultPage from "../PaymentPage/PaymentResultPage";
+import VnPaySandboxSimulatorPage from "../PaymentPage/VnPaySandboxSimulatorPage";
+import ErrorPage from "../ErrorPage";
 import { useAuth } from "../../auth/authProvider";
 
 function AppRoutes() {
@@ -114,13 +117,19 @@ function AppRoutes() {
         {/* VNPay Payment Result page — public, no auth required */}
         <Route path="/payment/result" element={<PaymentResultPage />} />
 
+        {/* VNPay Sandbox Simulator gateway — public simulator page */}
+        <Route path="/payment/vnpay-sandbox-simulator" element={<VnPaySandboxSimulatorPage />} />
+
         {/* ── STYLIST ROUTES ─────────────────────────────────── */}
         <Route
           path="/stylist/*"
           element={
             <ProtectedRoute roles={["STYLIST"]}>
               <Routes>
+                <Route path="" element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<StylistDashboard />} />
+                <Route path="dashboard/:tab" element={<StylistDashboard />} />
+                <Route path="*" element={<ErrorPage customError={{ status: 404, message: 'Đường dẫn stylist không tồn tại.' }} />} />
               </Routes>
             </ProtectedRoute>
           }
@@ -132,7 +141,12 @@ function AppRoutes() {
           element={
             <ProtectedRoute roles={["ADMIN"]}>
               <Routes>
+                <Route path="" element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="dashboard/:tab" element={<AdminDashboard />} />
+                <Route path="salons/:salonId" element={<SalonDetailPage />} />
+                <Route path="salon/:salonId" element={<SalonDetailPage />} />
+                <Route path="*" element={<ErrorPage customError={{ status: 404, message: 'Đường dẫn trong trang quản trị không tồn tại.' }} />} />
               </Routes>
             </ProtectedRoute>
           }
@@ -147,6 +161,12 @@ function AppRoutes() {
             </div>
           }
         />
+
+        {/* Dedicated Error route */}
+        <Route path="/error" element={<ErrorPage />} />
+
+        {/* 404 / Catch-all route */}
+        <Route path="*" element={<ErrorPage customError={{ status: 404, message: 'Đường dẫn bạn yêu cầu không tồn tại.' }} />} />
       </Routes>
     </>
   );

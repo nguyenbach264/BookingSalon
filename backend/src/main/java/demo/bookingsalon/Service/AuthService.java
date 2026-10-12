@@ -206,6 +206,16 @@ public class AuthService {
                     .phoneNumber(user.getPhoneNumber())
                     .avatarUrl(resolveAvatar(user.getAvatarUrl(), user.getFullName(), user.getUsername()))
                     .role(role)
+                    .gender(user.getGender())
+                    .address(user.getAddress())
+                    .city(user.getCity())
+                    .district(user.getDistrict())
+                    .ward(user.getWard())
+                    .membershipTier(user.getMembershipTier())
+                    .emailVerified(user.isEmailVerified())
+                    .phoneVerified(user.isPhoneVerified())
+                    .voucherCode(user.getVoucherCode())
+                    .createdAt(user.getCreatedAt())
                     .build();
 
             return AuthResponse.builder()
@@ -321,7 +331,7 @@ public class AuthService {
                 userRep.setLastName(String.join(" ", Arrays.copyOf(nameParts, nameParts.length - 1)));
         }
         userRep.setEnabled(true);
-        userRep.setEmailVerified(true);
+        userRep.setEmailVerified(false);
         userRep.setCredentials(Collections.singletonList(credential));
 
         Response keycloakResponse = keycloak.realm(realm).users().create(userRep);
@@ -353,6 +363,7 @@ public class AuthService {
                     .phoneNumber(request.getPhoneNumber())
                     .address(request.getAddress())
                     .avatarUrl(resolvedAvatar)
+                    .emailVerified(false)
                     .enabled(true)
                     .build();
 
