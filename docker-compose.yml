@@ -78,11 +78,11 @@ services:
     networks:
       - bookingsalon_net
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080; echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q '200 OK' <&3"]
-      interval: 15s
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3"]
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 40s
+      start_period: 45s
 
   # ========================================================
   # 4. BACKEND: Spring Boot 3.5.3 (BFF Server)
