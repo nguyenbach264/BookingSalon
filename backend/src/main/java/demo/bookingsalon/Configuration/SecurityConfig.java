@@ -1,6 +1,7 @@
 package demo.bookingsalon.Configuration;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 public class SecurityConfig {
 
     private final BffSessionService bffSessionService;
+    private final demo.bookingsalon.Security.RateLimit.IpRateLimitingFilter ipRateLimitingFilter;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
@@ -59,11 +61,12 @@ public class SecurityConfig {
                     "/v3/api-docs/**"
                 )
             )
+            .addFilterBefore(ipRateLimitingFilter, BasicAuthenticationFilter.class)
             .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
             .cors(Customizer.withDefaults())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .sessionFixation().none()
+                .sessionFixation(sessionFixation -> sessionFixation.none())
             )
             .authorizeHttpRequests(auth -> auth
                 // Endpoint công khai
@@ -101,6 +104,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,    "/api/booking/**", "/api/bookings/**", "/api/booking", "/api/bookings").authenticated()
                 .requestMatchers(HttpMethod.POST,   "/api/booking/**", "/api/bookings/**", "/api/booking", "/api/bookings").authenticated()
                 .requestMatchers(HttpMethod.PUT,    "/api/booking/**", "/api/bookings/**", "/api/booking", "/api/bookings").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/booking/*/hard", "/api/bookings/*/hard").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/booking/**", "/api/bookings/**").authenticated()
                 // USER PROFILE & VERIFICATION
                 .requestMatchers("/api/users/me", "/api/users/me/**").authenticated()
@@ -117,6 +121,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**", "/api/admin").hasRole("ADMIN")
                 .requestMatchers("/api/vouchers/admin/**", "/api/vouchers/admin").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET,    "/api/users/**", "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/users/**", "/api/users").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/api/users/**", "/api/users").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/users/**", "/api/users").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST,   "/api/salons/**", "/api/salon/**", "/api/salons", "/api/salon").hasRole("ADMIN")
@@ -188,7 +193,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = List.of(allowedOrigins.split(","));
+        List<String> origins = new ArrayList<>(List.of(allowedOrigins.split(",")));
+        if (!origins.contains("http://localhost")) origins.add("http://localhost");
+        if (!origins.contains("http://localhost:80")) origins.add("http://localhost:80");
+        if (!origins.contains("http://localhost:5173")) origins.add("http://localhost:5173");
+        if (!origins.contains("http://127.0.0.1")) origins.add("http://127.0.0.1");
+        if (!origins.contains("http://127.0.0.1:80")) origins.add("http://127.0.0.1:80");
+        if (!origins.contains("http://127.0.0.1:5173")) origins.add("http://127.0.0.1:5173");
+        if (!origins.contains("http://localhost:5174")) origins.add("http://localhost:5174");
+        if (!origins.contains("http://127.0.0.1:5174")) origins.add("http://127.0.0.1:5174");
         configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

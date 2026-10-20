@@ -86,11 +86,12 @@ public class PaymentWebhookService {
             Payment payment = paymentRepository.findByPaymentCode(vnp_TxnRef)
                     .orElseThrow(() -> new NotFoundException("Payment not found with code: " + vnp_TxnRef));
 
-            // 3. Validate amount
+            // 3. Validate amount using precise BigDecimal comparison
             long callbackAmount = VNPayUtil.parseAmount(vnp_Amount);
-            if (callbackAmount != payment.getAmount().longValue()) {
+            BigDecimal callbackAmountBd = BigDecimal.valueOf(callbackAmount);
+            if (payment.getAmount().compareTo(callbackAmountBd) != 0) {
                 log.error("Amount mismatch for payment {}: expected {} but got {}",
-                        vnp_TxnRef, payment.getAmount(), callbackAmount);
+                        vnp_TxnRef, payment.getAmount(), callbackAmountBd);
                 return buildResponse(0, "Amount mismatch");
             }
 
@@ -129,7 +130,6 @@ public class PaymentWebhookService {
     /**
      * Xử lý VNPay callback cho Shop Orders (txnRef bắt đầu bằng "ORD")
      */
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     private Map<String, Object> handleShopOrderVnPayCallback(
             String txnRef, String responseCode,
             String vnpAmount, String transactionNo,
@@ -186,7 +186,6 @@ public class PaymentWebhookService {
     /**
      * Xử lý thanh toán booking thành công
      */
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     private Map<String, Object> handleBookingPaymentSuccess(Payment payment) {
         log.info("Booking payment successful for payment ID: {}", payment.getId());
         payment.transitionTo(PaymentStatus.SUCCESS);
@@ -194,6 +193,7 @@ public class PaymentWebhookService {
 
         Booking booking = payment.getBooking();
         booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setPaymentStatus("PAID");
         bookingRepository.save(booking);
 
         return buildResponse(1, "Payment processed successfully");
@@ -202,7 +202,6 @@ public class PaymentWebhookService {
     /**
      * Xử lý thanh toán booking thất bại
      */
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     private Map<String, Object> handleBookingPaymentFailure(Payment payment, String responseCode) {
         log.warn("Booking payment failed for payment ID: {} with code: {}", payment.getId(), responseCode);
         payment.transitionTo(PaymentStatus.FAILED);

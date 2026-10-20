@@ -61,3 +61,5 @@ Thumbs.db
 
 # Maven wrapper
 .mvn/wrapper/maven-wrapper.jar
+
+/keycloak-import/booking-salon-realm-realm.json

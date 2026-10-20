@@ -154,8 +154,10 @@ public class AuthController {
     // GET /api/auth/me — Yêu cầu Bearer token hoặc access_token cookie hợp lệ
     @GetMapping("/me")
     public ResponseEntity<AuthResponse.UserInfo> getMe(@AuthenticationPrincipal Jwt jwt) {
-        String keycloakId = jwt.getSubject();
-        return ResponseEntity.ok(authService.getMe(keycloakId));
+        String keycloakId = jwt != null ? jwt.getSubject() : null;
+        String username = jwt != null ? jwt.getClaimAsString("preferred_username") : null;
+        String email = jwt != null ? jwt.getClaimAsString("email") : null;
+        return ResponseEntity.ok(authService.getMe(keycloakId, username, email));
     }
 
     // POST /api/auth/forgot-password/send-otp — Gửi mã OTP xác thực đổi mật khẩu

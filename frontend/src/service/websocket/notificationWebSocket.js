@@ -1,3 +1,5 @@
+import { WS_NOTIFICATION_URL } from "../../config/api.js";
+
 class NotificationWebSocket {
   socket = null;
   listeners = new Set();
@@ -21,7 +23,7 @@ class NotificationWebSocket {
     const queryParts = [];
     if (this.options.userId) queryParts.push(`userId=${encodeURIComponent(this.options.userId)}`);
     if (this.options.stylistId) queryParts.push(`stylistId=${encodeURIComponent(this.options.stylistId)}`);
-    const wsUrl = `ws://localhost:8080/ws/notifications?${queryParts.join("&")}`;
+    const wsUrl = `${WS_NOTIFICATION_URL}?${queryParts.join("&")}`;
 
     try {
       this.socket = new WebSocket(wsUrl);

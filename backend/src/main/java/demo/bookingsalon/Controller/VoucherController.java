@@ -43,6 +43,13 @@ public class VoucherController {
         return ResponseEntity.ok(voucherService.getAvailableVouchers(userId));
     }
 
+    @demo.bookingsalon.Security.RateLimit.RateLimit(
+        keyPrefix = "voucher",
+        type = demo.bookingsalon.Security.RateLimit.RateLimitType.IP_OR_USER,
+        capacity = 10,
+        durationSeconds = 60,
+        message = "Bạn đã thử kiểm tra voucher quá nhiều lần. Vui lòng chờ 1 phút trước khi thử lại!"
+    )
     @PostMapping("/apply")
     public ResponseEntity<ApplyVoucherResponse> applyVoucher(@Valid @RequestBody ApplyVoucherRequest request) {
         return ResponseEntity.ok(voucherService.validateAndCalculate(request));

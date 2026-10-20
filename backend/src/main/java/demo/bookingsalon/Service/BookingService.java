@@ -10,9 +10,15 @@ import demo.bookingsalon.Payload.DTO.SalonDTO;
 import demo.bookingsalon.Payload.Request.Business.CreateBookingRequest;
 import demo.bookingsalon.Payload.Response.Business.BookingResponse;
 import demo.bookingsalon.Payload.Response.Business.BookingStatisticsResponse;
+import demo.bookingsalon.Payload.Response.Common.PageResponse;
 import demo.bookingsalon.Publisher.BookingEventPublisher;
 import demo.bookingsalon.Repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -20,12 +26,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingService {
@@ -53,6 +61,23 @@ public class BookingService {
                 .sorted(Comparator.comparing(BookingResponse::getStartTime, Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
     }
+
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public PageResponse<BookingResponse> getBookingsPage(
+            BookingStatus status,
+            UUID salonId,
+            UUID stylistId,
+            String search,
+            int page,
+            int size
+    ) {
+        int targetSize = Math.max(1, Math.min(size, 200));
+        int targetPage = Math.max(0, page);
+        Pageable pageable = PageRequest.of(targetPage, targetSize, Sort.by(Sort.Direction.DESC, "startTime"));
+        Page<Booking> bookingPage = bookingRepository.searchBookingsPage(status, salonId, stylistId, search, pageable);
+        return PageResponse.of(bookingPage, bookingMapper::toBookingResponse);
+    }
+
 
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public BookingResponse getBookingById(UUID id) {
@@ -161,12 +186,21 @@ public class BookingService {
                 offeringDTOs = offeringRepository.findAllById(bookingRequest.getServiceIds());
             }
         } catch (Exception e) {
-            System.out.println("Service offering not found");
-            e.printStackTrace();
+            log.warn("Could not load service offerings for booking: {}", e.getMessage());
         }
         int totalDuration = offeringDTOs.stream().mapToInt(ServiceOffering::getDuration).sum();
         if (totalDuration == 0) {
             totalDuration = 45; // Default 45 mins if not specified
+        }
+
+        User user = userRepository.findById(bookingRequest.getUserId()).orElseThrow(() ->
+                new NotFoundException("User not found"));
+
+        Stylist stylist = stylistRepository.findById(bookingRequest.getStylistId()).orElseThrow(() ->
+                new NotFoundException("Stylist not found"));
+
+        if (stylist.getStatus() != null && "OFF".equalsIgnoreCase(stylist.getStatus())) {
+            throw new Exception("Stylist hiện đang tạm nghỉ, không thể nhận lịch hẹn. Vui lòng chọn Stylist khác.");
         }
 
         LocalDateTime bookingStartTime = bookingRequest.getStartTime();
@@ -199,39 +233,51 @@ public class BookingService {
             Optional<Voucher> voucherOpt = voucherRepository.findByVoucherCodeAndIsDeletedFalse(code);
             if (voucherOpt.isPresent()) {
                 Voucher voucher = voucherOpt.get();
-                if (Boolean.TRUE.equals(voucher.getIsActive())) {
-                    discount = voucherService.calculateDiscountAmount(voucher, totalPrice);
-                    appliedVoucherCode = voucher.getVoucherCode();
-                    voucher.setUsedCount((voucher.getUsedCount() == null ? 0 : voucher.getUsedCount()) + 1);
-                    voucherRepository.save(voucher);
+                // Sử dụng voucherService để kiểm tra toàn diện: isActive, hạn dùng, minOrderAmount, usageLimitTotal
+                demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest applyReq = demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest.builder()
+                        .voucherCode(code)
+                        .orderAmount(totalPrice)
+                        .build();
+                demo.bookingsalon.Payload.Response.Business.ApplyVoucherResponse validation = voucherService.validateAndCalculate(applyReq);
 
-                    // Đánh dấu đã dùng nếu voucher này nằm trong ví cá nhân của user
-                    if (bookingRequest.getUserId() != null) {
-                        userVoucherRepository.findByUser_IdAndVoucher_VoucherCodeAndIsUsedFalse(bookingRequest.getUserId(), code)
-                                .ifPresent(uv -> {
-                                    uv.setIsUsed(true);
-                                    uv.setUsedAt(LocalDateTime.now());
-                                    userVoucherRepository.save(uv);
-                                });
+                if (!validation.isValid()) {
+                    throw new Exception("Voucher không thể áp dụng: " + validation.getMessage());
+                }
+
+                // Kiểm tra giới hạn số lần sử dụng cho mỗi người dùng (usageLimitPerUser)
+                if (bookingRequest.getUserId() != null && voucher.getUsageLimitPerUser() != null) {
+                    long userUsageCount = bookingRepository.countByUserIdAndVoucherCode(bookingRequest.getUserId(), code);
+                    if (userUsageCount >= voucher.getUsageLimitPerUser()) {
+                        throw new Exception("Bạn đã sử dụng hết lượt (" + voucher.getUsageLimitPerUser() + " lần) của mã voucher này!");
                     }
                 }
+
+                discount = validation.getDiscountAmount();
+                appliedVoucherCode = voucher.getVoucherCode();
+                int updatedCount = voucherRepository.incrementUsedCountAtomic(voucher.getId());
+                if (updatedCount == 0) {
+                    throw new IllegalStateException("Mã voucher đã đạt giới hạn sử dụng tối đa!");
+                }
+
+                // Đánh dấu đã dùng nếu voucher này nằm trong ví cá nhân của user
+                if (bookingRequest.getUserId() != null) {
+                    userVoucherRepository.findByUser_IdAndVoucher_VoucherCodeAndIsUsedFalse(bookingRequest.getUserId(), code)
+                            .ifPresent(uv -> {
+                                uv.setIsUsed(true);
+                                uv.setUsedAt(LocalDateTime.now());
+                                userVoucherRepository.save(uv);
+                            });
+                }
+            } else {
+                throw new Exception("Mã voucher '" + code + "' không tồn tại trên hệ thống!");
             }
         }
         BigDecimal finalTotal = totalPrice.subtract(discount).max(BigDecimal.ZERO);
 
-        User user = userRepository.findById(bookingRequest.getUserId()).orElseThrow(() ->
-                new NotFoundException("User not found"));
-
-        Stylist stylist = stylistRepository.findById(bookingRequest.getStylistId()).orElseThrow(() ->
-                new NotFoundException("Stylist not found"));
-
-        if (stylist.getStatus() != null && "OFF".equalsIgnoreCase(stylist.getStatus())) {
-            throw new Exception("Stylist hiện đang tạm nghỉ, không thể nhận lịch hẹn. Vui lòng chọn Stylist khác.");
-        }
-
         String bookingCode = "BB-" + LocalDateTime.now().getYear() + "-" + UUID.randomUUID().toString().replace("-","").substring(0, 8).toUpperCase();
         String paymentMethodStr = bookingRequest.getPaymentMethod() != null ? bookingRequest.getPaymentMethod().toUpperCase() : "CASH";
-        String paymentStatusStr = "BANK_TRANSFER".equals(paymentMethodStr) ? "PAID" : "UNPAID";
+        // C2 FIX: Mọi đơn đặt lịch ban đầu đều là UNPAID, chỉ chuyển sang PAID khi có xác nhận thanh toán thành công
+        String paymentStatusStr = "UNPAID";
 
         Booking booking = Booking.builder()
                 .bookingCode(bookingCode)
@@ -290,14 +336,14 @@ public class BookingService {
         try {
             bookingEventPublisher.publishBookingCreatedEvent(booking, user, salon);
         } catch (Exception e) {
-            System.err.println("Could not publish booking created event: " + e.getMessage());
+            log.error("Could not publish booking created event: {}", e.getMessage());
         }
 
         // Tạo thông báo cho User qua WebSocket
         try {
             notificationService.notifyBookingCreated(booking);
         } catch (Exception e) {
-            System.err.println("Could not create booking created notification: " + e.getMessage());
+            log.error("Could not create booking created notification: {}", e.getMessage());
         }
 
         // Thông báo tức thời tới Stylist Dashboard qua WebSocket
@@ -312,7 +358,7 @@ public class BookingService {
                 notificationWebSocketHandler.sendToStylist(stylist.getId(), wsMsg);
             }
         } catch (Exception e) {
-            System.err.println("Could not notify stylist via WebSocket: " + e.getMessage());
+            log.error("Could not notify stylist via WebSocket: {}", e.getMessage());
         }
 
         return bookingMapper.toBookingResponse(booking);
@@ -352,7 +398,7 @@ public class BookingService {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Could not create notification on status update: " + e.getMessage());
+            log.error("Could not create notification on status update: {}", e.getMessage());
         }
 
         // Báo cho Stylist Dashboard qua WebSocket
@@ -366,7 +412,7 @@ public class BookingService {
                 notificationWebSocketHandler.sendToStylist(booking.getStylist().getId(), wsMsg);
             }
         } catch (Exception e) {
-            System.err.println("Could not push stylist status update: " + e.getMessage());
+            log.error("Could not push stylist status update: {}", e.getMessage());
         }
 
         return "Update booking successfully";
@@ -394,7 +440,7 @@ public class BookingService {
                 notificationWebSocketHandler.sendToStylist(booking.getStylist().getId(), wsMsg);
             }
         } catch (Exception e) {
-            System.err.println("Could not notify cancellation: " + e.getMessage());
+            log.error("Could not notify cancellation: {}", e.getMessage());
         }
 
         return "Booking cancelled successfully";

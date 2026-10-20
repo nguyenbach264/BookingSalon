@@ -40,6 +40,13 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPayments());
     }
 
+    @demo.bookingsalon.Security.RateLimit.RateLimit(
+        keyPrefix = "payment",
+        type = demo.bookingsalon.Security.RateLimit.RateLimitType.IP_OR_USER,
+        capacity = 5,
+        durationSeconds = 60,
+        message = "Bạn đang gửi yêu cầu thanh toán quá nhanh. Vui lòng chờ 1 phút!"
+    )
     @PostMapping
     public ResponseEntity<PaymentResponse> createPayment(@Valid @RequestBody CreatePaymentRequest request) {
         PaymentResponse response = paymentService.checkout(request);

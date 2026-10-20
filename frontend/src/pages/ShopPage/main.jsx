@@ -11,7 +11,35 @@ import CartPage from './CartPage';
 import ShopLayoutHeader from '../components/ShopLayoutHeader';
 import ProductCard from './ProductCard';
 
-const PAGE_SIZE = 15; // 3 hàng x 5 sản phẩm = 15 sản phẩm / trang
+// Tính số cột hiển thị theo chuẩn Tailwind của grid:
+// grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6
+const getGridColumns = (width) => {
+  if (width >= 1024) return 6; // lg, xl
+  if (width >= 768) return 4;  // md
+  if (width >= 640) return 3;  // sm
+  return 2;                    // mobile
+};
+
+// Tính batchSize là BỘI SỐ của số cột trên mỗi hàng để mỗi hàng luôn được lấp đầy hoàn chỉnh:
+// - Màn lg/xl (6 cột): load 18 sản phẩm (3 hàng đầy x 6 item)
+// - Màn md (4 cột): load 16 sản phẩm (4 hàng đầy x 4 item)
+// - Màn sm (3 cột): load 15 sản phẩm (5 hàng đầy x 3 item)
+// - Màn mobile (2 cột): load 12 sản phẩm (6 hàng đầy x 2 item)
+// Chỉ có thể khuyết ở hàng cuối cùng khi đã tải HẾT sạch sản phẩm trong kho.
+const getBatchSize = (cols) => {
+  switch (cols) {
+    case 6:
+      return 18;
+    case 4:
+      return 16;
+    case 3:
+      return 15;
+    case 2:
+      return 12;
+    default:
+      return cols * 3;
+  }
+};
 
 const PRICE_RANGES = {
   ALL: { label: 'Tất cả mức giá', min: undefined, max: undefined },
@@ -26,6 +54,22 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlSearch = (searchParams.get('search') || '').trim();
 
+  // Responsive column count & multiple-of-columns batch size
+  const [columns, setColumns] = useState(() =>
+    typeof window !== 'undefined' ? getGridColumns(window.innerWidth) : 6
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      const currentCols = getGridColumns(window.innerWidth);
+      setColumns((prev) => (prev !== currentCols ? currentCols : prev));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const batchSize = useMemo(() => getBatchSize(columns), [columns]);
+
   const [categories, setCategories] = useState([]);
   const [activeCategorySlug, setActiveCategorySlug] = useState('ALL');
   const [priceRangeKey, setPriceRangeKey] = useState('ALL');
@@ -37,6 +81,7 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState('grid');
+
 
   // Đọc chỉ số trang ban đầu từ URL Hash (VD: #o=1&pi=3) hoặc query param
   const getInitialPageIndex = () => {
@@ -66,7 +111,7 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
     setLoading(true);
     const initialPi = getInitialPageIndex();
     // Nếu URL ban đầu có pi > 1 (ví dụ người dùng refresh hoặc dán link #o=1&pi=3)
-    const fetchSize = PAGE_SIZE * initialPi;
+    const fetchSize = batchSize * initialPi;
 
     try {
       const selectedPrice = PRICE_RANGES[priceRangeKey] || PRICE_RANGES.ALL;
@@ -99,7 +144,7 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
     } finally {
       setLoading(false);
     }
-  }, [activeCategorySlug, priceRangeKey, sortBy, urlSearch]);
+  }, [activeCategorySlug, batchSize, priceRangeKey, sortBy, urlSearch]);
 
   useEffect(() => {
     fetchInitialProducts();
@@ -115,7 +160,7 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
       const selectedPrice = PRICE_RANGES[priceRangeKey] || PRICE_RANGES.ALL;
       const params = {
         page: nextPage - 1, // Spring Data dùng 0-indexed page
-        size: PAGE_SIZE,
+        size: batchSize,
         sortBy: sortBy,
       };
 
@@ -134,10 +179,15 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
 
       const res = await productApi.getProducts(params);
       const newItems = res.content || [];
-      setProducts((prev) => [...prev, ...newItems]);
+      // Deduplicate items bảo đảm không bao giờ lặp sản phẩm giữa các đợt load
+      setProducts((prev) => {
+        const existingIds = new Set(prev.map((item) => item.id));
+        const uniqueNewItems = newItems.filter((item) => !existingIds.has(item.id));
+        return [...prev, ...uniqueNewItems];
+      });
       setCurrentPage(nextPage);
 
-      // Cập nhật URL Hash theo chuẩn giao diện như Thế Giới Di Động (#o=1&pi=X)
+      // Cập nhật URL Hash theo chuẩn giao diện (#o=1&pi=X)
       window.location.hash = `o=1&pi=${nextPage}`;
     } catch (err) {
       console.error('Failed to load more products:', err);
@@ -146,6 +196,7 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
       setLoadingMore(false);
     }
   };
+
 
   // 4. Các handler thay đổi bộ lọc
   const handleCategorySelect = (slug) => {
@@ -196,165 +247,111 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
       : categories.find((c) => c.slug === activeCategorySlug)?.name || 'Sản phẩm';
 
   const remainingCount = Math.max(0, totalProducts - products.length);
+  const nextLoadCount = Math.min(batchSize, remainingCount);
+
 
   return (
-    <div className="w-full flex-1 flex flex-col">
-      <main className="w-full flex-1">
-        <div className="max-w-[1280px] mx-auto px-4 py-6">
-          {/* ── HERO BANNER PROMOTION ── */}
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-5 sm:p-7 mb-6 shadow-md border border-slate-800">
-            <div className="relative z-10 max-w-3xl">
-              <span className="inline-block px-3 py-1 bg-amber-400 text-slate-900 font-black text-xs uppercase tracking-wider rounded-full mb-2.5 shadow-xs">
-                💈 BachBarber Pro Salon Store
-              </span>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight mb-2">
-                Sản phẩm tạo kiểu & chăm sóc tóc nam Barber chính hãng
-              </h1>
-              <p className="text-blue-100 text-xs sm:text-sm mb-3.5 leading-relaxed">
-                Hơn 200+ dòng sáp vuốt tóc, clay, pomade, gôm xịt, dầu gội da đầu & phụ kiện barber nhập khẩu chuẩn salon. Tư vấn kiểu tóc miễn phí từ Stylist hàng đầu.
-              </p>
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/10 px-3 py-1 rounded-lg border border-white/10">
-                  ⚡ Freeship đơn từ 500k
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/10 px-3 py-1 rounded-lg border border-white/10">
-                  🛡️ 100% Nhập khẩu chính hãng
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/10 px-3 py-1 rounded-lg border border-white/10">
-                  🔄 Đổi trả trong 7 ngày
-                </span>
-              </div>
+    <div className="w-full bg-[#f8fafc] min-h-screen">
+      <main className="w-full">
+        <div className="max-w-[1360px] mx-auto px-4 py-6">
+          {/* ── Breadcrumb & Title (Mockup: media_1791826579236_04693605.jpg) ── */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
+              <span>Trang chủ</span>
+              <span>›</span>
+              <span>Cửa hàng</span>
+              <span>›</span>
+              <span className="text-gray-600 font-medium">Sản phẩm</span>
             </div>
-          </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mb-3">
+              Cửa Hàng Grooming
+            </h1>
 
-          {/* ── BỘ LỌC ĐẶT Ở PHÍA TRÊN (TOP FILTER BAR) ── */}
-          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-gray-200 mb-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              {/* Nhóm bộ lọc: Danh mục, Khoảng giá */}
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mr-1">
-                  <FilterOutlined className="text-[#60a5fa]" /> Bộ lọc:
-                </span>
-
-                {/* 1. Lọc theo Danh mục sản phẩm */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-gray-600 font-medium">Danh mục:</span>
-                  <Select
-                    value={activeCategorySlug}
-                    onChange={handleCategorySelect}
-                    style={{ minWidth: 170 }}
-                    className="rounded-lg text-xs"
-                    options={[
-                      { value: 'ALL', label: `📦 Tất cả danh mục (${totalProducts || 0})` },
-                      ...categories.map((c) => ({
-                        value: c.slug,
-                        label: `${c.name} ${c.productCount ? `(${c.productCount})` : ''}`,
-                      })),
-                    ]}
-                  />
-                </div>
-
-                {/* 2. Lọc theo Khoảng giá */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-gray-600 font-medium">Khoảng giá:</span>
-                  <Select
-                    value={priceRangeKey}
-                    onChange={handlePriceRangeChange}
-                    style={{ minWidth: 170 }}
-                    className="rounded-lg text-xs"
-                    options={[
-                      { value: 'ALL', label: '💰 Tất cả mức giá' },
-                      { value: 'UNDER_100K', label: 'Dưới 100.000đ' },
-                      { value: '100K_300K', label: '100.000đ - 300.000đ' },
-                      { value: '300K_500K', label: '300.000đ - 500.000đ' },
-                      { value: 'OVER_500K', label: 'Trên 500.000đ' },
-                    ]}
-                  />
-                </div>
-
-                {/* Nút Xóa bộ lọc nếu đang áp dụng lọc */}
-                {isFilterActive && (
-                  <Button
-                    size="small"
-                    onClick={handleResetFilters}
-                    className="text-xs text-red-500 hover:text-red-700 border-red-200 hover:border-red-400 rounded-lg cursor-pointer"
+            {/* Thanh chọn nhanh danh mục (Category Pills) - Chuẩn Mockup đặt ngay dưới tiêu đề */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <button
+                  onClick={() => handleCategorySelect('ALL')}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    activeCategorySlug === 'ALL'
+                      ? 'bg-[#60a5fa] text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Tất cả
+                </button>
+                {categories.map((c) => (
+                  <button
+                    key={c.id || c.slug}
+                    onClick={() => handleCategorySelect(c.slug)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      activeCategorySlug === c.slug
+                        ? 'bg-[#60a5fa] text-white shadow-xs'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                   >
-                    Xóa tất cả bộ lọc
-                  </Button>
-                )}
+                    {c.name}
+                  </button>
+                ))}
               </div>
 
-              {/* Sắp xếp và chuyển đổi chế độ xem */}
-              <div className="flex items-center gap-3 ml-auto">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-gray-600 font-medium">Sắp xếp:</span>
-                  <Select
-                    value={sortBy}
-                    onChange={handleSortChange}
-                    style={{ width: 170 }}
-                    className="rounded-lg text-xs"
-                    options={[
-                      { value: 'rating', label: '⭐ Đánh giá cao nhất' },
-                      { value: 'price_asc', label: '💵 Giá thấp đến cao' },
-                      { value: 'price_desc', label: '💎 Giá cao xuống thấp' },
-                      { value: 'sold_desc', label: '🔥 Bán chạy nhất' },
-                      { value: 'createdAt', label: '🆕 Mới nhất' },
-                    ]}
-                  />
-                </div>
+              {/* Sắp xếp và bộ lọc nhanh bên phải */}
+              <div className="flex items-center gap-2 ml-auto">
+                <Select
+                  value={priceRangeKey}
+                  onChange={handlePriceRangeChange}
+                  size="small"
+                  style={{ width: 150 }}
+                  className="rounded-lg text-xs"
+                  options={[
+                    { value: 'ALL', label: '💰 Mọi mức giá' },
+                    { value: 'UNDER_100K', label: 'Dưới 100k' },
+                    { value: '100K_300K', label: '100k - 300k' },
+                    { value: '300K_500K', label: '300k - 500k' },
+                    { value: 'OVER_500K', label: 'Trên 500k' },
+                  ]}
+                />
 
-                <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <Select
+                  value={sortBy}
+                  onChange={handleSortChange}
+                  size="small"
+                  style={{ width: 150 }}
+                  className="rounded-lg text-xs"
+                  options={[
+                    { value: 'rating', label: '⭐ Đánh giá cao' },
+                    { value: 'price_asc', label: '💵 Giá thấp → cao' },
+                    { value: 'price_desc', label: '💎 Giá cao → thấp' },
+                    { value: 'sold_desc', label: '🔥 Bán chạy' },
+                    { value: 'createdAt', label: '🆕 Mới nhất' },
+                  ]}
+                />
+
+                <div className="hidden sm:flex items-center bg-gray-100 rounded-lg p-0.5">
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                    className={`p-1 rounded transition-colors cursor-pointer ${
                       viewMode === 'grid'
                         ? 'bg-white shadow-xs text-blue-600'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                     title="Chế độ lưới"
                   >
-                    <AppstoreOutlined className="text-base" />
+                    <AppstoreOutlined className="text-sm" />
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                    className={`p-1 rounded transition-colors cursor-pointer ${
                       viewMode === 'list'
                         ? 'bg-white shadow-xs text-blue-600'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                     title="Chế độ danh sách"
                   >
-                    <UnorderedListOutlined className="text-base" />
+                    <UnorderedListOutlined className="text-sm" />
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* Thanh chọn nhanh danh mục (Category Pills) ngay bên dưới filter */}
-            <div className="flex items-center gap-2 overflow-x-auto pt-3 mt-3 border-t border-gray-100 scrollbar-hide">
-              <button
-                onClick={() => handleCategorySelect('ALL')}
-                className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  activeCategorySlug === 'ALL'
-                    ? 'bg-[#60a5fa] text-white shadow-xs'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Tất cả ({totalProducts})
-              </button>
-              {categories.map((c) => (
-                <button
-                  key={c.id || c.slug}
-                  onClick={() => handleCategorySelect(c.slug)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    activeCategorySlug === c.slug
-                      ? 'bg-[#60a5fa] text-white shadow-xs'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {c.name} {c.productCount ? `(${c.productCount})` : ''}
-                </button>
-              ))}
             </div>
           </div>
 
@@ -412,12 +409,12 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
             </p>
           </div>
 
-          {/* ── GRID SẢN PHẨM: 5 ITEMS TRÊN MÀN HÌNH BÌNH THƯỜNG & RESPONSIVE ── */}
+          {/* ── GRID SẢN PHẨM: 6 CỘT CHUẨN MOCKUP ── */}
           {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-3.5 sm:gap-4 md:gap-5">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-                <div key={i} className="bg-white p-4 rounded-xl border border-gray-100 h-80">
-                  <Skeleton.Image className="w-full h-44 mb-3 rounded-lg" active />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-3 sm:gap-3.5">
+              {Array.from({ length: batchSize }).map((_, i) => (
+                <div key={i} className="bg-white p-3 rounded-2xl border border-gray-100 h-72">
+                  <Skeleton.Image className="w-full h-36 mb-3 rounded-xl" active />
                   <Skeleton active paragraph={{ rows: 2 }} title={{ width: '80%' }} />
                 </div>
               ))}
@@ -438,7 +435,7 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
               <div
                 className={
                   viewMode === 'grid'
-                    ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-3.5 sm:gap-4 md:gap-5'
+                    ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-3 sm:gap-3.5'
                     : 'grid grid-cols-1 gap-4'
                 }
               >
@@ -468,13 +465,14 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
                       </>
                     ) : (
                       <>
-                        <span>Xem thêm {remainingCount} sản phẩm</span>
+                        <span>Xem thêm {nextLoadCount} sản phẩm</span>
                         <span className="text-blue-500 font-black text-sm group-hover:translate-y-0.5 transition-transform">
                           ∨
                         </span>
                       </>
                     )}
                   </button>
+
                   <span className="text-xs text-gray-400 mt-2">
                     Đã hiển thị {products.length} / {totalProducts} sản phẩm
                   </span>

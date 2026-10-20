@@ -9,7 +9,9 @@ import demo.bookingsalon.Exception.NotFoundException;
 import demo.bookingsalon.Handler.NotificationWebSocketHandler;
 import demo.bookingsalon.Payload.DTO.ProductDTO;
 import demo.bookingsalon.Payload.Response.Business.OrderResponse;
+import demo.bookingsalon.Payload.Response.Common.PageResponse;
 import demo.bookingsalon.Repository.OrderDetailRepository;
+
 import demo.bookingsalon.Repository.OrderRepository;
 import demo.bookingsalon.Repository.ProductCategoryRepository;
 import demo.bookingsalon.Repository.ProductRepository;
@@ -222,7 +224,25 @@ public class AdminShopController {
 
     @GetMapping("/orders")
     @Transactional(readOnly = true)
-    public ResponseEntity<List<OrderResponse>> getAdminOrders(@RequestParam(required = false) String status) {
+    public ResponseEntity<?> getAdminOrders(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
+    ) {
+        if (page != null || size != null) {
+            int p = page != null ? Math.max(0, page) : 0;
+            int s = size != null ? Math.max(1, size) : 20;
+            PageRequest pageRequest = PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "createdAt"));
+            Page<Order> orderPage;
+            if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+                OrderStatus orderStatus = parseOrderStatus(status);
+                orderPage = orderRepository.findByStatus(orderStatus, pageRequest);
+            } else {
+                orderPage = orderRepository.findAll(pageRequest);
+            }
+            return ResponseEntity.ok(PageResponse.of(orderPage, orderService::mapToOrderResponse));
+        }
+
         List<Order> orders;
         if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
             OrderStatus orderStatus = parseOrderStatus(status);
@@ -236,6 +256,7 @@ public class AdminShopController {
                 .toList();
         return ResponseEntity.ok(responses);
     }
+
 
     @PutMapping("/orders/{id}/status")
     @Transactional

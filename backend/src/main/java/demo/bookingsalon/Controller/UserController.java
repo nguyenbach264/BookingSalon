@@ -3,8 +3,10 @@ package demo.bookingsalon.Controller;
 import demo.bookingsalon.Payload.Request.Keycloak.ResetPasswordRequest;
 import demo.bookingsalon.Payload.Request.Business.UpdateUserRequest;
 import demo.bookingsalon.Payload.Response.Business.UserResponse;
+import demo.bookingsalon.Payload.Response.Common.PageResponse;
 import demo.bookingsalon.Service.Keycloak.RoleService;
 import demo.bookingsalon.Service.UserService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -80,6 +82,12 @@ public class UserController {
         return userService.getUsers();
     }
 
+    @PostMapping("/sync")
+    public ResponseEntity<java.util.Map<String, Object>> syncUsersFromKeycloak() {
+        int count = userService.syncUsersFromKeycloak();
+        return ResponseEntity.ok(java.util.Map.of("message", "Đồng bộ thành công " + count + " người dùng từ Keycloak!"));
+    }
+
     @GetMapping("/{id}")
     public UserResponse getUserById(@PathVariable UUID id) {
         return userService.getUserById(id);
@@ -123,12 +131,28 @@ public class UserController {
     }
 
     @GetMapping("/paginated")
-    public ResponseEntity<List<UserResponse>> getUsersByPagination(
+    public ResponseEntity<?> getUsersByPagination(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
             @RequestParam(defaultValue = "0") int first,
             @RequestParam(defaultValue = "20") int max,
             @RequestParam(required = false) String search) {
+        if (page != null || size != null) {
+            int p = page != null ? page : (max > 0 ? first / max : 0);
+            int s = size != null ? size : max;
+            return ResponseEntity.ok(userService.getUsersPage(p, s, search));
+        }
         return ResponseEntity.ok(userService.getUsersByPagination(first, max, search));
     }
+
+    @GetMapping("/page")
+    public ResponseEntity<PageResponse<UserResponse>> getUsersPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(userService.getUsersPage(page, size, search));
+    }
+
 
     @GetMapping("/reverse")
     public ResponseEntity<String> reverseUser() {

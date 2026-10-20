@@ -482,16 +482,16 @@ export default function ProductDetailPage() {
                       size="large"
                       disabled={isOutOfStock}
                       onClick={handleBuyNow}
-                      className="flex-1 font-bold rounded-xl h-12 text-sm bg-[#1b2a4a] hover:bg-blue-900 border-none shadow-md"
+                      className="flex-1 font-bold rounded-xl h-12 text-sm bg-[#60a5fa] hover:bg-[#3b82f6] text-white border-none shadow-md shadow-blue-200 cursor-pointer"
                     >
                       MUA NGAY
                     </Button>
                     <Button
                       size="large"
-                      icon={<ShoppingCartOutlined />}
+                      icon={<ShoppingCartOutlined className="text-[#2563eb]" />}
                       disabled={isOutOfStock}
                       onClick={handleAddToCart}
-                      className="flex-1 font-bold rounded-xl h-12 text-sm border-[#1b2a4a] text-[#1b2a4a] hover:bg-blue-50"
+                      className="flex-1 font-bold rounded-xl h-12 text-sm border-[#60a5fa] text-[#2563eb] hover:bg-blue-50 cursor-pointer"
                     >
                       Thêm Vào Giỏ
                     </Button>
@@ -499,7 +499,7 @@ export default function ProductDetailPage() {
                       size="large"
                       icon={wishlisted ? <HeartFilled className="text-red-500" /> : <HeartOutlined />}
                       onClick={() => setWishlisted(v => !v)}
-                      className="w-12 rounded-xl flex-shrink-0 border-gray-200"
+                      className="w-12 rounded-xl flex-shrink-0 border-gray-200 cursor-pointer"
                     />
                   </div>
 

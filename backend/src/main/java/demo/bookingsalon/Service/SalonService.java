@@ -87,7 +87,8 @@ public class SalonService {
     public String deleteSalon(UUID salonId) {
         Salon salon = salonRepository.findById(salonId).orElseThrow(() ->
                 new NotFoundException("This salon does not exist"));
-        salonRepository.delete(salon);
-        return "Delete salon successfully";
+        salon.setEnabled(false);
+        salonRepository.save(salon);
+        return "Salon disabled successfully";
     }
 }

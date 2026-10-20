@@ -3,10 +3,13 @@ package demo.bookingsalon.Repository;
 import demo.bookingsalon.Entity.Booking;
 import demo.bookingsalon.Enum.BookingStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,6 +22,12 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findByUserIdAndStatus(UUID userId, BookingStatus status);
 
     List<Booking> getBookingBySalonId(UUID salonId);
+
+    List<Booking> findByCustomerPhone(String customerPhone);
+
+    List<Booking> findByCustomerEmail(String customerEmail);
+
+    long countByUserIdAndVoucherCode(UUID userId, String voucherCode);
 
     @Query("SELECT b FROM Booking b WHERE b.salon.id = :salonId " +
            "AND b.startTime >= :startOfDay AND b.startTime < :endOfDay " +
@@ -81,4 +90,22 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findFutureActiveBookingsByStylist(
             @Param("stylistId") UUID stylistId,
             @Param("fromTime") LocalDateTime fromTime);
+
+    @Query("SELECT b FROM Booking b WHERE " +
+           "(:status IS NULL OR b.status = :status) AND " +
+           "(:salonId IS NULL OR b.salon.id = :salonId) AND " +
+           "(:stylistId IS NULL OR b.stylist.id = :stylistId) AND " +
+           "(:search IS NULL OR :search = '' OR " +
+           "LOWER(b.customerName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "b.customerPhone LIKE CONCAT('%', :search, '%') OR " +
+           "LOWER(b.customerEmail) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(b.bookingCode) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Booking> searchBookingsPage(
+            @Param("status") BookingStatus status,
+            @Param("salonId") UUID salonId,
+            @Param("stylistId") UUID stylistId,
+            @Param("search") String search,
+            Pageable pageable
+    );
 }
+

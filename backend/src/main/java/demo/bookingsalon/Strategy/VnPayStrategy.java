@@ -51,8 +51,9 @@ public class VnPayStrategy implements PaymentStrategy {
         params.put("vnp_OrderInfo", "Thanh toan don hang " + payment.getBooking().getId());
         params.put("vnp_OrderType", "other");
         params.put("vnp_Locale", "vn");
-        params.put("vnp_ReturnUrl", config.getReturnUrl());
-        params.put("vnp_IpAddr", "127.0.0.1"); // Lấy IP thực tế từ HttpServletRequest nếu có
+        String clientIp = (request != null && request.getClientIp() != null && !request.getClientIp().isBlank())
+                ? request.getClientIp() : "127.0.0.1";
+        params.put("vnp_IpAddr", clientIp);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
         params.put("vnp_CreateDate", LocalDateTime.now().format(formatter));
