@@ -341,15 +341,29 @@ public class OrderService {
 
     public OrderResponse mapToOrderResponse(Order order) {
         List<OrderResponse.OrderItemResponse> items = order.getOrderDetails() != null
-                ? order.getOrderDetails().stream().map(d -> OrderResponse.OrderItemResponse.builder()
-                .orderDetailId(d.getId())
-                .productId(d.getProduct() != null ? d.getProduct().getId() : null)
-                .productName(d.getProduct() != null ? d.getProduct().getName() : "Sản phẩm")
-                .productImage(d.getProduct() != null ? d.getProduct().getImageUrl() : null)
-                .quantity(d.getQuantity())
-                .unitPrice(d.getUnitPrice())
-                .totalPrice(d.getTotalPrice())
-                .build()).toList()
+                ? order.getOrderDetails().stream().map(d -> {
+                    UUID prodId = null;
+                    String prodName = "Sản phẩm";
+                    String prodImage = null;
+                    try {
+                        if (d.getProduct() != null) {
+                            prodId = d.getProduct().getId();
+                            prodName = d.getProduct().getName();
+                            prodImage = d.getProduct().getImageUrl();
+                        }
+                    } catch (Exception e) {
+                        prodName = "Sản phẩm";
+                    }
+                    return OrderResponse.OrderItemResponse.builder()
+                            .orderDetailId(d.getId())
+                            .productId(prodId)
+                            .productName(prodName)
+                            .productImage(prodImage)
+                            .quantity(d.getQuantity())
+                            .unitPrice(d.getUnitPrice())
+                            .totalPrice(d.getTotalPrice())
+                            .build();
+                }).toList()
                 : Collections.emptyList();
 
         OrderResponse.BankTransferDetails bankDetails = null;

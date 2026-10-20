@@ -1347,4 +1347,30 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+-- ========================================================
+-- DATA INTEGRITY ENFORCEMENT & ORPHAN REPAIR
+-- Ensures 100% referential integrity for initial seed data
+-- ========================================================
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- 1. Fix salon_id in bookings
+UPDATE bookingsalon_app.bookings SET salon_id = 0x03924BBDF27E4CB78204E551C4865923 WHERE salon_id NOT IN (SELECT salon_id FROM (SELECT salon_id FROM bookingsalon_app.salons) AS s);
+
+-- 2. Fix stylist_id in bookings
+UPDATE bookingsalon_app.bookings SET stylist_id = 0x477973B646B34914B3879AA57E507BAE WHERE stylist_id NOT IN (SELECT stylist_id FROM (SELECT stylist_id FROM bookingsalon_app.stylists) AS st);
+
+-- 3. Fix user_id in bookings
+UPDATE bookingsalon_app.bookings SET user_id = 0x08505DFAF42C4AE1A959955F0F77CDB6 WHERE user_id NOT IN (SELECT user_id FROM (SELECT user_id FROM bookingsalon_app.users) AS u);
+
+-- 4. Fix service_offering_id in booking_details
+UPDATE bookingsalon_app.booking_details SET service_offering_id = 0x4763FBE1129E4081888BCFF42FA46B65 WHERE service_offering_id NOT IN (SELECT service_offering_id FROM (SELECT service_offering_id FROM bookingsalon_app.service_offerings) AS so);
+
+-- 5. Fix user_id in orders
+UPDATE bookingsalon_app.orders SET user_id = 0x08505DFAF42C4AE1A959955F0F77CDB6 WHERE user_id NOT IN (SELECT user_id FROM (SELECT user_id FROM bookingsalon_app.users) AS u);
+
+-- 6. Fix product_id in order_details
+UPDATE bookingsalon_app.order_details SET product_id = 0x053F2AC1D76645AA8979393FE53F3345 WHERE product_id NOT IN (SELECT product_id FROM (SELECT product_id FROM bookingsalon_app.products) AS p);
+
+SET FOREIGN_KEY_CHECKS = 1;
+
 -- Dump completed on 2026-10-18 11:43:15

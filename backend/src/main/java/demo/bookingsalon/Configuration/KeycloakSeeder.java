@@ -174,10 +174,38 @@ public class KeycloakSeeder implements ApplicationRunner {
 
         if (exactUser != null) {
             UUID existingId = UUID.fromString(exactUser.getId());
-            log.info("   ℹ️  '{}' already exists in Keycloak (id={}), ensuring role...", acct.username(), existingId);
+            log.info("   ℹ️  '{}' already exists in Keycloak (id={}), ensuring role and password...", acct.username(), existingId);
 
             // Ensure correct role is assigned
             ensureRoleAssigned(existingId, acct.role());
+
+            // Ensure email is verified, password is set, and required actions are cleared
+            try {
+                var userResource = keycloak.realm(realm).users().get(exactUser.getId());
+                UserRepresentation rep = userResource.toRepresentation();
+                rep.setEmailVerified(true);
+                rep.setEnabled(true);
+                if ((rep.getEmail() == null || rep.getEmail().isBlank()) && acct.email() != null) {
+                    rep.setEmail(acct.email());
+                }
+                String[] nameParts = acct.fullName().trim().split("\\s+");
+                if (nameParts.length > 0) {
+                    rep.setFirstName(nameParts[nameParts.length - 1]);
+                    if (nameParts.length > 1) {
+                        rep.setLastName(String.join(" ", Arrays.copyOf(nameParts, nameParts.length - 1)));
+                    }
+                }
+                rep.setRequiredActions(Collections.emptyList());
+                userResource.update(rep);
+
+                CredentialRepresentation credential = new CredentialRepresentation();
+                credential.setType(CredentialRepresentation.PASSWORD);
+                credential.setValue(DEFAULT_SEED_PASSWORD);
+                credential.setTemporary(false);
+                userResource.resetPassword(credential);
+            } catch (Exception ex) {
+                log.warn("   ⚠️  Could not reset password/state for '{}': {}", acct.username(), ex.getMessage());
+            }
 
             // Still update DB keycloak_id to point to the real ID
             updateDbKeycloakId(acct, existingId);
