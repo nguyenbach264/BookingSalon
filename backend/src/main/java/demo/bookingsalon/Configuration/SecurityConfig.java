@@ -38,12 +38,6 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
 
-    @Value("${keycloak.server-url:http://localhost:8081}")
-    private String keycloakServerUrl;
-
-    @Value("${keycloak.realm:booking-salon-realm}")
-    private String realm;
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -224,17 +218,4 @@ public class SecurityConfig {
         return source;
     }
 
-    @Bean
-    public org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder() {
-        String jwkSetUri = keycloakServerUrl + "/realms/" + realm + "/protocol/openid-connect/certs";
-        org.springframework.security.oauth2.jwt.NimbusJwtDecoder jwtDecoder =
-                org.springframework.security.oauth2.jwt.NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
-
-        org.springframework.security.oauth2.core.OAuth2TokenValidator<org.springframework.security.oauth2.jwt.Jwt> validator =
-                new org.springframework.security.oauth2.jwt.DelegatingOAuth2TokenValidator<>(
-                        new org.springframework.security.oauth2.jwt.JwtTimestampValidator()
-                );
-        jwtDecoder.setJwtValidator(validator);
-        return jwtDecoder;
-    }
 }
