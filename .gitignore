@@ -41,7 +41,7 @@ coverage/
 .apt_generated
 .springBeans
 .sts4-cache
-.keycloak-import
+.keycloak-import/
 
 # OS generated files
 .DS_Store
