@@ -155,7 +155,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-    steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
