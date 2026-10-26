@@ -1,15 +1,12 @@
 # ========================================================
 # GIAI ĐOẠN 1: Build file JAR từ mã nguồn Java 21
 # ========================================================
-FROM eclipse-temurin:21-jdk-alpine AS builder
-WORKDIR /build 
-
-# Tải trước Maven
-RUN apk add --no-cache maven
+FROM maven:3.9-eclipse-temurin-21-alpine AS builder
+WORKDIR /build
 
 # Copy tệp cấu hình dependency trước để tận dụng Docker Cache Layer
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+RUN mvn dependency:resolve -B
 
 # Copy toàn bộ mã nguồn backend vào và đóng gói
 COPY src ./src
