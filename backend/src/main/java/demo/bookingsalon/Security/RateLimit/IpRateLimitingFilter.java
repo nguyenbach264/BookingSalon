@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,12 +19,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class IpRateLimitingFilter extends OncePerRequestFilter {
 
     private final RateLimiterService rateLimiterService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public IpRateLimitingFilter(@Autowired(required = false) RateLimiterService rateLimiterService) {
+        this.rateLimiterService = rateLimiterService;
+    }
 
     @Value("${app.ratelimit.otp.limit:10}")
     private int otpLimit;
@@ -50,6 +54,12 @@ public class IpRateLimitingFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
         String method = request.getMethod();
+
+        // Bỏ qua nếu RateLimiterService không có sẵn (ví dụ trong WebMvc slice test)
+        if (rateLimiterService == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         // Bỏ qua các tệp tĩnh, Swagger docs, webhooks và WebSocket
         if (path.startsWith("/swagger-ui") ||

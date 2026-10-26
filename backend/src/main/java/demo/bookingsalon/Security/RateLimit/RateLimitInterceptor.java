@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -19,17 +20,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class RateLimitInterceptor implements HandlerInterceptor {
 
     private final RateLimiterService rateLimiterService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    public RateLimitInterceptor(@Autowired(required = false) RateLimiterService rateLimiterService) {
+        this.rateLimiterService = rateLimiterService;
+    }
+
     @Override
     public boolean preHandle(HttpServletRequest request,
                              HttpServletResponse response,
                              Object handler) throws Exception {
+
+        if (rateLimiterService == null) {
+            return true;
+        }
 
         if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;

@@ -121,7 +121,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
 
-      # Keycloak: Server URL dùng tên container, Public URL dùng localhost cho trình duyệt
+      # Keycloak: Server URL dùng tên container, Public URL dùng localhost cho trình duyệt 
       KEYCLOAK_SERVER_URL: http://keycloak:8080
       KEYCLOAK_PUBLIC_URL: http://localhost:8081
       KEYCLOAK_REALM: booking-salon-realm
@@ -154,7 +154,6 @@ services:
       PAYMENT_BANK_ACCOUNT: ${PAYMENT_BANK_ACCOUNT:-0866429205}
       PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET}
       PAYMENT_EXPIRE_MINUTES: 15
-
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME}
