@@ -99,13 +99,7 @@ public class KeycloakSeeder implements ApplicationRunner {
                     skipped++;
                     continue;
                 }
-
-                // Update keycloak_id in DB
-                userRepository.findByUsername(acct.username()).ifPresent(user -> {
-                    user.setKeycloakId(kcId);
-                    userRepository.save(user);
-                    log.info("   ✅ User '{}' → keycloak_id={}", acct.username(), kcId);
-                });
+                updateDbKeycloakId(acct, kcId);
                 created++;
             } catch (Exception e) {
                 log.warn("   ⚠️  Could not provision user '{}': {}", acct.username(), e.getMessage(), e);
@@ -120,13 +114,7 @@ public class KeycloakSeeder implements ApplicationRunner {
                     skipped++;
                     continue;
                 }
-
-                // Update keycloak_id in DB
-                stylistRepository.findByUsername(acct.username()).ifPresent(stylist -> {
-                    stylist.setKeycloakId(kcId);
-                    stylistRepository.save(stylist);
-                    log.info("   ✅ Stylist '{}' → keycloak_id={}", acct.username(), kcId);
-                });
+                updateDbKeycloakId(acct, kcId);
                 created++;
             } catch (Exception e) {
                 log.warn("   ⚠️  Could not provision stylist '{}': {}", acct.username(), e.getMessage(), e);
@@ -141,13 +129,7 @@ public class KeycloakSeeder implements ApplicationRunner {
                     skipped++;
                     continue;
                 }
-
-                // Update keycloak_id in DB
-                adminRepository.findByUsername(acct.username()).ifPresent(admin -> {
-                    admin.setKeycloakId(kcId);
-                    adminRepository.save(admin);
-                    log.info("   ✅ Admin '{}' → keycloak_id={}", acct.username(), kcId);
-                });
+                updateDbKeycloakId(acct, kcId);
                 created++;
             } catch (Exception e) {
                 log.warn("   ⚠️  Could not provision admin '{}': {}", acct.username(), e.getMessage(), e);
@@ -192,10 +174,38 @@ public class KeycloakSeeder implements ApplicationRunner {
 
         if (exactUser != null) {
             UUID existingId = UUID.fromString(exactUser.getId());
-            log.info("   ℹ️  '{}' already exists in Keycloak (id={}), ensuring role...", acct.username(), existingId);
+            log.info("   ℹ️  '{}' already exists in Keycloak (id={}), ensuring role and password...", acct.username(), existingId);
 
             // Ensure correct role is assigned
             ensureRoleAssigned(existingId, acct.role());
+
+            // Ensure email is verified, password is set, and required actions are cleared
+            try {
+                var userResource = keycloak.realm(realm).users().get(exactUser.getId());
+                UserRepresentation rep = userResource.toRepresentation();
+                rep.setEmailVerified(true);
+                rep.setEnabled(true);
+                if ((rep.getEmail() == null || rep.getEmail().isBlank()) && acct.email() != null) {
+                    rep.setEmail(acct.email());
+                }
+                String[] nameParts = acct.fullName().trim().split("\\s+");
+                if (nameParts.length > 0) {
+                    rep.setFirstName(nameParts[nameParts.length - 1]);
+                    if (nameParts.length > 1) {
+                        rep.setLastName(String.join(" ", Arrays.copyOf(nameParts, nameParts.length - 1)));
+                    }
+                }
+                rep.setRequiredActions(Collections.emptyList());
+                userResource.update(rep);
+
+                CredentialRepresentation credential = new CredentialRepresentation();
+                credential.setType(CredentialRepresentation.PASSWORD);
+                credential.setValue(DEFAULT_SEED_PASSWORD);
+                credential.setTemporary(false);
+                userResource.resetPassword(credential);
+            } catch (Exception ex) {
+                log.warn("   ⚠️  Could not reset password/state for '{}': {}", acct.username(), ex.getMessage());
+            }
 
             // Still update DB keycloak_id to point to the real ID
             updateDbKeycloakId(acct, existingId);
@@ -288,19 +298,74 @@ public class KeycloakSeeder implements ApplicationRunner {
      * This bridges existing Keycloak accounts to the seeded DB rows.
      */
     private void updateDbKeycloakId(SeedAccount acct, UUID kcId) {
-        switch (acct.role()) {
-            case "USER" -> userRepository.findByUsername(acct.username()).ifPresent(u -> {
-                u.setKeycloakId(kcId);
-                userRepository.save(u);
-            });
-            case "STYLIST" -> stylistRepository.findByUsername(acct.username()).ifPresent(s -> {
-                s.setKeycloakId(kcId);
-                stylistRepository.save(s);
-            });
-            case "ADMIN" -> adminRepository.findByUsername(acct.username()).ifPresent(a -> {
-                a.setKeycloakId(kcId);
-                adminRepository.save(a);
-            });
+        try {
+            switch (acct.role()) {
+                case "USER" -> userRepository.findFirstByUsername(acct.username()).ifPresentOrElse(
+                    u -> {
+                        u.setKeycloakId(kcId);
+                        userRepository.save(u);
+                        log.info("   ✅ Synced keycloak_id for existing User '{}' → {}", acct.username(), kcId);
+                    },
+                    () -> {
+                        User newUser = User.builder()
+                                .keycloakId(kcId)
+                                .username(acct.username())
+                                .fullName(acct.fullName())
+                                .email(acct.email())
+                                .status("ACTIVE")
+                                .membershipTier("STANDARD")
+                                .emailVerified(true)
+                                .enabled(true)
+                                .build();
+                        userRepository.save(newUser);
+                        log.info("   🌱 Created missing User in DB: '{}' → keycloak_id={}", acct.username(), kcId);
+                    }
+                );
+                case "STYLIST" -> stylistRepository.findFirstByUsername(acct.username()).ifPresentOrElse(
+                    s -> {
+                        s.setKeycloakId(kcId);
+                        stylistRepository.save(s);
+                        log.info("   ✅ Synced keycloak_id for existing Stylist '{}' → {}", acct.username(), kcId);
+                    },
+                    () -> {
+                        Stylist newStylist = Stylist.builder()
+                                .keycloakId(kcId)
+                                .username(acct.username())
+                                .fullName(acct.fullName())
+                                .email(acct.email())
+                                .status("ACTIVE")
+                                .levelRank("SENIOR")
+                                .workShiftType("FULL_TIME")
+                                .ratingAverage(java.math.BigDecimal.valueOf(4.85))
+                                .totalReviewsCount(100)
+                                .enabled(true)
+                                .build();
+                        stylistRepository.save(newStylist);
+                        log.info("   🌱 Created missing Stylist in DB: '{}' → keycloak_id={}", acct.username(), kcId);
+                    }
+                );
+                case "ADMIN" -> adminRepository.findFirstByUsername(acct.username()).ifPresentOrElse(
+                    a -> {
+                        a.setKeycloakId(kcId);
+                        adminRepository.save(a);
+                        log.info("   ✅ Synced keycloak_id for existing Admin '{}' → {}", acct.username(), kcId);
+                    },
+                    () -> {
+                        Admin newAdmin = Admin.builder()
+                                .keycloakId(kcId)
+                                .username(acct.username())
+                                .fullName(acct.fullName())
+                                .email(acct.email())
+                                .phoneNumber("0901999888")
+                                .enabled(true)
+                                .build();
+                        adminRepository.save(newAdmin);
+                        log.info("   🌱 Created missing Admin in DB: '{}' → keycloak_id={}", acct.username(), kcId);
+                    }
+                );
+            }
+        } catch (Exception ex) {
+            log.warn("   ⚠️ Could not sync keycloak_id for account '{}': {}", acct.username(), ex.getMessage());
         }
     }
 

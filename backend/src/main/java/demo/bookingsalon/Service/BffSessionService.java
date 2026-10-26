@@ -53,6 +53,9 @@ public class BffSessionService {
     @Value("${keycloak.frontend-client-id:booking-salon-client}")
     private String frontendClientId;
 
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+
     /**
      * Lưu trữ tokens của Keycloak vào Server-side HttpSession và thiết lập JSESSIONID cookie.
      * Hoàn toàn không gửi access_token hay refresh_token về browser.
@@ -75,10 +78,20 @@ public class BffSessionService {
                                   Boolean rememberMe,
                                   String keycloakId,
                                   String targetClientId) {
+        // Bảo vệ Session Fixation tại thời điểm đăng nhập:
+        // Đổi session ID an toàn nếu request đã có session cũ (anonymous session)
+        HttpSession existingSession = request.getSession(false);
+        if (existingSession != null) {
+            try {
+                request.changeSessionId();
+            } catch (Exception e) {
+                log.debug("Session ID change exception on login: {}", e.getMessage());
+            }
+        }
         HttpSession session = request.getSession(true);
 
-        // Duy trì phiên đăng nhập 30 ngày theo yêu cầu, chỉ hết hạn sau 30 ngày hoặc khi người dùng chủ động đăng xuất
-        int sessionTimeoutSeconds = 30 * 24 * 3600;
+        // Duy trì phiên đăng nhập theo rememberMe: 30 ngày nếu rememberMe, 4 giờ nếu không
+        int sessionTimeoutSeconds = Boolean.TRUE.equals(rememberMe) ? 30 * 24 * 3600 : 4 * 3600;
         session.setMaxInactiveInterval(sessionTimeoutSeconds);
 
         Instant expiresAt = Instant.now().plusSeconds(Math.max(30, expiresIn));
@@ -93,11 +106,12 @@ public class BffSessionService {
             session.setAttribute(SESSION_CLIENT_ID, targetClientId);
         }
 
-        // Thiết lập JSESSIONID cookie với maxAge 30 ngày
-        long cookieMaxAge = 30L * 24 * 3600;
+        // Thiết lập JSESSIONID cookie
+        long cookieMaxAge = sessionTimeoutSeconds;
+        boolean isSecure = cookieSecure && (request.isSecure() || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto")));
         ResponseCookie sessionCookie = ResponseCookie.from("JSESSIONID", session.getId())
                 .httpOnly(true)
-                .secure(false)
+                .secure(isSecure)
                 .path("/")
                 .maxAge(cookieMaxAge)
                 .sameSite("Lax")
@@ -105,15 +119,18 @@ public class BffSessionService {
         response.addHeader(HttpHeaders.SET_COOKIE, sessionCookie.toString());
 
         // Dọn dẹp sạch sẽ các cookie token cũ nếu còn tồn tại trên browser
-        purgeLegacyTokenCookies(response);
+        purgeLegacyTokenCookies(response, isSecure);
 
-        log.info("BFF Session initialized for user {}, session ID: {}, duration: 30 days, targetClientId: {}",
-                keycloakId, session.getId(), targetClientId);
+        log.info("BFF Session initialized for user {}, session ID: {}, duration: {} seconds, targetClientId: {}",
+                keycloakId, session.getId(), sessionTimeoutSeconds, targetClientId);
     }
 
     private final java.util.concurrent.ConcurrentHashMap<String, Object> sessionLocks = new java.util.concurrent.ConcurrentHashMap<>();
 
     private Object getSessionLock(String sessionId) {
+        if (sessionLocks.size() > 5000) {
+            sessionLocks.clear(); // Ngăn chặn memory leak nếu nhiều session không được dọn dẹp
+        }
         return sessionLocks.computeIfAbsent(sessionId, k -> new Object());
     }
 
@@ -294,6 +311,7 @@ public class BffSessionService {
             if (keycloakId == null) {
                 keycloakId = (String) session.getAttribute(SESSION_KEYCLOAK_ID);
             }
+            sessionLocks.remove(session.getId());
             try {
                 session.invalidate();
             } catch (Exception e) {
@@ -304,10 +322,11 @@ public class BffSessionService {
         // Thu hồi token ở Keycloak
         revokeKeycloakSession(refreshToken, keycloakId);
 
+        boolean isSecure = cookieSecure && (request.isSecure() || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto")));
         // Xoá cookie JSESSIONID
         ResponseCookie clearSessionCookie = ResponseCookie.from("JSESSIONID", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(isSecure)
                 .path("/")
                 .maxAge(0)
                 .sameSite("Lax")
@@ -315,7 +334,7 @@ public class BffSessionService {
         response.addHeader(HttpHeaders.SET_COOKIE, clearSessionCookie.toString());
 
         // Xoá các cookie token cũ nếu có
-        purgeLegacyTokenCookies(response);
+        purgeLegacyTokenCookies(response, isSecure);
 
         log.info("BFF Session cleared successfully for user {}", keycloakId);
     }
@@ -353,10 +372,10 @@ public class BffSessionService {
         }
     }
 
-    private void purgeLegacyTokenCookies(HttpServletResponse response) {
+    private void purgeLegacyTokenCookies(HttpServletResponse response, boolean isSecure) {
         ResponseCookie clearAccess = ResponseCookie.from("access_token", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(isSecure)
                 .path("/")
                 .maxAge(0)
                 .sameSite("Lax")
@@ -364,7 +383,7 @@ public class BffSessionService {
 
         ResponseCookie clearRefresh = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(isSecure)
                 .path("/")
                 .maxAge(0)
                 .sameSite("Lax")

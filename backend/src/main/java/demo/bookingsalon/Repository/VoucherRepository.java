@@ -29,5 +29,22 @@ public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
         ORDER BY v.createdAt DESC
     """)
     List<Voucher> findActivePublicVouchers(@Param("now") LocalDateTime now);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("""
+        UPDATE Voucher v 
+        SET v.usedCount = COALESCE(v.usedCount, 0) + 1 
+        WHERE v.id = :id 
+          AND (v.usageLimitTotal IS NULL OR COALESCE(v.usedCount, 0) < v.usageLimitTotal)
+    """)
+    int incrementUsedCountAtomic(@Param("id") UUID id);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("""
+        UPDATE Voucher v 
+        SET v.usedCount = CASE WHEN COALESCE(v.usedCount, 0) > 0 THEN v.usedCount - 1 ELSE 0 END 
+        WHERE v.id = :id
+    """)
+    int decrementUsedCountAtomic(@Param("id") UUID id);
 }
 

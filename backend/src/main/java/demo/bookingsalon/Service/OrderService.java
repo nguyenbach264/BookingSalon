@@ -18,6 +18,7 @@ import demo.bookingsalon.Repository.OrderDetailRepository;
 import demo.bookingsalon.Repository.OrderRepository;
 import demo.bookingsalon.Repository.ProductRepository;
 import demo.bookingsalon.Repository.UserRepository;
+import demo.bookingsalon.Repository.VoucherRepository;
 import demo.bookingsalon.Utility.IdempotencyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,8 @@ public class OrderService {
     private final NotificationService notificationService;
     private final NotificationWebSocketHandler notificationWebSocketHandler;
     private final VnPayConfig vnPayConfig;
+    private final VoucherService voucherService;
+    private final VoucherRepository voucherRepository;
 
     @Value("${payment.bank.bin:970422}")
     private String bankBin;
@@ -146,7 +149,33 @@ public class OrderService {
                 ? BigDecimal.ZERO
                 : BigDecimal.valueOf(30_000);
         BigDecimal discountAmount = BigDecimal.ZERO;
-        BigDecimal finalAmount = totalAmount.add(shippingFee).subtract(discountAmount);
+
+        if (request.getVoucherCode() != null && !request.getVoucherCode().trim().isBlank()) {
+            String vCode = request.getVoucherCode().trim().toUpperCase();
+            try {
+                demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest applyReq = demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest.builder()
+                        .voucherCode(vCode)
+                        .orderAmount(totalAmount)
+                        .build();
+                demo.bookingsalon.Payload.Response.Business.ApplyVoucherResponse vResp = voucherService.validateAndCalculate(applyReq);
+                if (vResp.isValid()) {
+                    discountAmount = vResp.getDiscountAmount();
+                    voucherRepository.findByVoucherCodeAndIsDeletedFalse(vResp.getVoucherCode())
+                            .ifPresent(v -> {
+                                int rows = voucherRepository.incrementUsedCountAtomic(v.getId());
+                                if (rows == 0) {
+                                    log.warn("Voucher code {} reached usage limit atomically", vCode);
+                                }
+                            });
+                } else {
+                    log.warn("Voucher code {} is not valid for order: {}", vCode, vResp.getMessage());
+                }
+            } catch (Exception ex) {
+                log.warn("Could not apply voucher {} for order: {}", vCode, ex.getMessage());
+            }
+        }
+
+        BigDecimal finalAmount = totalAmount.add(shippingFee).subtract(discountAmount).max(BigDecimal.ZERO);
 
         // ── 4. CREATE ORDER & ORDER DETAILS ───────────────────────────────────
         String orderCode = generateOrderCode();
@@ -312,15 +341,29 @@ public class OrderService {
 
     public OrderResponse mapToOrderResponse(Order order) {
         List<OrderResponse.OrderItemResponse> items = order.getOrderDetails() != null
-                ? order.getOrderDetails().stream().map(d -> OrderResponse.OrderItemResponse.builder()
-                .orderDetailId(d.getId())
-                .productId(d.getProduct() != null ? d.getProduct().getId() : null)
-                .productName(d.getProduct() != null ? d.getProduct().getName() : "Sản phẩm")
-                .productImage(d.getProduct() != null ? d.getProduct().getImageUrl() : null)
-                .quantity(d.getQuantity())
-                .unitPrice(d.getUnitPrice())
-                .totalPrice(d.getTotalPrice())
-                .build()).toList()
+                ? order.getOrderDetails().stream().map(d -> {
+                    UUID prodId = null;
+                    String prodName = "Sản phẩm";
+                    String prodImage = null;
+                    try {
+                        if (d.getProduct() != null) {
+                            prodId = d.getProduct().getId();
+                            prodName = d.getProduct().getName();
+                            prodImage = d.getProduct().getImageUrl();
+                        }
+                    } catch (Exception e) {
+                        prodName = "Sản phẩm";
+                    }
+                    return OrderResponse.OrderItemResponse.builder()
+                            .orderDetailId(d.getId())
+                            .productId(prodId)
+                            .productName(prodName)
+                            .productImage(prodImage)
+                            .quantity(d.getQuantity())
+                            .unitPrice(d.getUnitPrice())
+                            .totalPrice(d.getTotalPrice())
+                            .build();
+                }).toList()
                 : Collections.emptyList();
 
         OrderResponse.BankTransferDetails bankDetails = null;
@@ -371,7 +414,7 @@ public class OrderService {
 
     private String generateOrderCode() {
         String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
-        String randPart = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+        String randPart = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
         return "DH" + datePart + randPart;
     }
 

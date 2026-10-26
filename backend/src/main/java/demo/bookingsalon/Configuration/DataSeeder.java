@@ -80,6 +80,18 @@ public class DataSeeder implements ApplicationRunner {
     public void run(ApplicationArguments args) throws Exception {
         if (salonRepository.count() > 0) {
             log.info("✅ DataSeeder: Database already has salons.");
+            if (adminRepository.count() == 0) {
+                log.info("🌱 DataSeeder: Seeding missing admins...");
+                seedAdmins();
+            }
+            if (stylistRepository.count() == 0) {
+                log.info("🌱 DataSeeder: Seeding missing stylists...");
+                seedStylists();
+            }
+            if (userRepository.count() == 0) {
+                log.info("🌱 DataSeeder: Seeding missing users...");
+                seedUsers();
+            }
             if (bookingRepository.count() < 30) {
                 log.info("🌱 DataSeeder: Expanding rich booking data across Day/Week/Month/Year for all stylists...");
                 seedPeriodBookings();
@@ -1521,6 +1533,113 @@ public class DataSeeder implements ApplicationRunner {
                     .category(category)
                     .build());
         }
+    }
+
+    private void seedAdmins() {
+        if (adminRepository.findByUsername("admin.bach").isEmpty()) {
+            adminRepository.save(Admin.builder()
+                    .keycloakId(UUID.fromString("99999999-0001-0001-0001-999999999999"))
+                    .username("admin.bach")
+                    .fullName("Nguyễn Bách (CEO)")
+                    .email("bach@bachbarber.vn")
+                    .phoneNumber("0901999888")
+                    .enabled(true)
+                    .build());
+        }
+        if (adminRepository.findByUsername("admin.manager").isEmpty()) {
+            adminRepository.save(Admin.builder()
+                    .keycloakId(UUID.fromString("99999999-0002-0002-0002-999999999999"))
+                    .username("admin.manager")
+                    .fullName("Trần Quản Lý")
+                    .email("manager@bachbarber.vn")
+                    .phoneNumber("0902999777")
+                    .enabled(true)
+                    .build());
+        }
+        log.info("✅ Admins ensured in database");
+    }
+
+    private void seedStylists() {
+        Salon salon = salonRepository.findAll().stream().findFirst().orElse(null);
+        if (stylistRepository.findByUsername("alex.bach").isEmpty()) {
+            stylistRepository.save(Stylist.builder()
+                    .keycloakId(UUID.fromString("11111111-aaaa-aaaa-aaaa-111111111111"))
+                    .username("alex.bach")
+                    .fullName("Alex Bach")
+                    .nickname("Alex")
+                    .email("alex.bach@bachbarber.vn")
+                    .phoneNumber("0901111111")
+                    .bio("Master stylist với hơn 8 năm kinh nghiệm. Chuyên gia về cắt fade và undercut Hàn Quốc.")
+                    .experienceYears(BigDecimal.valueOf(8.5))
+                    .specialties("Fade, Undercut, Pompadour, Korean Style")
+                    .levelRank("MASTER")
+                    .ratingAverage(BigDecimal.valueOf(4.95))
+                    .totalReviewsCount(312)
+                    .totalServedBookings(1840)
+                    .baseSalary(BigDecimal.valueOf(15_000_000))
+                    .commissionRate(BigDecimal.valueOf(25.00))
+                    .tipBalance(BigDecimal.valueOf(2_500_000))
+                    .joinDate(LocalDate.of(2018, 3, 15))
+                    .workShiftType("FULL_TIME")
+                    .maxParallelSlots(1)
+                    .isFeatured(true)
+                    .status("ACTIVE")
+                    .avatarUrl("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop")
+                    .enabled(true)
+                    .salon(salon)
+                    .build());
+        }
+        if (stylistRepository.findByUsername("tony.tran").isEmpty()) {
+            stylistRepository.save(Stylist.builder()
+                    .keycloakId(UUID.fromString("22222222-bbbb-bbbb-bbbb-222222222222"))
+                    .username("tony.tran")
+                    .fullName("Tony Trần")
+                    .nickname("Tony")
+                    .email("tony.tran@bachbarber.vn")
+                    .phoneNumber("0902222222")
+                    .bio("Senior stylist 5 năm kinh nghiệm. Thế mạnh: nhuộm highlight và ombre tóc nam.")
+                    .experienceYears(BigDecimal.valueOf(5.0))
+                    .specialties("Nhuộm tóc, Highlight, Ombre, Uốn xoăn")
+                    .levelRank("SENIOR")
+                    .ratingAverage(BigDecimal.valueOf(4.80))
+                    .totalReviewsCount(198)
+                    .totalServedBookings(1120)
+                    .baseSalary(BigDecimal.valueOf(12_000_000))
+                    .commissionRate(BigDecimal.valueOf(20.00))
+                    .tipBalance(BigDecimal.valueOf(800_000))
+                    .joinDate(LocalDate.of(2020, 6, 1))
+                    .workShiftType("FULL_TIME")
+                    .maxParallelSlots(1)
+                    .isFeatured(true)
+                    .status("ACTIVE")
+                    .avatarUrl("https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop")
+                    .enabled(true)
+                    .salon(salon)
+                    .build());
+        }
+        log.info("✅ Stylists ensured in database");
+    }
+
+    private void seedUsers() {
+        if (userRepository.findByUsername("nguyen.van.minh").isEmpty()) {
+            userRepository.save(User.builder()
+                    .keycloakId(UUID.fromString("aaaaaaaa-0001-0001-0001-aaaaaaaaaaaa"))
+                    .username("nguyen.van.minh")
+                    .fullName("Nguyễn Văn Minh")
+                    .email("minh.nguyen@gmail.com")
+                    .phoneNumber("0912345678")
+                    .gender("MALE")
+                    .city("Hà Nội")
+                    .district("Cầu Giấy")
+                    .ward("Dịch Vọng")
+                    .membershipTier("GOLD")
+                    .status("ACTIVE")
+                    .emailVerified(true)
+                    .phoneVerified(true)
+                    .enabled(true)
+                    .build());
+        }
+        log.info("✅ Users ensured in database");
     }
 }
 

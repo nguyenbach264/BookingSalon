@@ -8,16 +8,12 @@ import {
   CreditCard,
   Banknote,
   QrCode,
-  ShieldCheck,
   ChevronLeft,
   CheckCircle2,
-  FileText,
   Phone,
   Mail,
-  AlertCircle,
   Gift,
   Tag,
-  Check,
   X,
 } from 'lucide-react';
 import { useBooking } from '../../service/context/BookingContext';
@@ -38,6 +34,10 @@ export function Checkout() {
     setCustomerNotes,
     paymentMethod,
     setPaymentMethod,
+    appliedVoucher,
+    setAppliedVoucher,
+    voucherCodeInput,
+    setVoucherCodeInput,
     setCreatedBooking,
   } = useBooking();
 
@@ -50,16 +50,14 @@ export function Checkout() {
   const [errorMessage, setErrorMessage] = useState(null);
 
   // Voucher states
-  const [voucherCodeInput, setVoucherCodeInput] = useState('');
   const [availableVouchers, setAvailableVouchers] = useState([]);
-  const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [applyingVoucher, setApplyingVoucher] = useState(false);
   const [voucherModalOpen, setVoucherModalOpen] = useState(false);
 
-  // Top-center notification modal state (avoids any layout shift / jitter)
+  // Top-center notification modal state
   const [notification, setNotification] = useState({
     isOpen: false,
-    type: 'info', // 'success' | 'error' | 'warning' | 'info'
+    type: 'info',
     title: '',
     message: '',
     primaryActionText: null,
@@ -209,10 +207,7 @@ export function Checkout() {
     setSubmitting(true);
     setErrorMessage(null);
 
-    // Build LocalDateTime ISO string: YYYY-MM-DDTHH:mm:ss
     const startTimeFormatted = `${selectedDate}T${selectedTime.length === 5 ? selectedTime + ':00' : selectedTime}`;
-
-    // Get user ID
     const userId = userInfo?.id || '11111111-1111-1111-1111-111111111111';
 
     const payload = {
@@ -225,7 +220,7 @@ export function Checkout() {
       customerPhone: customerPhone.trim(),
       customerEmail: customerEmail.trim() || null,
       customerNotes: customerNotes.trim() || null,
-      paymentMethod: paymentMethod, // 'CASH' | 'BANK_TRANSFER'
+      paymentMethod: paymentMethod,
       voucherCode: appliedVoucher ? appliedVoucher.voucherCode : null,
     };
 
@@ -241,7 +236,6 @@ export function Checkout() {
         onPrimaryAction: () => setStep(5),
       });
 
-      // Tự động chuyển bước sau 1.5 giây nếu người dùng không bấm
       setTimeout(() => {
         setStep(5);
       }, 1800);
@@ -266,8 +260,8 @@ export function Checkout() {
   };
 
   return (
-    <div className="max-w-[1000px] mx-auto px-4 py-6 animate-fade-in">
-      {/* Top-Center Notification Modal (zero layout shift) */}
+    <div className="max-w-[1040px] mx-auto px-4 py-8 animate-fade-in pb-20">
+      {/* Top-Center Notification Modal */}
       <TopCenterNotificationModal
         isOpen={notification.isOpen}
         type={notification.type}
@@ -280,7 +274,7 @@ export function Checkout() {
       />
 
       <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1b2a4a] tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
           Xác nhận đặt lịch & Thanh toán
         </h1>
         <p className="text-gray-500 text-sm mt-1">
@@ -288,13 +282,13 @@ export function Checkout() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmitBooking} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <form onSubmit={handleSubmitBooking} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Customer info & Payment method */}
         <div className="lg:col-span-7 space-y-6">
           {/* Card 1: Customer Details */}
           <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/80 shadow-sm">
             <h3 className="font-extrabold text-gray-900 text-base mb-4 flex items-center gap-2">
-              <User className="w-5 h-5 text-blue-600" />
+              <User className="w-5 h-5 text-[#60a5fa]" />
               Thông tin người đặt hẹn
             </h3>
 
@@ -306,7 +300,7 @@ export function Checkout() {
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#60a5fa] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
                   placeholder="Nhập họ và tên của bạn"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
@@ -321,7 +315,7 @@ export function Checkout() {
                   <input
                     type="tel"
                     required
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#60a5fa] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
                     placeholder="0912 345 678"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
@@ -334,7 +328,7 @@ export function Checkout() {
                   </label>
                   <input
                     type="email"
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#60a5fa] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
                     placeholder="email@example.com"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
@@ -348,8 +342,8 @@ export function Checkout() {
                 </label>
                 <textarea
                   rows={2}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all resize-none"
-                  placeholder="Ví dụ: Cắt ngắn gọn gàng, sấy phồng tự nhiên, tóc yếu..."
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#60a5fa] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all resize-none"
+                  placeholder="Ví dụ: Cắt ngắn 2 bên, sấy phồng tự nhiên, tóc yếu..."
                   value={customerNotes}
                   onChange={(e) => setCustomerNotes(e.target.value)}
                 />
@@ -357,14 +351,14 @@ export function Checkout() {
             </div>
           </div>
 
-          {/* Card 2: Payment Method (Simulated) */}
+          {/* Card 2: Payment Method */}
           <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/80 shadow-sm">
             <h3 className="font-extrabold text-gray-900 text-base mb-1.5 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-blue-600" />
+              <CreditCard className="w-5 h-5 text-[#60a5fa]" />
               Phương thức thanh toán
             </h3>
             <p className="text-xs text-gray-500 mb-4">
-              Chế độ giả lập thanh toán - Dữ liệu đơn đặt và giao dịch sẽ được cập nhật tự động vào hệ thống
+              Lựa chọn hình thức thanh toán thuận tiện nhất cho bạn
             </p>
 
             <div className="space-y-3">
@@ -373,8 +367,8 @@ export function Checkout() {
                 onClick={() => setPaymentMethod('CASH')}
                 className={`flex items-start gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                   paymentMethod === 'CASH'
-                    ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-100'
-                    : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50/50'
+                    ? 'border-[#60a5fa] bg-blue-50/30 ring-2 ring-blue-100'
+                    : 'border-gray-200 hover:border-[#60a5fa]/50 hover:bg-gray-50/50'
                 }`}
               >
                 <input
@@ -383,7 +377,7 @@ export function Checkout() {
                   value="CASH"
                   checked={paymentMethod === 'CASH'}
                   onChange={() => setPaymentMethod('CASH')}
-                  className="mt-1 text-blue-600 focus:ring-blue-500"
+                  className="mt-1 text-[#60a5fa] focus:ring-[#60a5fa]"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -398,13 +392,13 @@ export function Checkout() {
                 </div>
               </label>
 
-              {/* Option 2: Bank Transfer (Simulated QR) */}
+              {/* Option 2: Bank Transfer */}
               <label
                 onClick={() => setPaymentMethod('BANK_TRANSFER')}
                 className={`flex items-start gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                   paymentMethod === 'BANK_TRANSFER'
-                    ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-100'
-                    : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50/50'
+                    ? 'border-[#60a5fa] bg-blue-50/30 ring-2 ring-blue-100'
+                    : 'border-gray-200 hover:border-[#60a5fa]/50 hover:bg-gray-50/50'
                 }`}
               >
                 <input
@@ -413,11 +407,11 @@ export function Checkout() {
                   value="BANK_TRANSFER"
                   checked={paymentMethod === 'BANK_TRANSFER'}
                   onChange={() => setPaymentMethod('BANK_TRANSFER')}
-                  className="mt-1 text-blue-600 focus:ring-blue-500"
+                  className="mt-1 text-[#60a5fa] focus:ring-[#60a5fa]"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <QrCode className="w-4 h-4 text-blue-600" />
+                    <QrCode className="w-4 h-4 text-[#2563eb]" />
                     <span className="font-bold text-sm text-gray-900">
                       Chuyển khoản Ngân hàng (Mô phỏng VietQR)
                     </span>
@@ -435,15 +429,15 @@ export function Checkout() {
         </div>
 
         {/* Right Column: Order Summary Card */}
-        <div className="lg:col-span-5">
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/80 shadow-sm sticky top-24">
+        <div className="lg:col-span-5 sticky top-24">
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/80 shadow-sm">
             <h3 className="font-extrabold text-base text-gray-900 mb-4 pb-3 border-b border-gray-100">
               Tóm tắt lịch hẹn
             </h3>
 
             {/* Salon Info */}
             <div className="flex items-start gap-3 mb-3.5 pb-3 border-b border-gray-100">
-              <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500 shrink-0 mt-0.5">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#2563eb] shrink-0 mt-0.5">
                 <MapPin className="w-4 h-4" />
               </div>
               <div className="min-w-0">
@@ -457,7 +451,7 @@ export function Checkout() {
 
             {/* Date & Time */}
             <div className="flex items-start gap-3 mb-3.5 pb-3 border-b border-gray-100">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#2563eb] shrink-0 mt-0.5">
                 <Calendar className="w-4 h-4" />
               </div>
               <div>
@@ -494,7 +488,7 @@ export function Checkout() {
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="text-xs font-bold text-blue-600 hover:underline"
+                  className="text-xs font-bold text-[#2563eb] hover:underline cursor-pointer"
                 >
                   Thay đổi
                 </button>
@@ -523,7 +517,7 @@ export function Checkout() {
                   <button
                     type="button"
                     onClick={() => setVoucherModalOpen(true)}
-                    className="text-xs font-bold text-purple-600 hover:text-purple-800 underline"
+                    className="text-xs font-bold text-purple-600 hover:text-purple-800 underline cursor-pointer"
                   >
                     Chọn voucher ({availableVouchers.length})
                   </button>
@@ -546,7 +540,7 @@ export function Checkout() {
                   <button
                     type="button"
                     onClick={handleRemoveVoucher}
-                    className="text-gray-400 hover:text-red-500 p-1 transition-colors"
+                    className="text-gray-400 hover:text-red-500 p-1 transition-colors cursor-pointer"
                     title="Hủy voucher"
                   >
                     <X className="w-4 h-4" />
@@ -565,7 +559,7 @@ export function Checkout() {
                     type="button"
                     disabled={applyingVoucher || !voucherCodeInput.trim()}
                     onClick={() => handleApplyVoucher()}
-                    className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+                    className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                       applyingVoucher || !voucherCodeInput.trim()
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         : 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm'
@@ -591,20 +585,20 @@ export function Checkout() {
               </div>
               <div className="flex justify-between items-center pt-2 text-base sm:text-lg font-black text-gray-900">
                 <span>Tổng thanh toán:</span>
-                <span className="text-xl font-black text-rose-600">
+                <span className="text-xl font-black text-[#60a5fa]">
                   {formatPrice(finalPaymentPrice)}
                 </span>
               </div>
             </div>
 
-            {/* Submit Button with Spinner & Disabled State (Requirement 4) */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={submitting || !customerName.trim() || !customerPhone.trim()}
               className={`w-full py-4 rounded-xl font-extrabold text-sm uppercase transition-all shadow-md flex items-center justify-center gap-2 select-none ${
                 submitting || !customerName.trim() || !customerPhone.trim()
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transform hover:scale-[1.01] active:scale-[0.99] shadow-blue-200'
+                  : 'bg-[#60a5fa] hover:bg-[#3b82f6] text-white cursor-pointer shadow-blue-200 hover:shadow-lg transform active:scale-[0.98]'
               }`}
             >
               {submitting ? (
@@ -624,7 +618,7 @@ export function Checkout() {
               type="button"
               disabled={submitting}
               onClick={() => setStep(3)}
-              className="w-full mt-3 py-2 text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors flex items-center justify-center gap-1"
+              className="w-full mt-3 py-2 text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors flex items-center justify-center gap-1 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
               Quay lại bước chọn Dịch vụ
@@ -645,7 +639,7 @@ export function Checkout() {
               <button
                 type="button"
                 onClick={() => setVoucherModalOpen(false)}
-                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg"
+                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -694,7 +688,7 @@ export function Checkout() {
                         type="button"
                         disabled={applyingVoucher}
                         onClick={() => handleApplyVoucher(v.voucherCode)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg shrink-0 transition-all ${
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg shrink-0 transition-all cursor-pointer ${
                           isApplied
                             ? 'bg-purple-100 text-purple-700 border border-purple-300'
                             : 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm'
@@ -712,7 +706,7 @@ export function Checkout() {
               <button
                 type="button"
                 onClick={() => setVoucherModalOpen(false)}
-                className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl"
+                className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl cursor-pointer"
               >
                 Đóng
               </button>

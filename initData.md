@@ -1,7 +1,7 @@
-﻿# 💾 DATABASE BACKUP & KHỞI TẠO DỮ LIỆU CƠ SỞ (INIT DATA)
+# 💾 DATABASE BACKUP & KHỞI TẠO DỮ LIỆU CƠ SỞ (INIT DATA)
 
 > **Hệ quản trị CSDL**: MySQL 8.0+  
-> **Database Name**: `bookingsalondb`  
+> **Database Name**: `bookingsalon_app`  
 > **Định dạng khóa chính UUID**: `BINARY(16)` (đã encode HEX `0x...` chuẩn xác chống lỗi charset)  
 > **Charset / Collation**: `utf8mb4` / `utf8mb4_unicode_ci`  
 > **Ngày export**: 2026-10-03  
@@ -16,9 +16,9 @@
 2. Tạo file `backup_init.sql` và dán nội dung vào.
 3. Mở Terminal / PowerShell và chạy:
    ```bash
-   mysql -u root -p bookingsalondb < backup_init.sql
+   mysql -u root -p bookingsalon_app < backup_init.sql
    ```
-   *(Nếu chưa có database, file đã có sẵn câu lệnh `CREATE DATABASE IF NOT EXISTS bookingsalondb; USE bookingsalondb;`)*
+   *(Nếu chưa có database, file đã có sẵn câu lệnh `CREATE DATABASE IF NOT EXISTS bookingsalon_app; USE bookingsalon_app;`)*
 
 ### Cách 2: Sử dụng MySQL Workbench hoặc DBeaver / Navicat
 1. Mở **MySQL Workbench** hoặc **DBeaver**.
@@ -27,7 +27,7 @@
 
 ### Cách 3: Khôi phục bằng MySQL CLI một dòng lệnh
 ```powershell
-Get-Content backup_init.sql | mysql -u root -p bookingsalondb
+Get-Content backup_init.sql | mysql -u root -p bookingsalon_app
 ```
 
 ---
@@ -66,7 +66,7 @@ Get-Content backup_init.sql | mysql -u root -p bookingsalondb
 ```sql
 -- MySQL dump 10.13  Distrib 8.0.43, for Win64 (x86_64)
 --
--- Host: localhost    Database: bookingsalondb
+-- Host: localhost    Database: bookingsalon_app
 -- ------------------------------------------------------
 -- Server version	8.0.43
 
@@ -82,12 +82,12 @@ Get-Content backup_init.sql | mysql -u root -p bookingsalondb
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Current Database: `bookingsalondb`
+-- Current Database: `bookingsalon_app`
 --
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `bookingsalondb` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `bookingsalon_app` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 
-USE `bookingsalondb`;
+USE `bookingsalon_app`;
 
 --
 -- Table structure for table `admins`
@@ -1402,7 +1402,7 @@ INSERT INTO `vouchers` VALUES (0x03CEBB4BB3CD11F1A0CC00155D4D4099,'CHAOBANMOI','
 UNLOCK TABLES;
 
 --
--- Dumping routines for database 'bookingsalondb'
+-- Dumping routines for database 'bookingsalon_app'
 --
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -1419,4 +1419,4 @@ UNLOCK TABLES;
 ```
 
 ---
-*File được xuất tự động từ hệ thống MySQL `bookingsalondb` bằng `mysqldump` với cờ `--hex-blob` chuẩn hóa UUID BINARY(16).*
+*File được xuất tự động từ hệ thống MySQL `bookingsalon_app` bằng `mysqldump` với cờ `--hex-blob` chuẩn hóa UUID BINARY(16).*

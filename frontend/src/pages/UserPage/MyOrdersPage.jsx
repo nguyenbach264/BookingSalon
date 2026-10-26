@@ -220,9 +220,9 @@ export default function MyOrdersPage() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === tab.key
-                ? 'bg-blue-600 text-white shadow-sm'
+                ? 'bg-[#60a5fa] text-white shadow-sm shadow-blue-200'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -243,7 +243,7 @@ export default function MyOrdersPage() {
         </div>
       ) : filteredOrders.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center shadow-xs border border-gray-100 flex flex-col items-center">
-          <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-blue-50 text-[#60a5fa] rounded-2xl flex items-center justify-center mb-4">
             <ShoppingBag size={28} />
           </div>
           <h2 className="text-lg font-bold text-gray-800 mb-1">Chưa có đơn hàng nào</h2>
@@ -253,7 +253,7 @@ export default function MyOrdersPage() {
           <Button
             type="primary"
             onClick={() => navigate('/shop')}
-            className="bg-[#1b2a4a] hover:bg-blue-900 font-bold h-10 px-6 rounded-xl text-xs"
+            className="bg-[#60a5fa] hover:bg-[#3b82f6] shadow-blue-200 font-bold h-10 px-6 rounded-xl text-xs border-none cursor-pointer"
           >
             Khám phá Cửa hàng
           </Button>

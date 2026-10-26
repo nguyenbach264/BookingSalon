@@ -8,6 +8,7 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn, notice, targe
   const [forgotStep, setForgotStep] = useState(1); // 1: input email, 2: input OTP + new password
   const [forgotEmail, setForgotEmail] = useState("");
   const [countdown, setCountdown] = useState(0);
+  const [loginRateLimitSeconds, setLoginRateLimitSeconds] = useState(0);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState(null);
   const [forgotSuccess, setForgotSuccess] = useState(null);
@@ -16,8 +17,28 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn, notice, targe
   const [forgotEmailForm] = Form.useForm();
   const [forgotResetForm] = Form.useForm();
 
-  const { login, loginWithGoogle, loading, authError, sendForgotPasswordOtp, verifyAndResetPassword } = useAuth();
+  const { login, loginWithGoogle, loading, authError, clearAuthError, sendForgotPasswordOtp, verifyAndResetPassword } = useAuth();
   const redirectByRole = useRoleRedirect();
+
+  // Đếm ngược thời gian thực khi bị giới hạn tần suất đăng nhập (Rate limit 429)
+  useEffect(() => {
+    let timer;
+    if (loginRateLimitSeconds > 0) {
+      timer = setInterval(() => {
+        setLoginRateLimitSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            if (clearAuthError) clearAuthError();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [loginRateLimitSeconds, clearAuthError]);
 
   // Đếm ngược 60 giây khi gửi OTP quên mật khẩu
   useEffect(() => {
@@ -31,11 +52,22 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn, notice, targe
   }, [countdown]);
 
   const handleLogin = async (values) => {
+    if (loginRateLimitSeconds > 0) return;
     const result = await login(values.identifier, values.password, values.rememberMe || false);
     if (result && result.success) {
+      setLoginRateLimitSeconds(0);
       onClose();
       if (onLoggedIn) onLoggedIn(result.user);
       redirectByRole(result.user, targetRedirect);
+    } else {
+      if (result?.status === 429 || (result?.retryAfterSeconds && result.retryAfterSeconds > 0)) {
+        const seconds = Number(result.retryAfterSeconds) || 40;
+        setLoginRateLimitSeconds(seconds);
+      } else if (result?.error && /thử lại sau (\d+)\s*giây/i.test(result.error)) {
+        const match = result.error.match(/thử lại sau (\d+)\s*giây/i);
+        const seconds = match ? parseInt(match[1], 10) : 40;
+        setLoginRateLimitSeconds(seconds);
+      }
     }
   };
 
@@ -103,6 +135,8 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn, notice, targe
     setForgotError(null);
     setForgotSuccess(null);
     setCountdown(0);
+    setLoginRateLimitSeconds(0);
+    if (clearAuthError) clearAuthError();
   };
 
   return (
@@ -127,9 +161,16 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn, notice, targe
           <Alert message={notice} type="warning" showIcon className="mb-4 rounded-xl font-medium" />
         )}
 
-        {authError && !isForgot && (
+        {loginRateLimitSeconds > 0 && !isForgot ? (
+          <Alert
+            message={`Quý khách đang thao tác Đăng nhập quá nhanh. Vui lòng thử lại sau ${loginRateLimitSeconds} giây!`}
+            type="warning"
+            showIcon
+            className="mb-4 rounded-xl font-medium"
+          />
+        ) : authError && !isForgot ? (
           <Alert message={authError} type="error" showIcon className="mb-4 rounded-xl" />
-        )}
+        ) : null}
 
         {forgotError && isForgot && (
           <Alert message={forgotError} type="error" showIcon className="mb-4 rounded-xl" />
@@ -149,7 +190,7 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn, notice, targe
             id="loginForm"
             layout="vertical"
             onFinish={handleLogin}
-            autoComplete="on"
+            autoComplete="off"
           >
             <Form.Item
               label={<span className="font-semibold text-gray-700">Tên đăng nhập</span>}
@@ -160,7 +201,7 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn, notice, targe
               <Input
                 id="username"
                 name="username"
-                autoComplete="username"
+                autoComplete="off"
                 placeholder="Nhập tên đăng nhập..."
                 size="large"
                 className="rounded-xl h-11"
@@ -176,7 +217,7 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn, notice, targe
               <Input.Password
                 id="password"
                 name="password"
-                autoComplete="current-password"
+                autoComplete="off"
                 placeholder="Nhập mật khẩu..."
                 size="large"
                 className="rounded-xl h-11"
@@ -204,9 +245,14 @@ const LoginPage = ({ visible, onClose, onGoToRegister, onLoggedIn, notice, targe
               type="primary"
               htmlType="submit"
               loading={loading}
-              className="w-full h-12 bg-[#1b2a4a] hover:bg-[#244383] font-bold text-base rounded-xl mb-4 shadow-sm"
+              disabled={loginRateLimitSeconds > 0}
+              className={`w-full h-12 font-bold text-base rounded-xl mb-4 shadow-sm transition-all ${
+                loginRateLimitSeconds > 0
+                  ? "bg-gray-400 border-gray-400 text-white cursor-not-allowed opacity-80"
+                  : "bg-[#1b2a4a] hover:bg-[#244383] text-white"
+              }`}
             >
-              ĐĂNG NHẬP
+              {loginRateLimitSeconds > 0 ? `THỬ LẠI SAU (${loginRateLimitSeconds}s)` : "ĐĂNG NHẬP"}
             </Button>
 
             <div className="relative my-4 text-center">

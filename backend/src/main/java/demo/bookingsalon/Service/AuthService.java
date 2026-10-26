@@ -293,7 +293,7 @@ public class AuthService {
                     .onStatus(status -> status.is4xxClientError(), res ->
                             res.bodyToMono(String.class).map(body -> {
                                 log.warn("Keycloak login rejected: {}", body);
-                                return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tên đăng nhập hoặc mật khẩu không chính xác");
+                                return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tài khoản hoặc mật khẩu không đúng");
                             }))
                     .bodyToMono(String.class)
                     .block();
@@ -480,9 +480,60 @@ public class AuthService {
     // 9. GET ME — Lấy thông tin user/stylist/admin hiện tại từ DB
     // =====================================================
     public AuthResponse.UserInfo getMe(String keycloakId) {
-        UUID kcUuid = UUID.fromString(keycloakId);
-        AuthResponse.UserInfo userInfo = resolveUserInfo(kcUuid, null);
+        return getMe(keycloakId, null, null);
+    }
+
+    public AuthResponse.UserInfo getMe(String keycloakId, String username, String email) {
+        UUID kcUuid = null;
+        if (keycloakId != null && !keycloakId.isBlank()) {
+            try {
+                kcUuid = UUID.fromString(keycloakId);
+            } catch (Exception ignored) {}
+        }
+
+        AuthResponse.UserInfo userInfo = resolveUserInfo(kcUuid, username);
+
+        // Fallback: Tìm qua email nếu username/UUID chưa tìm thấy
+        if (userInfo == null && email != null && !email.isBlank()) {
+            User userByEmail = userRepository.findAll().stream()
+                    .filter(u -> email.equalsIgnoreCase(u.getEmail()))
+                    .findFirst().orElse(null);
+            if (userByEmail != null) {
+                userInfo = resolveUserInfo(kcUuid, userByEmail.getUsername());
+            } else {
+                Stylist stylistByEmail = stylistRepository.findAll().stream()
+                        .filter(s -> email.equalsIgnoreCase(s.getEmail()))
+                        .findFirst().orElse(null);
+                if (stylistByEmail != null) {
+                    userInfo = resolveUserInfo(kcUuid, stylistByEmail.getUsername());
+                } else {
+                    Admin adminByEmail = adminRepository.findAll().stream()
+                            .filter(a -> email.equalsIgnoreCase(a.getEmail()))
+                            .findFirst().orElse(null);
+                    if (adminByEmail != null) {
+                        userInfo = resolveUserInfo(kcUuid, adminByEmail.getUsername());
+                    }
+                }
+            }
+        }
+
+        // Tự động khôi phục tài khoản Admin nếu là tài khoản quản trị từ Keycloak
+        if (userInfo == null && username != null && (username.startsWith("admin") || "admin.bach".equalsIgnoreCase(username) || "admin.manager".equalsIgnoreCase(username))) {
+            log.info("Auto-provisioning missing Admin record for username '{}', keycloakId={}", username, kcUuid);
+            Admin newAdmin = Admin.builder()
+                    .keycloakId(kcUuid)
+                    .username(username)
+                    .fullName("admin.bach".equalsIgnoreCase(username) ? "Nguyễn Bách (CEO)" : "Trần Quản Lý")
+                    .email(email != null && !email.isBlank() ? email : username + "@bachbarber.vn")
+                    .phoneNumber("0901999888")
+                    .enabled(true)
+                    .build();
+            adminRepository.save(newAdmin);
+            userInfo = resolveUserInfo(kcUuid, username);
+        }
+
         if (userInfo == null) {
+            log.warn("getMe could not resolve user info for keycloakId={}, username={}, email={}", keycloakId, username, email);
             throw new NotFoundException("Không tìm thấy thông tin người dùng");
         }
         return userInfo;
@@ -658,6 +709,11 @@ public class AuthService {
             user = userRepository.findByUsername(username).orElse(null);
         }
         if (user != null) {
+            if (keycloakId != null && (user.getKeycloakId() == null || !keycloakId.equals(user.getKeycloakId()))) {
+                user.setKeycloakId(keycloakId);
+                userRepository.save(user);
+                log.info("Auto-synced keycloakId {} for User '{}'", keycloakId, user.getUsername());
+            }
             UUID actualKcId = user.getKeycloakId() != null ? user.getKeycloakId() : keycloakId;
             String role = determineRole(actualKcId, "USER");
             return AuthResponse.UserInfo.builder()
@@ -691,6 +747,11 @@ public class AuthService {
             stylist = stylistRepository.findByUsername(username).orElse(null);
         }
         if (stylist != null) {
+            if (keycloakId != null && (stylist.getKeycloakId() == null || !keycloakId.equals(stylist.getKeycloakId()))) {
+                stylist.setKeycloakId(keycloakId);
+                stylistRepository.save(stylist);
+                log.info("Auto-synced keycloakId {} for Stylist '{}'", keycloakId, stylist.getUsername());
+            }
             UUID actualKcId = stylist.getKeycloakId() != null ? stylist.getKeycloakId() : keycloakId;
             String role = determineRole(actualKcId, "STYLIST");
             return AuthResponse.UserInfo.builder()
@@ -714,6 +775,11 @@ public class AuthService {
             admin = adminRepository.findByUsername(username).orElse(null);
         }
         if (admin != null) {
+            if (keycloakId != null && (admin.getKeycloakId() == null || !keycloakId.equals(admin.getKeycloakId()))) {
+                admin.setKeycloakId(keycloakId);
+                adminRepository.save(admin);
+                log.info("Auto-synced keycloakId {} for Admin '{}'", keycloakId, admin.getUsername());
+            }
             UUID actualKcId = admin.getKeycloakId() != null ? admin.getKeycloakId() : keycloakId;
             String role = determineRole(actualKcId, "ADMIN");
             return AuthResponse.UserInfo.builder()

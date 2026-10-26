@@ -82,20 +82,33 @@ public class PaymentApplicationService {
             SalonDTO salonDTO = salonService.getSalonById(bookingResponse.getSalonId());
             if (salonDTO == null) throw new NotFoundException("Salon not found. Fail to create Payment");
 
-            payment = Payment.builder()
-                    .paymentCode(generatePaymentCode())
-                    .booking(booking)
-                    .salon(salonMapper.toSalon(salonDTO))
-                    .user(userMapper.toUserByUserReponse(user))
-                    .amount(bookingResponse.getTotalAmount())
-                    .paymentMethod(request.getPaymentMethod())
-                    .transactions(new ArrayList<>())
-                    .version(1)
-                    .status(PaymentStatus.PENDING)
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-            payment = paymentPersistenceService.createPayment(payment);
+            java.util.Optional<Payment> existingPaymentOpt = paymentRepository.findByBookingId(booking.getId());
+            if (existingPaymentOpt.isPresent()) {
+                payment = existingPaymentOpt.get();
+                payment.setPaymentMethod(request.getPaymentMethod());
+                payment.setAmount(bookingResponse.getTotalAmount());
+                if (payment.getTransactions() == null) {
+                    payment.setTransactions(new ArrayList<>());
+                }
+                payment.setStatus(PaymentStatus.PENDING);
+                payment.setUpdatedAt(LocalDateTime.now());
+                payment = paymentRepository.save(payment);
+            } else {
+                payment = Payment.builder()
+                        .paymentCode(generatePaymentCode())
+                        .booking(booking)
+                        .salon(booking.getSalon() != null ? booking.getSalon() : salonMapper.toSalon(salonDTO))
+                        .user(booking.getUser() != null ? booking.getUser() : userMapper.toUserByUserReponse(user))
+                        .amount(bookingResponse.getTotalAmount())
+                        .paymentMethod(request.getPaymentMethod())
+                        .transactions(new ArrayList<>())
+                        .version(1)
+                        .status(PaymentStatus.PENDING)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build();
+                payment = paymentPersistenceService.createPayment(payment);
+            }
 
             if (request.getPaymentMethod() == PaymentMethod.COD) {
                 PaymentStrategy paymentStrategy = paymentFactory.getStrategy(PaymentMethod.COD);

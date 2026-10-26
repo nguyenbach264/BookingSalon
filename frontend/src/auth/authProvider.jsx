@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { generateCodeVerifier, generateCodeChallenge, generateState } from "./pkce";
 
 const SESSION_USER_KEY = "bs_user_profile";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL || "http://localhost:8081";
 
 const getSavedProfile = () => {
   try {
@@ -55,6 +57,8 @@ export function AuthProvider({ children }) {
   const [registerModalVisible, setRegisterModalVisible] = useState(false);
   const [authNotice, setAuthNotice] = useState(null);
   const [targetRedirect, setTargetRedirect] = useState(null);
+  const lastCheckTimeRef = useRef(Date.now());
+  const lastLoginTimeRef = useRef(0);
 
   const openLoginModal = useCallback((notice = null, redirect = null) => {
     setAuthNotice(notice);
@@ -78,16 +82,20 @@ export function AuthProvider({ children }) {
     setRegisterModalVisible(false);
   }, []);
 
+  const clearAuthError = useCallback(() => {
+    setAuthError(null);
+  }, []);
+
   // ── 8. REFRESH TOKEN (BFF ĐÃ TỰ ĐỘNG REFRESH SERVER-SIDE VÀ DUY TRÌ 30 NGÀY) ──
   const refreshToken = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/auth/refresh-token", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
         method: "POST",
         credentials: "include",
       });
       if (response.ok) {
         try {
-          const meRes = await fetch("http://localhost:8080/api/auth/me", {
+          const meRes = await fetch(`${API_BASE_URL}/api/auth/me`, {
             method: "GET",
             credentials: "include",
           });
@@ -110,7 +118,7 @@ export function AuthProvider({ children }) {
   // ── KIỂM TRA PHIÊN ĐĂNG NHẬP QUA SERVER SESSION (BFF) ───────────────────────
   const checkCurrentSession = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/auth/me", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
         method: "GET",
         credentials: "include",
       });
@@ -120,23 +128,49 @@ export function AuthProvider({ children }) {
         setUserInfo(user);
         setAuthenticated(true);
         saveProfile(user);
+        lastCheckTimeRef.current = Date.now();
         return true;
       }
 
-      // Nếu res không ok (ví dụ 401), thử refresh token ngầm 1 lần
-      const refreshed = await refreshToken();
-      if (refreshed) {
+      // Nếu người dùng vừa đăng nhập thành công trong vòng 15 giây qua, bỏ qua lỗi phiên tạm thời
+      if (Date.now() - lastLoginTimeRef.current < 15 * 1000) {
+        console.warn("Bỏ qua lỗi phiên tạm thời ngay sau khi vừa đăng nhập");
+        const cached = getSavedProfile();
+        if (cached) {
+          setUserInfo(cached);
+          setAuthenticated(true);
+        }
         return true;
       }
 
-      // Chỉ khi xác nhận phiên hết hạn thực sự
-      saveProfile(null);
-      setUserInfo(null);
-      setAuthenticated(false);
+      // Nếu res là 401 Unauthorized, thử refresh token ngầm 1 lần
+      if (res.status === 401) {
+        const refreshed = await refreshToken();
+        if (refreshed) {
+          lastCheckTimeRef.current = Date.now();
+          return true;
+        }
+
+        // Chỉ xác nhận đăng xuất khi chắc chắn 401 và refresh token thất bại
+        saveProfile(null);
+        setUserInfo(null);
+        setAuthenticated(false);
+        return false;
+      }
+
+      // Nếu là lỗi khác (như 404, 500, 502 khi server đang khởi động lại hoặc lag mạng tạm thời),
+      // Giữ nguyên trạng thái đăng nhập từ localStorage để tránh bị logout khi F5
+      const cached = getSavedProfile();
+      if (cached) {
+        setUserInfo(cached);
+        setAuthenticated(true);
+        return true;
+      }
+
       return false;
     } catch (err) {
       console.warn("checkCurrentSession error or backend offline:", err);
-      // Nếu backend tạm thời offline nhưng đã có profile đã lưu, giữ nguyên trạng thái
+      // Nếu backend tạm thời offline hoặc lỗi mạng nhưng đã có profile đã lưu, giữ nguyên trạng thái
       const cached = getSavedProfile();
       if (cached) {
         setUserInfo(cached);
@@ -171,11 +205,14 @@ export function AuthProvider({ children }) {
     }, 4 * 60 * 1000);
 
     const onFocus = () => {
-      checkCurrentSession();
+      // Chỉ kiểm tra nếu lần check trước cách đây hơn 60s, tránh bão request khi modal đóng hoặc chuyển tab
+      if (Date.now() - lastCheckTimeRef.current > 60 * 1000) {
+        checkCurrentSession();
+      }
     };
     window.addEventListener("focus", onFocus);
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && Date.now() - lastCheckTimeRef.current > 60 * 1000) {
         checkCurrentSession();
       }
     };
@@ -199,12 +236,12 @@ export function AuthProvider({ children }) {
     setAuthError(null);
     try {
       let config = {
-        authUrl: "http://localhost:8081/realms/booking-salon-realm/protocol/openid-connect/auth",
+        authUrl: `${KEYCLOAK_URL}/realms/booking-salon-realm/protocol/openid-connect/auth`,
         clientId: "booking-salon-client",
       };
 
       try {
-        const res = await fetch("http://localhost:8080/api/auth/oauth2/config", {
+        const res = await fetch(`${API_BASE_URL}/api/auth/oauth2/config`, {
           credentials: "include",
         });
         if (res.ok) {
@@ -252,25 +289,53 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include", // Nhận cookie JSESSIONID từ server BFF
         body: JSON.stringify({ username, password, rememberMe }),
       });
-      const data = await response.json();
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (e) {
+        // Fallback nếu response không phải JSON
+      }
+
       if (!response.ok) {
-        throw new Error(data.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!");
+        let message = data.message;
+        if (response.status === 401) {
+          message = "Tài khoản hoặc mật khẩu không đúng";
+        } else if (!message) {
+          message = "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!";
+        }
+
+        const retryAfterSeconds = Number(
+          data.retryAfterSeconds ||
+          response.headers.get("Retry-After") ||
+          (data.message && data.message.match(/thử lại sau (\d+)\s*giây/i)?.[1]) ||
+          0
+        );
+
+        const error = new Error(message);
+        error.status = response.status;
+        error.retryAfterSeconds = retryAfterSeconds;
+        throw error;
       }
 
       setUserInfo(data.user);
       setAuthenticated(true);
       saveProfile(data.user);
+      lastLoginTimeRef.current = Date.now();
+      lastCheckTimeRef.current = Date.now();
       return { success: true, user: data.user };
     } catch (error) {
       const message = error.message || "Có lỗi xảy ra, vui lòng thử lại!";
+      const status = error.status || 500;
+      const retryAfterSeconds = error.retryAfterSeconds || 0;
+
       setAuthError(message);
-      return { success: false, error: message };
+      return { success: false, error: message, status, retryAfterSeconds };
     } finally {
       setLoading(false);
     }
@@ -281,7 +346,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
     try {
-      const response = await fetch("http://localhost:8080/api/auth/register/send-otp", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -307,7 +372,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
     try {
-      const response = await fetch("http://localhost:8080/api/auth/register/verify-otp", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -337,7 +402,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
     try {
-      const response = await fetch("http://localhost:8080/api/auth/register", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -370,7 +435,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
     try {
-      const response = await fetch("http://localhost:8080/api/auth/oauth2/callback", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/oauth2/callback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include", // Nhận và gán HttpOnly cookies
@@ -405,7 +470,7 @@ export function AuthProvider({ children }) {
 
     // 1. Gọi backend để BFF xoá session server, thu hồi token tại Keycloak và xoá JSESSIONID
     try {
-      await fetch("http://localhost:8080/api/auth/logout", {
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -413,9 +478,9 @@ export function AuthProvider({ children }) {
       console.warn("Failed to logout at server", e);
     }
 
-    // 2. Kích hoạt OIDC front-channel logout để xoá session cookie tại Keycloak (localhost:8081)
+    // 2. Kích hoạt OIDC front-channel logout để xoá session cookie tại Keycloak
     try {
-      const oidcLogoutUrl = `http://localhost:8081/realms/booking-salon-realm/protocol/openid-connect/logout?client_id=booking-salon-client&post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`;
+      const oidcLogoutUrl = `${KEYCLOAK_URL}/realms/booking-salon-realm/protocol/openid-connect/logout?client_id=booking-salon-client&post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`;
       const img = new Image();
       img.src = oidcLogoutUrl;
     } catch (e) {
@@ -428,7 +493,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
     try {
-      const response = await fetch("http://localhost:8080/api/auth/forgot-password/send-otp", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -453,7 +518,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
     try {
-      const response = await fetch("http://localhost:8080/api/auth/forgot-password/verify-and-reset", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password/verify-and-reset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -484,6 +549,7 @@ export function AuthProvider({ children }) {
         userInfo,
         loading,
         authError,
+        clearAuthError,
         login,
         loginDirect,
         register,

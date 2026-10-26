@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Button, Result, Spin } from 'antd';
-import { CheckCircle2, XCircle, ShoppingBag, ArrowRight, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, ShoppingBag, ArrowRight, Clock, RotateCcw, ChevronRight } from 'lucide-react';
 
 /**
  * PaymentResultPage — Trang kết quả thanh toán VNPay
+ * Design A: Minimalist Digital Receipt
  * VNPay redirect về đây sau khi người dùng hoàn tất thanh toán (cả thành công lẫn thất bại)
  * URL: /payment/result?responseCode=00&txnRef=ORDxxxxxxxx&amount=xxxxxx&orderInfo=...
  */
@@ -61,122 +61,144 @@ export default function PaymentResultPage() {
   }, [isSuccess, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/40 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+
+        {/* ── Main Card ─────────────────────────────────────── */}
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+
           {/* Status Header */}
-          <div className={`p-8 text-center ${isSuccess ? 'bg-gradient-to-br from-green-50 to-emerald-50' : 'bg-gradient-to-br from-red-50 to-rose-50'}`}>
-            <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${isSuccess ? 'bg-green-100' : 'bg-red-100'}`}>
+          <div className={`px-8 py-10 text-center border-b border-gray-100 ${
+            isSuccess
+              ? 'bg-gradient-to-b from-green-50 to-white'
+              : 'bg-gradient-to-b from-red-50 to-white'
+          }`}>
+            {/* Icon */}
+            <div className={`w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center ${
+              isSuccess ? 'bg-green-100 ring-8 ring-green-50' : 'bg-red-100 ring-8 ring-red-50'
+            }`}>
               {isSuccess ? (
-                <CheckCircle2 size={44} className="text-green-600" />
+                <CheckCircle2 size={42} className="text-green-600" strokeWidth={1.5} />
               ) : (
-                <XCircle size={44} className="text-red-500" />
+                <XCircle size={42} className="text-red-500" strokeWidth={1.5} />
               )}
             </div>
-            <h1 className={`text-2xl font-black mb-1 ${isSuccess ? 'text-green-700' : 'text-red-600'}`}>
+
+            <h1 className={`text-2xl font-black mb-2 ${isSuccess ? 'text-gray-900' : 'text-gray-900'}`}>
               {isSuccess ? 'Thanh toán thành công!' : 'Thanh toán thất bại'}
             </h1>
-            <p className={`text-sm ${isSuccess ? 'text-green-600' : 'text-red-500'}`}>
-              {isSuccess ? 'Đơn hàng của bạn đã được xác nhận và đang được xử lý' : errorMessage}
+            <p className={`text-sm font-medium ${isSuccess ? 'text-green-600' : 'text-red-500'}`}>
+              {isSuccess
+                ? 'Đơn hàng của bạn đã được xác nhận và đang được xử lý'
+                : errorMessage}
             </p>
+
+            {/* Amount — prominent display for success */}
+            {isSuccess && amount > 0 && (
+              <div className="mt-5 inline-flex flex-col items-center bg-green-50 border border-green-200 px-6 py-3 rounded-2xl">
+                <span className="text-xs text-green-600 font-semibold uppercase tracking-wider mb-1">Số tiền giao dịch</span>
+                <span className="text-3xl font-black text-green-700">{formatPrice(amount)}</span>
+              </div>
+            )}
           </div>
 
-          {/* Payment Details */}
-          <div className="p-6 space-y-4">
-            {/* Transaction Info */}
-            <div className="bg-gray-50 rounded-2xl p-4 space-y-3 text-sm">
-              {txnRef && (
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Mã giao dịch:</span>
-                  <span className="font-mono font-bold text-gray-800 text-xs">{txnRef}</span>
-                </div>
-              )}
-              {amount > 0 && (
-                <div className="flex items-center justify-between border-t border-gray-200 pt-3">
-                  <span className="text-gray-500">Số tiền:</span>
-                  <span className={`font-extrabold text-lg ${isSuccess ? 'text-green-600' : 'text-gray-700'}`}>
-                    {formatPrice(amount)}
-                  </span>
-                </div>
-              )}
-              {orderInfo && (
-                <div className="flex items-center justify-between border-t border-gray-200 pt-3">
-                  <span className="text-gray-500">Nội dung:</span>
-                  <span className="font-medium text-gray-700 text-right max-w-[200px] text-xs">{orderInfo}</span>
-                </div>
-              )}
-              <div className="flex items-center justify-between border-t border-gray-200 pt-3">
-                <span className="text-gray-500">Trạng thái:</span>
-                <span className={`px-3 py-0.5 rounded-full text-xs font-bold ${
-                  isSuccess ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
-                }`}>
-                  {isSuccess ? '✓ Thành công' : `✗ Lỗi ${responseCode}`}
+          {/* Transaction Details */}
+          <div className="px-6 py-5 space-y-0 divide-y divide-gray-100">
+            {txnRef && (
+              <div className="flex items-center justify-between py-3">
+                <span className="text-sm text-gray-500">Mã giao dịch</span>
+                <span className="font-mono font-bold text-gray-900 text-xs bg-gray-100 px-2.5 py-1 rounded-lg">
+                  {txnRef}
+                </span>
+              </div>
+            )}
+            {!isSuccess && amount > 0 && (
+              <div className="flex items-center justify-between py-3">
+                <span className="text-sm text-gray-500">Số tiền</span>
+                <span className="font-bold text-gray-800">{formatPrice(amount)}</span>
+              </div>
+            )}
+            {orderInfo && (
+              <div className="flex items-start justify-between py-3 gap-4">
+                <span className="text-sm text-gray-500 shrink-0">Nội dung</span>
+                <span className="font-medium text-gray-700 text-right text-sm max-w-[200px] leading-snug">
+                  {orderInfo}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between py-3">
+              <span className="text-sm text-gray-500">Trạng thái</span>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                isSuccess
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-red-100 text-red-600'
+              }`}>
+                {isSuccess ? '✓ Thành công' : `✗ Lỗi ${responseCode}`}
+              </span>
+            </div>
+          </div>
+
+          {/* VNPay Branding */}
+          <div className="px-6 pb-2">
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-400 bg-gray-50 rounded-xl py-2.5">
+              <span>Thanh toán qua</span>
+              <span className="font-black text-[#005BAC] text-sm">VNPay</span>
+              <span>— Cổng thanh toán điện tử uy tín</span>
+            </div>
+          </div>
+
+          {/* Auto-redirect countdown */}
+          {isSuccess && (
+            <div className="px-6 pb-4">
+              <div className="flex items-center justify-center gap-2 text-xs text-[#60a5fa] bg-blue-50 border border-blue-100 py-2.5 px-4 rounded-xl">
+                <Clock size={13} />
+                <span>
+                  Tự động chuyển về đơn hàng sau{' '}
+                  <strong className="font-black">{countdown}</strong> giây...
                 </span>
               </div>
             </div>
-
-            {/* VNPay Branding */}
-            <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-              <span>Thanh toán qua</span>
-              <span className="font-bold text-blue-600 text-sm">VNPay</span>
-              <span>— Cổng thanh toán điện tử uy tín</span>
-            </div>
-
-            {/* Auto redirect notice */}
-            {isSuccess && (
-              <div className="flex items-center justify-center gap-2 text-xs text-blue-600 bg-blue-50 py-2.5 px-4 rounded-xl">
-                <Clock size={14} />
-                <span>Tự động chuyển về đơn hàng sau <strong>{countdown}</strong> giây...</span>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="px-6 pb-6 space-y-2.5">
-            <Button
-              type="primary"
-              block
-              size="large"
+            <button
               onClick={() => navigate('/my-orders')}
-              className={`h-12 rounded-2xl font-bold text-sm border-none flex items-center justify-center gap-2 ${
+              className={`w-full h-12 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] ${
                 isSuccess
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-[#1b2a4a] hover:bg-blue-900'
+                  ? 'bg-[#60a5fa] hover:bg-[#3b82f6] text-white shadow-md shadow-blue-200'
+                  : 'bg-gray-900 hover:bg-gray-800 text-white'
               }`}
             >
-              <ShoppingBag size={18} />
+              <ShoppingBag size={17} />
               {isSuccess ? 'Xem đơn hàng của tôi' : 'Xem đơn hàng & thử lại'}
-              <ArrowRight size={16} />
-            </Button>
+              <ArrowRight size={15} />
+            </button>
 
             {!isSuccess && (
-              <Button
-                block
-                size="large"
+              <button
                 onClick={() => navigate('/checkout')}
-                className="h-11 rounded-2xl font-semibold text-sm border-gray-200"
+                className="w-full h-11 rounded-2xl font-semibold text-sm border border-gray-200 hover:bg-gray-50 text-gray-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
-                ← Quay lại thanh toán
-              </Button>
+                <RotateCcw size={14} />
+                Quay lại thanh toán
+              </button>
             )}
 
-            <Button
-              type="link"
-              block
+            <button
               onClick={() => navigate('/shop')}
-              className="text-gray-400 text-xs"
+              className="w-full text-gray-400 hover:text-gray-600 text-xs font-medium transition-colors py-1 cursor-pointer"
             >
-              Tiếp tục mua sắm
-            </Button>
+              Tiếp tục mua sắm →
+            </button>
           </div>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-gray-400 mt-4">
+        {/* Footer note */}
+        <p className="text-center text-xs text-gray-400 mt-5 leading-relaxed">
           Gặp vấn đề? Liên hệ hỗ trợ qua hotline hoặc email của BachBarber Salon
         </p>
       </div>
     </div>
   );
 }
-

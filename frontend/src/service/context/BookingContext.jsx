@@ -25,6 +25,8 @@ export function BookingProvider({ children }) {
   const [selectedServices, setSelectedServices] = useState([]);
   const [customerNotes, setCustomerNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH"); // 'CASH' | 'BANK_TRANSFER'
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [voucherCodeInput, setVoucherCodeInput] = useState("");
   const [createdBooking, setCreatedBooking] = useState(null);
 
   // Custom setSelectedSalon that only clears dependent selections if the salon changed
@@ -75,6 +77,8 @@ export function BookingProvider({ children }) {
     setSelectedServices([]);
     setCustomerNotes("");
     setPaymentMethod("CASH");
+    setAppliedVoucher(null);
+    setVoucherCodeInput("");
     setCreatedBooking(null);
   }, []);
 
@@ -102,6 +106,10 @@ export function BookingProvider({ children }) {
         setCustomerNotes,
         paymentMethod,
         setPaymentMethod,
+        appliedVoucher,
+        setAppliedVoucher,
+        voucherCodeInput,
+        setVoucherCodeInput,
         createdBooking,
         setCreatedBooking,
         resetBooking,

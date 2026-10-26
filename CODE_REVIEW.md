@@ -1601,10 +1601,11 @@ ws.onclose = (e) => {
 
 | # | Bug | File | Mô tả |
 |---|-----|------|-------|
-| S1 | `findAll()` không phân trang | Nhiều service | OOM với hàng chục nghìn records |
+| S1 | `findAll()` không phân trang | Nhiều service | ✅ ĐÃ SỬA: Thay thế bằng Database Pagination (`Pageable`, `LIMIT`/`OFFSET`) |
 | S2 | WebSocket không scale ngang | `NotificationWebSocketHandler.java` | Multi-instance → user không nhận notification |
-| S3 | `getUserDetailSummary` gọi `findAll()` | `UserService.java:173` | Load toàn bộ bookings/orders vào memory |
+| S3 | `getUserDetailSummary` gọi `findAll()` | `UserService.java:173` | ✅ ĐÃ SỬA: Dùng specific queries `findByCustomerPhone`, `findByCustomerEmail` |
 | S4 | Amount comparison mất precision | `PaymentWebhookService.java:91` | Có thể reject thanh toán hợp lệ |
+
 | S5 | Voucher TOCTOU race condition | `VoucherService.java` | Validate và apply là 2 transaction riêng |
 | S6 | Double payment record | `BookingService.java` + `PaymentApplicationService.java` | 2 payment cho 1 booking |
 | S7 | Regex `findOrderFromText` sai pattern | `NotificationService.java:357` | Feature "order từ notification" không hoạt động |
@@ -1641,7 +1642,7 @@ ws.onclose = (e) => {
 | Pagination | Thiếu nhiều API | Tất cả list endpoint | 🔴 Thiếu |
 | Caching strategy | Redis (idempotency only) | Cache + CDN | 🟡 Partial |
 | Structured Logging | SLF4J basic | JSON structured logs | 🟡 Cần nâng cấp |
-| Distributed Tracing | ❌ Không | Micrometer + Zipkin | 🟠 Thiếu |
+| Distributed Tracing | ❌ Không | Micrometer + Zipkin | 🟠 Thiếu | 
 | Circuit Breaker | ❌ Không | Resilience4j | 🟡 Nice to have |
 | Health Checks | Spring Actuator (mặc định) | Custom health indicators | 🟡 Basic |
 | API Versioning | `/api/v1/` partial | Consistent across all | 🟡 Inconsistent |
@@ -1696,12 +1697,13 @@ Dự án thể hiện nhiều kỹ thuật cao cấp hiếm gặp ở level juni
 [ ] Thêm per-user voucher usage check trong createBooking()
 [ ] Fix Review: check booking COMPLETED trước khi allow review
 [ ] Fix Review: recalculate stylist rating khi deleteReview()
-[ ] Fix getUserDetailSummary: thay findAll() bằng specific queries
+[x] Fix getUserDetailSummary: thay findAll() bằng specific queries
 [ ] Fix getUsers(): tách KC sync ra cron job riêng
-[ ] Thêm Pagination cho tất cả list APIs
+[x] Thêm Pagination cho tất cả list APIs (User, Booking, Order, Product)
 [ ] Fix memory leak sessionLocks → Caffeine cache với expiry
-[ ] Thêm Rate Limiting cho /api/auth/login, /api/auth/register/send-otp
+[x] Thêm Rate Limiting cho /api/auth/login, /api/auth/register/send-otp, booking, payment
 [ ] Frontend: thay hardcode URL → VITE_API_URL env var
+
 ```
 
 ### 🟡 P2 — Cải thiện trong Sprint 2-3 (1-2 tuần)

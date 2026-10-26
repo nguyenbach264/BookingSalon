@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+import demo.bookingsalon.Security.RateLimit.RateLimit;
+import demo.bookingsalon.Security.RateLimit.RateLimitType;
+
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
@@ -26,6 +29,13 @@ public class OrderController {
     private final OrderService orderService;
     private final UserRepository userRepository;
 
+    @RateLimit(
+        keyPrefix = "order",
+        type = RateLimitType.USER,
+        capacity = 5,
+        durationSeconds = 300,
+        message = "Quý khách chỉ có thể tạo tối đa 5 đơn hàng trong vòng 5 phút. Vui lòng thử lại sau!"
+    )
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
@@ -50,6 +60,12 @@ public class OrderController {
             @PathVariable UUID userId,
             Authentication authentication
     ) {
+        UUID authenticatedUserId = resolveUserId(authentication);
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equalsIgnoreCase("ROLE_ADMIN"));
+        if (!isAdmin && (authenticatedUserId == null || !authenticatedUserId.equals(userId))) {
+            throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền xem đơn hàng của người dùng khác!");
+        }
         log.info("Fetching orders for user: {}", userId);
         List<OrderResponse> orders = orderService.getUserOrders(userId);
         return ResponseEntity.ok(orders);

@@ -1,17 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Spin, Tag, Tooltip } from 'antd';
+import { Spin } from 'antd';
 import {
   User,
   MapPin,
   Calendar,
   Clock,
   Star,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
   Check,
-  Scissors,
-  Award,
 } from 'lucide-react';
 import { useBooking } from '../../service/context/BookingContext';
 import { getStylistsBySalon, getAllStylists, getStylistBookedSlots } from '../../service/api/bookingApi';
@@ -42,7 +39,7 @@ export function SelectStylistAndDate() {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Fetch stylists from backend for the selected salon (only active stylists with duty ON)
+  // Fetch stylists from backend for the selected salon
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
@@ -50,7 +47,7 @@ export function SelectStylistAndDate() {
     const fetchPromise = selectedSalon?.id
       ? getStylistsBySalon(selectedSalon.id, { onlyActive: true }).then((res) => {
           if (Array.isArray(res) && res.length > 0) return res;
-          return getAllStylists({ onlyActive: true }); // Fallback to active stylists
+          return getAllStylists({ onlyActive: true });
         })
       : getAllStylists({ onlyActive: true });
 
@@ -58,12 +55,10 @@ export function SelectStylistAndDate() {
       .then((data) => {
         if (isMounted) {
           const rawList = Array.isArray(data) ? data : [];
-          // Requirement 4: Filter out stylists whose status is OFF (not active)
           const list = rawList.filter(
             (s) => s.status === 'ACTIVE' || s.isDutyActive === true
           );
           setStylists(list);
-          // If no stylist is selected yet, or if current selection is invalid/off, select first active stylist
           if (list.length > 0) {
             if (!selectedStylist || !list.some((s) => s.id === selectedStylist.id)) {
               setSelectedStylist(list[0]);
@@ -100,7 +95,6 @@ export function SelectStylistAndDate() {
         if (isMounted) {
           const list = Array.isArray(slots) ? slots : [];
           setBookedSlots(list);
-          // If selectedTime is in booked slots, clear it
           if (selectedTime && list.includes(selectedTime)) {
             setSelectedTime(null);
           }
@@ -162,7 +156,6 @@ export function SelectStylistAndDate() {
         if (isBooked) {
           available = false;
         } else if (isSelectedDayToday) {
-          // Slot must be at least 15 minutes after current time
           if (hour < currentHour || (hour === currentHour && min <= currentMin + 15)) {
             available = false;
           }
@@ -185,11 +178,11 @@ export function SelectStylistAndDate() {
   };
 
   return (
-    <div className="max-w-[960px] mx-auto px-4 py-6 animate-fade-in">
+    <div className="max-w-[960px] mx-auto px-4 py-8 animate-fade-in">
       {/* Top Banner: Selected Salon Summary */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-200/80 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#2563eb] shrink-0">
             <MapPin className="w-5 h-5" />
           </div>
           <div>
@@ -206,7 +199,7 @@ export function SelectStylistAndDate() {
         </div>
         <button
           onClick={() => setStep(1)}
-          className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors border border-blue-200 shrink-0"
+          className="text-xs font-bold text-[#2563eb] hover:text-blue-800 hover:bg-blue-50 px-3.5 py-1.5 rounded-xl transition-colors border border-blue-200 shrink-0 cursor-pointer"
         >
           Đổi salon khác
         </button>
@@ -214,15 +207,15 @@ export function SelectStylistAndDate() {
 
       {/* SECTION 1: SELECT STYLIST */}
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-200/80 shadow-sm mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-[#2563eb] font-bold text-sm">
               1
             </div>
-            <h2 className="font-extrabold text-lg text-[#1b2a4a]">Chọn Stylist tạo kiểu</h2>
+            <h2 className="font-extrabold text-lg text-gray-900">Chọn Stylist tạo kiểu</h2>
           </div>
-          <span className="text-xs text-gray-400">
-            {stylists.length} Stylist sẵn sàng phục vụ
+          <span className="text-xs text-gray-400 font-medium">
+            {stylists.length} Stylist sẵn sàng
           </span>
         </div>
 
@@ -252,23 +245,23 @@ export function SelectStylistAndDate() {
                 <div
                   key={stylist.id || idx}
                   onClick={() => setSelectedStylist(stylist)}
-                  className={`group relative rounded-xl border-2 p-3 flex flex-col items-center text-center cursor-pointer transition-all duration-200 select-none ${
+                  className={`group relative rounded-2xl border-2 p-3.5 flex flex-col items-center text-center cursor-pointer transition-all duration-300 select-none ${
                     isSelected
-                      ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-100 shadow-md transform -translate-y-0.5'
-                      : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50/70'
+                      ? 'border-[#60a5fa] bg-blue-50/40 ring-4 ring-blue-50 shadow-md transform -translate-y-0.5'
+                      : 'border-gray-200 hover:border-[#60a5fa]/50 hover:bg-gray-50/50'
                   }`}
                 >
                   {/* Selected check badge */}
                   {isSelected && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-sm">
+                    <div className="absolute top-2 right-2 w-5 h-5 bg-[#60a5fa] text-white rounded-full flex items-center justify-center shadow-sm">
                       <Check className="w-3.5 h-3.5 stroke-[3]" />
                     </div>
                   )}
 
                   {/* Avatar */}
                   <div
-                    className={`w-20 h-20 rounded-full overflow-hidden border-2 mb-2 relative ${
-                      isSelected ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'
+                    className={`w-20 h-20 rounded-full overflow-hidden border-2 mb-2.5 relative ${
+                      isSelected ? 'border-[#60a5fa] ring-2 ring-blue-200' : 'border-gray-200'
                     }`}
                   >
                     <img
@@ -279,22 +272,22 @@ export function SelectStylistAndDate() {
                   </div>
 
                   {/* Name & Rank */}
-                  <h4 className="font-bold text-gray-900 text-sm mb-0.5 truncate w-full">
+                  <h4 className="font-bold text-gray-900 text-sm mb-1 truncate w-full group-hover:text-[#2563eb] transition-colors">
                     {stylist.fullName || stylist.nickname || 'Stylist'}
                   </h4>
 
-                  <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full mb-1.5">
+                  <span className="text-[11px] font-semibold text-[#2563eb] bg-blue-50 px-2 py-0.5 rounded-full mb-2">
                     {rank}
                   </span>
 
-                  {/* Real Rating & Reviews from DB */}
+                  {/* Rating */}
                   <div className="flex items-center gap-1 text-xs text-amber-500 font-bold">
                     <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                     {hasReviews ? (
                       <>
                         <span>{rating}</span>
                         <span className="text-gray-400 font-normal text-[10px]">
-                          ({stylist.totalReviewsCount} đánh giá)
+                          ({stylist.totalReviewsCount})
                         </span>
                       </>
                     ) : (
@@ -312,11 +305,11 @@ export function SelectStylistAndDate() {
 
       {/* SECTION 2: SELECT DATE & TIME */}
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-200/80 shadow-sm mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+        <div className="flex items-center gap-2.5 mb-5">
+          <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-[#2563eb] font-bold text-sm">
             2
           </div>
-          <h2 className="font-extrabold text-lg text-[#1b2a4a]">Chọn ngày & giờ hẹn</h2>
+          <h2 className="font-extrabold text-lg text-gray-900">Chọn ngày & giờ hẹn</h2>
         </div>
 
         {/* 7-Day Date Carousel */}
@@ -331,18 +324,16 @@ export function SelectStylistAndDate() {
                 <button
                   key={d.iso}
                   type="button"
-                  onClick={() => {
-                    setSelectedDate(d.iso);
-                  }}
-                  className={`py-2.5 px-2 rounded-xl flex flex-col items-center justify-center transition-all duration-200 border-2 ${
+                  onClick={() => setSelectedDate(d.iso)}
+                  className={`py-3 px-2 rounded-xl flex flex-col items-center justify-center transition-all duration-200 border-2 cursor-pointer ${
                     isSelected
-                      ? 'bg-[#1b2a4a] text-white border-[#1b2a4a] shadow-md transform scale-[1.02]'
-                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-white'
+                      ? 'bg-[#60a5fa] text-white border-[#60a5fa] shadow-md shadow-blue-200 transform scale-[1.02]'
+                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-[#60a5fa]/50 hover:bg-white'
                   }`}
                 >
                   <span
                     className={`text-[11px] font-bold ${
-                      isSelected ? 'text-blue-300' : 'text-gray-500'
+                      isSelected ? 'text-white/80' : 'text-gray-500'
                     }`}
                   >
                     {d.label}
@@ -356,12 +347,12 @@ export function SelectStylistAndDate() {
 
         {/* Time Slots Grid */}
         <div>
-          <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Khung giờ trống ({timeSlots.filter((s) => s.available).length} khung giờ)
             </p>
             {selectedTime && (
-              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+              <span className="text-xs font-bold text-[#2563eb] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
                 Đã chọn: {selectedTime}
               </span>
             )}
@@ -376,15 +367,21 @@ export function SelectStylistAndDate() {
                   type="button"
                   disabled={!slot.available}
                   onClick={() => setSelectedTime(slot.time)}
-                  title={slot.isBooked ? 'Stylist đã có lịch hẹn khung giờ này' : !slot.available ? 'Đã qua khung giờ này' : slot.time}
-                  className={`py-2 px-1 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 flex flex-col items-center justify-center gap-0.5 ${
+                  title={
+                    slot.isBooked
+                      ? 'Stylist đã có lịch hẹn khung giờ này'
+                      : !slot.available
+                      ? 'Đã qua khung giờ này'
+                      : slot.time
+                  }
+                  className={`py-2 px-1 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                     slot.isBooked
                       ? 'bg-rose-50 text-rose-400 border border-rose-200 cursor-not-allowed opacity-80'
                       : !slot.available
                       ? 'bg-gray-100 text-gray-300 cursor-not-allowed border border-gray-100'
                       : isSelected
-                      ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-200 scale-105'
-                      : 'bg-white text-gray-700 border border-gray-200 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50/50'
+                      ? 'bg-[#60a5fa] text-white shadow-md shadow-blue-200 ring-2 ring-blue-200 scale-105'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:border-[#60a5fa] hover:text-[#2563eb] hover:bg-blue-50/50'
                   }`}
                 >
                   <span className={slot.isBooked ? 'line-through' : ''}>{slot.time}</span>
@@ -397,9 +394,9 @@ export function SelectStylistAndDate() {
           </div>
 
           {/* Legend */}
-          <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-4 text-xs text-gray-500">
+          <div className="mt-5 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-4 text-xs text-gray-500">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-blue-600 inline-block"></span>
+              <span className="w-3 h-3 rounded-md bg-[#60a5fa] inline-block"></span>
               <span>Đang chọn</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -423,7 +420,7 @@ export function SelectStylistAndDate() {
         <button
           type="button"
           onClick={() => setStep(1)}
-          className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-bold text-sm hover:bg-gray-100 transition-colors flex items-center gap-2"
+          className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-bold text-sm hover:bg-gray-100 transition-colors flex items-center gap-2 cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4" />
           Quay lại chọn Salon
@@ -433,10 +430,10 @@ export function SelectStylistAndDate() {
           type="button"
           disabled={!selectedStylist || !selectedTime}
           onClick={handleNext}
-          className={`px-8 py-3 rounded-xl text-white font-bold text-sm shadow-md flex items-center gap-2 transition-all ${
+          className={`px-8 py-3 rounded-xl text-white font-bold text-sm shadow-md flex items-center gap-2 transition-all cursor-pointer ${
             selectedStylist && selectedTime
-              ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg cursor-pointer transform hover:scale-[1.02]'
-              : 'bg-gray-300 cursor-not-allowed text-gray-500'
+              ? 'bg-[#60a5fa] hover:bg-[#3b82f6] shadow-blue-200 hover:shadow-lg transform hover:scale-[1.02] active:scale-95'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
           }`}
         >
           Tiếp tục chọn Dịch vụ

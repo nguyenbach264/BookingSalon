@@ -36,11 +36,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import demo.bookingsalon.Payload.Response.Common.PageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -170,13 +177,20 @@ public class UserService {
         Set<UUID> bookingIds = rawBookings.stream().map(Booking::getId).collect(Collectors.toSet());
 
         if (phone != null && !phone.isBlank()) {
-            List<Booking> allBookings = bookingRepository.findAll();
-            for (Booking b : allBookings) {
+            List<Booking> phoneBookings = bookingRepository.findByCustomerPhone(phone);
+            for (Booking b : phoneBookings) {
                 if (!bookingIds.contains(b.getId())) {
-                    if (phone.equals(b.getCustomerPhone()) || (email != null && email.equalsIgnoreCase(b.getCustomerEmail()))) {
-                        rawBookings.add(b);
-                        bookingIds.add(b.getId());
-                    }
+                    rawBookings.add(b);
+                    bookingIds.add(b.getId());
+                }
+            }
+        }
+        if (email != null && !email.isBlank()) {
+            List<Booking> emailBookings = bookingRepository.findByCustomerEmail(email);
+            for (Booking b : emailBookings) {
+                if (!bookingIds.contains(b.getId())) {
+                    rawBookings.add(b);
+                    bookingIds.add(b.getId());
                 }
             }
         }
@@ -204,13 +218,11 @@ public class UserService {
         Set<UUID> orderIds = rawOrders.stream().map(Order::getId).collect(Collectors.toSet());
 
         if (phone != null && !phone.isBlank()) {
-            List<Order> allOrders = orderRepository.findAll();
-            for (Order o : allOrders) {
+            List<Order> phoneOrders = orderRepository.findByReceiverPhone(phone);
+            for (Order o : phoneOrders) {
                 if (!orderIds.contains(o.getId())) {
-                    if (phone.equals(o.getReceiverPhone())) {
-                        rawOrders.add(o);
-                        orderIds.add(o.getId());
-                    }
+                    rawOrders.add(o);
+                    orderIds.add(o.getId());
                 }
             }
         }
@@ -263,11 +275,17 @@ public class UserService {
                 .build();
     }
 
-    // 3. Lấy danh sách toàn bộ user từ database (có đầy đủ thông tin hồ sơ chi tiết)
+    // 3. Lấy danh sách toàn bộ user từ database (thuần túy READ-ONLY, không có side effects)
     public List<UserResponse> getUsers() {
-        List<User> dbUsers = userRepository.findAll();
+        return userRepository.findAll().stream()
+                .map(userMapper::toUserResponseByUser)
+                .toList();
+    }
 
-        // Đồng bộ các user từ Keycloak nếu chưa có trong DB
+    // 3b. Đồng bộ các user từ Keycloak vào DB (chức năng quản trị riêng biệt)
+    public int syncUsersFromKeycloak() {
+        List<User> dbUsers = userRepository.findAll();
+        int syncedCount = 0;
         try {
             List<UserRepresentation> kcUsers = keycloak.realm(realm).users().list();
             java.util.Set<UUID> existingKcIds = dbUsers.stream()
@@ -286,6 +304,7 @@ public class UserService {
                             existingByEmail.setKeycloakId(kId);
                             userRepository.save(existingByEmail);
                             existingKcIds.add(kId);
+                            syncedCount++;
                         } else {
                             String fullName = ((kcUser.getLastName() != null ? kcUser.getLastName() + " " : "")
                                     + (kcUser.getFirstName() != null ? kcUser.getFirstName() : "")).trim();
@@ -300,9 +319,9 @@ public class UserService {
                                     .build();
                             Cart cart = Cart.builder().user(u).build();
                             u.setCart(cart);
-                            User saved = userRepository.save(u);
-                            dbUsers.add(saved);
+                            userRepository.save(u);
                             existingKcIds.add(kId);
+                            syncedCount++;
                         }
                     }
                 } catch (Exception ex) {
@@ -312,10 +331,7 @@ public class UserService {
         } catch (Exception ex) {
             log.warn("Không thể lấy danh sách user từ Keycloak để đồng bộ: {}", ex.getMessage());
         }
-
-        return dbUsers.stream()
-                .map(userMapper::toUserResponseByUser)
-                .toList();
+        return syncedCount;
     }
 
     // 4. Xóa user (Chức năng admin)
@@ -339,24 +355,28 @@ public class UserService {
         }
     }
 
-    // 5. Lấy danh sách user có phân trang (dùng cho Admin Dashboard)
+    // 5. Lấy danh sách user có phân trang thực sự trên Database (dùng cho Admin Dashboard)
+    @Transactional(readOnly = true)
+    public PageResponse<UserResponse> getUsersPage(int page, int size, String search) {
+        int targetSize = Math.max(1, Math.min(size, 200));
+        int targetPage = Math.max(0, page);
+        Pageable pageable = PageRequest.of(targetPage, targetSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<User> userPage = userRepository.searchUsers(search, pageable);
+        return PageResponse.of(userPage, userMapper::toUserResponseByUser);
+    }
+
+    // 5.1 Giữ tương thích ngược với getUsersByPagination (nhưng truy vấn LIMIT/OFFSET trực tiếp trên DB)
+    @Transactional(readOnly = true)
     public List<UserResponse> getUsersByPagination(int first, int max, String search) {
-        List<User> list = userRepository.findAll();
-        if (search != null && !search.isBlank()) {
-            String lower = search.toLowerCase();
-            list = list.stream().filter(u ->
-                    (u.getUsername() != null && u.getUsername().toLowerCase().contains(lower)) ||
-                    (u.getFullName() != null && u.getFullName().toLowerCase().contains(lower)) ||
-                    (u.getEmail() != null && u.getEmail().toLowerCase().contains(lower)) ||
-                    (u.getPhoneNumber() != null && u.getPhoneNumber().contains(lower))
-            ).toList();
-        }
-        int fromIndex = Math.min(first, list.size());
-        int toIndex = Math.min(first + max, list.size());
-        return list.subList(fromIndex, toIndex).stream()
+        int targetSize = Math.max(1, max);
+        int targetPage = Math.max(0, first / targetSize);
+        Pageable pageable = PageRequest.of(targetPage, targetSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<User> userPage = userRepository.searchUsers(search, pageable);
+        return userPage.getContent().stream()
                 .map(userMapper::toUserResponseByUser)
                 .toList();
     }
+
 
     // 6. Reset Password
     public void resetPassword(UUID id, String newPassword) {

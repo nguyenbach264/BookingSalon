@@ -8,10 +8,17 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 public interface StylistRepository extends JpaRepository<Stylist, UUID> {
-    Optional<Stylist> findByUsername(String username);
-    Optional<Stylist> findByKeycloakId(UUID keycloakId);
+    Optional<Stylist> findFirstByUsername(String username);
+    Optional<Stylist> findFirstByKeycloakId(UUID keycloakId);
+
+    default Optional<Stylist> findByUsername(String username) {
+        return findFirstByUsername(username);
+    }
+
+    default Optional<Stylist> findByKeycloakId(UUID keycloakId) {
+        return findFirstByKeycloakId(keycloakId);
+    }
     List<Stylist> findBySalonId(UUID salonId);
     List<Stylist> findByStatus(String status);
     List<Stylist> findBySalonIdAndStatus(UUID salonId, String status);

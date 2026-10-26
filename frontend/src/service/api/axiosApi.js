@@ -1,7 +1,10 @@
 import axios from "axios";
+import { message } from "antd";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: `${API_URL}/api`,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
@@ -90,12 +93,27 @@ api.interceptors.response.use(
           (window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/stylist"));
         // Chỉ mở modal nếu auth context đã initialized (tránh flash modal khi trang vừa load)
         const isInitialized = _authContext?.initialized !== false;
-        if (!isDashboard && isInitialized && _authContext?.openLoginModal) {
+        const isAuthLoading = _authContext?.loading === true;
+        if (!isDashboard && isInitialized && !isAuthLoading && _authContext?.openLoginModal) {
           _authContext.openLoginModal("Phiên đăng nhập của quý khách đã hết hạn. Vui lòng đăng nhập lại để tiếp tục!");
         }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
+      }
+    }
+
+    if (error.response?.status === 429) {
+      const retryAfter = error.response.headers?.["retry-after"] || error.response.data?.retryAfterSeconds || 60;
+      const warningMsg = error.response.data?.message || `Quý khách đang thao tác quá nhanh! Vui lòng chờ ${retryAfter} giây rồi thử lại.`;
+      try {
+        message.warning({
+          content: warningMsg,
+          key: "rate-limit-warning",
+          duration: 4,
+        });
+      } catch (e) {
+        console.warn("Rate limit warning:", warningMsg);
       }
     }
 

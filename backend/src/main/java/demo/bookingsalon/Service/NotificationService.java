@@ -15,6 +15,7 @@ import demo.bookingsalon.Repository.NotificationRepository;
 import demo.bookingsalon.Repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -114,9 +115,6 @@ public class NotificationService {
 
     @Transactional
     public NotificationDTO getNotificationById(UUID notificationId) {
-        // Cập nhật trạng thái trực tiếp bằng SQL trong DB
-        notificationRepository.markAsRead(notificationId);
-
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy thông báo với ID: " + notificationId));
 
@@ -354,10 +352,23 @@ public class NotificationService {
 
     private Optional<Order> findOrderFromText(String text) {
         if (text == null) return Optional.empty();
-        Matcher m = Pattern.compile("ORD-[A-Za-z0-9-]+").matcher(text);
+        // Hỗ trợ cả mã đơn hàng format mới (DH...) và format cũ (ORD-...)
+        Matcher m = Pattern.compile("(?:DH\\d{6}[A-Za-z0-9]+|ORD-[A-Za-z0-9-]+)").matcher(text);
         if (m.find()) {
             return orderRepository.findByOrderCode(m.group(0));
         }
         return Optional.empty();
+    }
+
+    /**
+     * Tự động xóa các thông báo đã hết hạn (expiredAt < hiện tại) mỗi ngày lúc 2:00 AM
+     */
+    @Scheduled(cron = "0 0 2 * * *")
+    @Transactional
+    public void cleanupExpiredNotifications() {
+        int deleted = notificationRepository.deleteByExpiredAtBefore(LocalDateTime.now());
+        if (deleted > 0) {
+            log.info("Cleaned up {} expired notifications from database", deleted);
+        }
     }
 }
