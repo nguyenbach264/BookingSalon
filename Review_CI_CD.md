@@ -490,32 +490,6 @@ on:
 
 ---
 
-### 0.14 Kịch bản thực tế: Code lỗi vẫn được push lên thì sao?
-
-#### 1. Điều gì thực sự xảy ra?
-Git và GitHub Actions hoạt động theo cơ chế **bất đồng bộ**:
-```
-Developer (git push) ───▶ GitHub Repo nhận commit ───▶ Phát sự kiện webhook ───▶ Kích hoạt CI/CD
-```
-Code luôn được lưu vào GitHub **trước** khi CI/CD bắt đầu chạy. Do đó:
-- **CI/CD không chặn được lệnh `git push` ở client**, trừ khi bạn dùng Git Pre-push Hook cục bộ trên máy.
-- **Docker & Server an toàn:** Nhờ cơ chế `needs: [backend-test, frontend-check]`, nếu test/lint thất bại thì job `docker-build-push` sẽ bị hủy (Canceled/Skipped). Sẽ không có Docker Image lỗi nào bị đẩy lên Docker Hub hay deploy ra production.
-- **Nhưng Repository bị "ô nhiễm":** Code lỗi đã nằm trên nhánh `master`. Các thành viên khác pull về sẽ bị lỗi theo.
-
-#### 2. Giải pháp chuẩn công nghiệp: Branch Protection Rules (Rulesets)
-Để ngăn tuyệt đối code lỗi vào nhánh chính:
-1. **Cấm push trực tiếp:** Chỉ cho phép merge thông qua Pull Request (PR).
-2. **Status Checks Enforced:** Cấu hình trên GitHub yêu cầu các jobs `backend-test` và `frontend-check` phải trả về status **PASS (Xanh ✅)** thì mới cho phép bấm Merge.
-3. **Pre-push Hooks (Tùy chọn):** Dùng `Husky` ở phía frontend/backend để chạy lint/test nhanh trên máy dev trước khi lệnh `git push` gửi dữ liệu lên mạng.
-
-#### 3. Quy trình xử lý sự cố khi lỡ push code lỗi lên master
-| Cách xử lý | Lệnh thực hiện | Khi nào nên dùng |
-|---|---|---|
-| **Fix forward** | Commit bản sửa lỗi mới ➔ `git push origin master` | Lỗi nhỏ, sửa được ngay trong vài phút |
-| **Git Revert** | `git revert <commit_id>` ➔ `git push origin master` | Lỗi nghiêm trọng hoặc cần thời gian điều tra |
-
----
-
 ## 1. Tổng quan kiến trúc pipeline
 
 ```
@@ -962,5 +936,5 @@ image: redis:7.2.4-alpine
 
 ---
 
-> _Review bởi Antigravity • BookingSalon Project • 2026-10-31_
+> _Review bởi Antigravity • BookingSalon Project • 2026-10-27_
 
