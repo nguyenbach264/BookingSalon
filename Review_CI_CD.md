@@ -962,5 +962,5 @@ image: redis:7.2.4-alpine
 
 ---
 
-> _Review bởi Antigravity • BookingSalon Project • 2026-10-31_
+> _Review bởi Antigravity • BookingSalon Project • 2026-10-31
 
