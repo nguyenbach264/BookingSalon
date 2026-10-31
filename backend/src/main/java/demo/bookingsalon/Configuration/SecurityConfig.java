@@ -1,6 +1,7 @@
 package demo.bookingsalon.Configuration;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,11 +24,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import demo.bookingsalon.Service.BffSessionService;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final BffSessionService bffSessionService;
+    private final demo.bookingsalon.Security.RateLimit.IpRateLimitingFilter ipRateLimitingFilter;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
@@ -36,10 +42,32 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
 
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        // Giữ nguyên thuộc tính tên token để CsrfCookieFilter có thể đọc được
+        requestHandler.setCsrfRequestAttributeName(null);
+
         http
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(requestHandler)
+                .ignoringRequestMatchers(
+                    "/api/payments/webhook/**",
+                    "/api/v1/payments/webhook/**",
+                    "/api/v1/payments/simulator/**",
+                    "/webhooks/**",
+                    "/api/auth/**",
+                    "/ws/**",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
+                )
+            )
+            .addFilterBefore(ipRateLimitingFilter, BasicAuthenticationFilter.class)
+            .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
             .cors(Customizer.withDefaults())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .sessionFixation(sessionFixation -> sessionFixation.none())
+            )
             .authorizeHttpRequests(auth -> auth
                 // Endpoint công khai
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
@@ -52,50 +80,75 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/refresh-token").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/payments/webhook/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/salons/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/service-offerings/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                // Yêu cầu đăng nhập
+                .requestMatchers(HttpMethod.POST, "/api/payments/webhook/**", "/api/v1/payments/webhook/**", "/webhooks/**", "/api/v1/payments/simulator/**").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/webhooks/**", "/api/v1/payments/simulator/**").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/api/v1/payments/webhook/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/products", "/api/product-categories/**", "/api/product-categories").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/salons/**", "/api/salon/**", "/api/salon", "/api/salons").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/service-offerings/**", "/api/service-offering/**", "/api/service-offering", "/api/service-offerings").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/category/**", "/api/category", "/api/categories").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stylists/**", "/api/stylists").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/booking/stylist/*/booked-slots", "/api/bookings/stylist/*/booked-slots").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/vouchers/available").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/vouchers/apply").permitAll()
+                // Yêu cầu đăng nhập chung
                 .requestMatchers(HttpMethod.GET,  "/api/auth/me").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/bookings/**").authenticated()
-                .requestMatchers(HttpMethod.GET,  "/api/bookings/my/**").authenticated()
-                .requestMatchers(HttpMethod.GET,  "/api/notifications/**").authenticated()
+                .requestMatchers("/api/notifications/**", "/api/notifications").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/payments/**").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/payments/**").authenticated()
-                // USER
-                .requestMatchers(HttpMethod.GET,  "/api/users/me/**").hasRole("USER")
-                .requestMatchers(HttpMethod.PUT,  "/api/users/me/**").hasRole("USER")
+                // ORDERS - permit authenticated for users
+                .requestMatchers(HttpMethod.GET,    "/api/orders/**", "/api/orders").authenticated()
+                .requestMatchers(HttpMethod.POST,   "/api/orders/**", "/api/orders").authenticated()
+                .requestMatchers(HttpMethod.PUT,    "/api/orders/**", "/api/orders").authenticated()
+                // BOOKINGS - permit authenticated for users, stylists, admins
+                .requestMatchers(HttpMethod.GET,    "/api/booking/**", "/api/bookings/**", "/api/booking", "/api/bookings").authenticated()
+                .requestMatchers(HttpMethod.POST,   "/api/booking/**", "/api/bookings/**", "/api/booking", "/api/bookings").authenticated()
+                .requestMatchers(HttpMethod.PUT,    "/api/booking/**", "/api/bookings/**", "/api/booking", "/api/bookings").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/booking/*/hard", "/api/bookings/*/hard").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/booking/**", "/api/bookings/**").authenticated()
+                // USER PROFILE & VERIFICATION
+                .requestMatchers("/api/users/me", "/api/users/me/**").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/api/cart/**").hasRole("USER")
                 .requestMatchers(HttpMethod.POST, "/api/cart/**").hasRole("USER")
                 .requestMatchers(HttpMethod.PUT,  "/api/cart/**").hasRole("USER")
                 .requestMatchers(HttpMethod.DELETE, "/api/cart/**").hasRole("USER")
-                .requestMatchers(HttpMethod.POST, "/api/orders/**").hasRole("USER")
-                .requestMatchers(HttpMethod.POST, "/api/reviews/**").hasRole("USER")
+                .requestMatchers(HttpMethod.GET,  "/api/reviews", "/api/reviews/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/reviews", "/api/reviews/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/reviews/**", "/api/reviews").hasRole("ADMIN")
                 // STYLIST
-                .requestMatchers("/api/stylist/**").hasRole("STYLIST")
-                .requestMatchers(HttpMethod.GET,  "/api/bookings/stylist/**").hasRole("STYLIST")
-                .requestMatchers(HttpMethod.PUT,  "/api/bookings/*/status").hasAnyRole("STYLIST", "ADMIN")
+                .requestMatchers("/api/stylist/**", "/api/stylist").hasRole("STYLIST")
                 // ADMIN
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.GET,    "/api/users/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,    "/api/users/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST,   "/api/salons/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,    "/api/salons/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/salons/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST,   "/api/service-offerings/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,    "/api/service-offerings/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/service-offerings/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST,   "/api/categories/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,    "/api/categories/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST,   "/api/media/**").hasAnyRole("ADMIN", "STYLIST")
-                .requestMatchers(HttpMethod.DELETE, "/api/media/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**", "/api/admin").hasRole("ADMIN")
+                .requestMatchers("/api/vouchers/admin/**", "/api/vouchers/admin").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET,    "/api/users/**", "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/users/**", "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/users/**", "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/**", "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/salons/**", "/api/salon/**", "/api/salons", "/api/salon").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/salons/**", "/api/salon/**", "/api/salons", "/api/salon").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/salons/**", "/api/salon/**", "/api/salons", "/api/salon").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/service-offerings/**", "/api/service-offering/**", "/api/service-offerings", "/api/service-offering").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/service-offerings/**", "/api/service-offering/**", "/api/service-offerings", "/api/service-offering").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/service-offerings/**", "/api/service-offering/**", "/api/service-offerings", "/api/service-offering").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/categories/**", "/api/category/**", "/api/categories", "/api/category").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/categories/**", "/api/category/**", "/api/categories", "/api/category").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/categories/**", "/api/category/**", "/api/categories", "/api/category").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/stylists/*/avatar", "/api/stylists/me/avatar").hasAnyRole("ADMIN", "STYLIST")
+                .requestMatchers(HttpMethod.POST,   "/api/stylists/**", "/api/stylists").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/stylists/**", "/api/stylists").hasAnyRole("ADMIN", "STYLIST")
+                .requestMatchers(HttpMethod.DELETE, "/api/stylists/**", "/api/stylists").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/media/**", "/api/media").hasAnyRole("ADMIN", "STYLIST")
+                .requestMatchers(HttpMethod.DELETE, "/api/media/**", "/api/media").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
                 .bearerTokenResolver(request -> {
+                    String path = request.getRequestURI();
+                    // Bỏ qua giải mã token trên các endpoint xác thực công khai
+                    // để tránh token cũ/hết hạn kích hoạt AuthenticationEntryPoint chặn request
+                    if (path.startsWith("/api/auth/") && !path.equals("/api/auth/me")) {
+                        return null;
+                    }
                     // 1. Kiểm tra header Authorization trước (cho Swagger, Postman, external clients)
                     String header = request.getHeader("Authorization");
                     if (header != null && header.startsWith("Bearer ")) {
@@ -146,7 +199,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = List.of(allowedOrigins.split(","));
+        List<String> origins = new ArrayList<>(List.of(allowedOrigins.split(",")));
+        if (!origins.contains("http://localhost")) origins.add("http://localhost");
+        if (!origins.contains("http://localhost:80")) origins.add("http://localhost:80");
+        if (!origins.contains("http://localhost:5173")) origins.add("http://localhost:5173");
+        if (!origins.contains("http://127.0.0.1")) origins.add("http://127.0.0.1");
+        if (!origins.contains("http://127.0.0.1:80")) origins.add("http://127.0.0.1:80");
+        if (!origins.contains("http://127.0.0.1:5173")) origins.add("http://127.0.0.1:5173");
+        if (!origins.contains("http://localhost:5174")) origins.add("http://localhost:5174");
+        if (!origins.contains("http://127.0.0.1:5174")) origins.add("http://127.0.0.1:5174");
         configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -156,4 +217,5 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }

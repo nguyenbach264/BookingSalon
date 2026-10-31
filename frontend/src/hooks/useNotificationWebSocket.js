@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 
 import notificationWebSocket from "../service/websocket/notificationWebSocket.js";
+import { WS_REVIEW_URL } from "../config/api.js";
 
 const useNotificationWebSocket = (productId, onNewReview) => {
   useEffect(() => {
     if (!productId) return;
 
-    notificationWebSocket.connect("ws://localhost:8080/ws/reviews", (message) => {
+    notificationWebSocket.connect(WS_REVIEW_URL, (message) => {
       if (message.type === "NEW_REVIEW" && message.data.productId === productId) {
         onNewReview(message.data);
       }

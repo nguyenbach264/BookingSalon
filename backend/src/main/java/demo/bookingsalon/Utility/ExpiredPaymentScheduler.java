@@ -25,8 +25,9 @@ public class ExpiredPaymentScheduler {
     @Transactional
     public void expirePendingPayments() {
         log.info("Running expired payment scheduler...");
-        List<Payment> expiredList = paymentRepository.findByStatusAndExpiredAt(PaymentStatus.PENDING)
-                .orElseThrow(() -> new NotFoundException("Payment not found"));
+        java.time.LocalDateTime cutoffTime = java.time.LocalDateTime.now().minusMinutes(15);
+        List<Payment> expiredList = paymentRepository.findByStatusAndCreatedBefore(PaymentStatus.PENDING, cutoffTime)
+                .orElse(java.util.Collections.emptyList());
 
         if (expiredList.isEmpty()) {
             log.info("No expired payments found");

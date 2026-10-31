@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Button, Modal, } from 'antd';
+import React from 'react';
+import { Button, Modal } from 'antd';
+import { ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 
 const formatPrice = (price) => {
-  return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " Đ";
+  return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' đ';
 };
 
 const CartPage = ({ visible, onClose, cartItems, onUpdateQuantity, onRemoveItem, onCheckout }) => {
@@ -10,22 +11,22 @@ const CartPage = ({ visible, onClose, cartItems, onUpdateQuantity, onRemoveItem,
 
   const modalFooter = cartItems.length > 0 ? (
     <div className="pt-4 mt-2 space-y-4 border-t border-gray-100">
-      <div className="flex justify-between items-center text-base px-2">
-        <span className="text-gray-600 font-medium">Tạm tính:</span>
-        <span className="font-bold text-gray-900">{formatPrice(totalPrice)}</span>
+      <div className="flex justify-between items-center text-sm px-1 text-gray-500">
+        <span className="font-medium">Tạm tính:</span>
+        <span className="font-bold text-gray-900 text-base">{formatPrice(totalPrice)}</span>
       </div>
-      <div className="flex justify-between items-center text-lg border-t border-dashed border-gray-300 pt-4 px-2">
-        <span className="text-gray-900 font-bold uppercase">Tổng cộng:</span>
-        <span className="font-black text-red-600 text-2xl">{formatPrice(totalPrice)}</span>
+      <div className="flex justify-between items-center text-base border-t border-dashed border-gray-200 pt-3 px-1">
+        <span className="text-gray-900 font-extrabold uppercase text-sm">Tổng cộng:</span>
+        <span className="font-black text-[#60a5fa] text-2xl">{formatPrice(totalPrice)}</span>
       </div>
-      <Button
-        type="primary"
-        size="large"
-        className="w-full h-12 bg-[#1b2a4a] hover:bg-[#244383] font-bold text-base rounded-lg shadow-md border-none uppercase tracking-wide"
-        onClick={ onCheckout }
+      <button
+        type="button"
+        className="w-full h-12 bg-[#60a5fa] hover:bg-[#3b82f6] text-white font-bold text-sm rounded-xl shadow-md shadow-blue-200 transition-all uppercase tracking-wide flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+        onClick={onCheckout}
       >
-        Thanh Toán Ngay
-      </Button>
+        <span>Thanh Toán Ngay</span>
+        <ArrowRight size={16} />
+      </button>
     </div>
   ) : null;
 
@@ -33,8 +34,11 @@ const CartPage = ({ visible, onClose, cartItems, onUpdateQuantity, onRemoveItem,
     <Modal
       title={
         <div className="flex items-center justify-between pr-8">
-          <span className="text-xl font-black text-gray-900">GIỎ HÀNG</span>
-          <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5 text-[#60a5fa]" />
+            <span className="text-lg font-black text-gray-900">GIỎ HÀNG</span>
+          </div>
+          <span className="text-xs font-bold text-[#2563eb] bg-blue-50 px-2.5 py-1 rounded-full">
             {cartItems.length} sản phẩm
           </span>
         </div>
@@ -43,60 +47,74 @@ const CartPage = ({ visible, onClose, cartItems, onUpdateQuantity, onRemoveItem,
       onCancel={onClose}
       footer={modalFooter}
       centered
-      width={720}
-      className="font-sans rounded-xl overflow-hidden"
+      width={680}
+      className="font-sans rounded-2xl overflow-hidden"
     >
-      <div className="max-h-[50vh] overflow-y-auto py-4 pr-2 -mr-2">
+      <div className="max-h-[55vh] overflow-y-auto py-3 pr-1">
         {cartItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-gray-500 gap-4">
-            <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center">
-              <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
-                </path>
-              </svg>
+          <div className="flex flex-col items-center justify-center py-12 text-gray-500 gap-3">
+            <div className="w-20 h-20 bg-blue-50/50 rounded-2xl flex items-center justify-center text-[#60a5fa]">
+              <ShoppingBag className="w-10 h-10 stroke-[1.5]" />
             </div>
-            <p className="text-base font-medium">Giỏ hàng của bạn đang trống</p>
-            <Button type="default" onClick={onClose} className="border-blue-600 text-blue-600 hover:text-blue-700 hover:border-blue-700 font-medium">
+            <p className="text-sm font-semibold text-gray-700">Giỏ hàng của bạn đang trống</p>
+            <p className="text-xs text-gray-400">Hãy thêm sản phẩm chăm sóc tóc yêu thích vào giỏ hàng nhé!</p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-2 px-5 py-2.5 rounded-xl bg-[#60a5fa] text-white text-xs font-bold hover:bg-[#3b82f6] shadow-sm transition-all cursor-pointer"
+            >
               Tiếp tục mua sắm
-            </Button>
+            </button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {cartItems.map((item) => (
-              <div key={item.id} className="flex gap-4 border border-gray-100 bg-white p-3 rounded-lg shadow-sm group hover:border-blue-200 transition-colors">
-                <div className="w-20 h-20 bg-gray-50 rounded-md overflow-hidden flex-shrink-0">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              <div
+                key={item.id}
+                className="flex gap-4 border border-gray-100 bg-white p-3.5 rounded-2xl shadow-xs group hover:border-[#60a5fa]/40 transition-colors"
+              >
+                <div className="w-20 h-20 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
 
-                <div className="flex-1 flex flex-col justify-between">
+                <div className="flex-1 flex flex-col justify-between min-w-0">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug pr-6 relative">
-                      {item.name}
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="text-sm font-bold text-gray-800 line-clamp-1 leading-snug">
+                        {item.name}
+                      </h4>
                       <button
                         onClick={() => onRemoveItem(item.id)}
-                        className="absolute -top-1 -right-2 text-gray-400 hover:text-red-500 p-1 transition-colors bg-white rounded-full"
+                        className="text-gray-400 hover:text-red-500 p-1 transition-colors rounded-lg cursor-pointer shrink-0"
                         title="Xóa sản phẩm"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <Trash2 className="w-4 h-4" />
                       </button>
-                    </h4>
-                    <div className="text-red-600 font-bold text-sm mt-1.5">{formatPrice(item.price)}</div>
+                    </div>
+                    <div className="text-rose-600 font-black text-sm mt-1">
+                      {formatPrice(item.price)}
+                    </div>
                   </div>
 
-                  <div className="flex items-center mt-2">
-                    <div className="flex items-center border border-gray-300 rounded overflow-hidden">
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
+                    <span className="text-xs text-gray-400">Số lượng:</span>
+                    <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                       <button
                         onClick={() => onUpdateQuantity(item.id, -1)}
-                        className="w-7 h-7 flex items-center justify-center bg-gray-50 text-gray-600 hover:bg-gray-200 transition-colors"
+                        className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer text-sm font-bold"
                       >
                         -
                       </button>
-                      <span className="w-9 text-center text-xs font-bold border-x border-gray-300 flex items-center justify-center h-7 bg-white">
+                      <span className="w-8 text-center text-xs font-bold border-x border-gray-200 flex items-center justify-center h-7 bg-white">
                         {item.quantity}
                       </span>
                       <button
                         onClick={() => onUpdateQuantity(item.id, 1)}
-                        className="w-7 h-7 flex items-center justify-center bg-gray-50 text-gray-600 hover:bg-gray-200 transition-colors"
+                        className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer text-sm font-bold"
                       >
                         +
                       </button>

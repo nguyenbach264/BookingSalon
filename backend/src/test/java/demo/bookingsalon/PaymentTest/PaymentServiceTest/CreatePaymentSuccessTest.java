@@ -15,6 +15,7 @@ import demo.bookingsalon.Payload.Response.Business.BookingResponse;
 import demo.bookingsalon.Payload.Response.Business.PaymentResponse;
 import demo.bookingsalon.Payload.Response.Business.UserResponse;
 import demo.bookingsalon.Repository.PaymentRepository;
+import demo.bookingsalon.Repository.BookingRepository;
 import demo.bookingsalon.Service.*;
 import demo.bookingsalon.Strategy.CodPaymentStrategy;
 import demo.bookingsalon.Utility.IdempotencyService;
@@ -58,6 +59,8 @@ public class CreatePaymentSuccessTest {
     private PaymentRepository paymentRepository;
     @Mock
     private PaymentMapper paymentMapper;
+    @Mock
+    private BookingRepository bookingRepository;
     @Mock
     private ApplicationEventPublisher applicationEventPublisher;
     @Mock
@@ -103,7 +106,7 @@ public class CreatePaymentSuccessTest {
                 .salonId(salonId)
                 .userId(userId)
                 .stylistId(stylistId)
-                .paymentMethod(createPaymentRequest.getPaymentMethod())
+                .paymentMethod(createPaymentRequest.getPaymentMethod().name())
                 .serviceIds(serviceIds)
                 .status(BookingStatus.PENDING)
                 .totalServices(3)
@@ -147,14 +150,13 @@ public class CreatePaymentSuccessTest {
     @Test
     void testCreatePayment_Cod_Success() {
         when(bookingService.getBookingById(createPaymentRequest.getBookingId())).thenReturn(bookingResponse);
+        when(bookingRepository.findById(createPaymentRequest.getBookingId())).thenReturn(Optional.of(booking));
 
         when(idempotencyService.tryLock(anyString(), anyLong())).thenReturn(true);
 
         when(userService.getUserInDbById(bookingResponse.getUserId())).thenReturn(userResponse);
 
         when(salonService.getSalonById(bookingResponse.getSalonId())).thenReturn(salonDTO);
-
-        when(bookingMapper.toBooking(bookingResponse)).thenReturn(booking);
 
         when(salonMapper.toSalon(salonDTO)).thenReturn(salon);
 
@@ -195,6 +197,7 @@ public class CreatePaymentSuccessTest {
     @Test
     void testIdempotency() {
         when(bookingService.getBookingById(createPaymentRequest.getBookingId())).thenReturn(bookingResponse);
+        when(bookingRepository.findById(createPaymentRequest.getBookingId())).thenReturn(Optional.of(booking));
 
         when(idempotencyService.tryLock(anyString(), anyLong())).thenReturn(false);
 

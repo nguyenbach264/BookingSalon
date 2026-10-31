@@ -10,9 +10,15 @@ import demo.bookingsalon.Payload.DTO.SalonDTO;
 import demo.bookingsalon.Payload.Request.Business.CreateBookingRequest;
 import demo.bookingsalon.Payload.Response.Business.BookingResponse;
 import demo.bookingsalon.Payload.Response.Business.BookingStatisticsResponse;
+import demo.bookingsalon.Payload.Response.Common.PageResponse;
 import demo.bookingsalon.Publisher.BookingEventPublisher;
 import demo.bookingsalon.Repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -20,12 +26,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingService {
@@ -39,14 +47,37 @@ public class BookingService {
     private final StylistRepository stylistRepository;
     private final BookingDetailRepository bookingDetailRepository;
     private final BookingEventPublisher bookingEventPublisher;
+    private final PaymentRepository paymentRepository;
+    private final VoucherRepository voucherRepository;
+    private final UserVoucherRepository userVoucherRepository;
+    private final VoucherService voucherService;
+    private final NotificationService notificationService;
+    private final demo.bookingsalon.Handler.NotificationWebSocketHandler notificationWebSocketHandler;
 
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<BookingResponse> getBookings() {
         return bookingRepository.findAll().stream()
                 .map(booking -> bookingMapper.toBookingResponse(booking))
-                .sorted(Comparator.comparing(BookingResponse::getStartTime))
+                .sorted(Comparator.comparing(BookingResponse::getStartTime, Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
     }
+
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public PageResponse<BookingResponse> getBookingsPage(
+            BookingStatus status,
+            UUID salonId,
+            UUID stylistId,
+            String search,
+            int page,
+            int size
+    ) {
+        int targetSize = Math.max(1, Math.min(size, 200));
+        int targetPage = Math.max(0, page);
+        Pageable pageable = PageRequest.of(targetPage, targetSize, Sort.by(Sort.Direction.DESC, "startTime"));
+        Page<Booking> bookingPage = bookingRepository.searchBookingsPage(status, salonId, stylistId, search, pageable);
+        return PageResponse.of(bookingPage, bookingMapper::toBookingResponse);
+    }
+
 
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public BookingResponse getBookingById(UUID id) {
@@ -59,7 +90,13 @@ public class BookingService {
     public List<BookingResponse> getBookingByUserId(UUID userId) {
         return bookingRepository.getBookingByUserId(userId).stream()
                 .map(booking -> bookingMapper.toBookingResponse(booking))
-                .sorted(Comparator.comparing(BookingResponse::getUserId))
+                .sorted(Comparator.comparing(
+                        BookingResponse::getCreatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ).thenComparing(
+                        BookingResponse::getStartTime,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ))
                 .toList();
     }
 
@@ -73,17 +110,53 @@ public class BookingService {
 
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<BookingResponse> getBookingByDate(LocalDate date, UUID salonId) {
-        List<BookingResponse> bookings = getBookingBySalonId(salonId);
-        if (date == null) return bookings;
-
-        List<BookingResponse> result = bookings.stream()
-                .filter(item -> item.getStartTime().toLocalDate().equals(date))
+        if (date == null) {
+            return getBookingBySalonId(salonId);
+        }
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+        return bookingRepository.findBySalonIdAndDate(salonId, startOfDay, endOfDay).stream()
+                .map(booking -> bookingMapper.toBookingResponse(booking))
+                .sorted(Comparator.comparing(BookingResponse::getStartTime))
                 .toList();
-        return result;
     }
 
-    // Kiểm tra time slot có sẵn (sử dụng PESSIMISTIC lock)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public List<String> getBookedTimeSlotsByStylistAndDate(UUID stylistId, LocalDate date) {
+        if (stylistId == null || date == null) return Collections.emptyList();
+        LocalDateTime dayStart = date.atStartOfDay();
+        LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+        List<Booking> bookings = bookingRepository.findActiveBookingsByStylistAndDate(stylistId, dayStart, dayEnd);
+
+        Set<String> bookedSlots = new TreeSet<>();
+        java.time.LocalTime slot = java.time.LocalTime.of(8, 0);
+        java.time.LocalTime endOfDay = java.time.LocalTime.of(21, 0);
+
+        while (slot.isBefore(endOfDay)) {
+            LocalDateTime slotStart = LocalDateTime.of(date, slot);
+            LocalDateTime slotEnd = slotStart.plusMinutes(30);
+
+            for (Booking b : bookings) {
+                LocalDateTime bStart = b.getStartTime();
+                LocalDateTime bEnd = b.getEndTime();
+                if (bEnd == null || !bEnd.isAfter(bStart)) {
+                    bEnd = bStart.plusMinutes(45);
+                }
+                // Nếu khoảng thời gian của slot [slotStart, slotEnd] giao với [bStart, bEnd]
+                // (slotStart < bEnd AND slotEnd > bStart) -> stylist đang bận trong slot này
+                if (slotStart.isBefore(bEnd) && slotEnd.isAfter(bStart)) {
+                    bookedSlots.add(String.format("%02d:%02d", slot.getHour(), slot.getMinute()));
+                    break;
+                }
+            }
+            slot = slot.plusMinutes(30);
+        }
+        return new ArrayList<>(bookedSlots);
+    }
+
+    // Kiểm tra time slot có sẵn theo Stylist (sử dụng PESSIMISTIC lock)
     private boolean isTimeSlotAvailable(SalonDTO salonDTO,
+                                        UUID stylistId,
                                         LocalDateTime bookingStartTime,
                                         LocalDateTime bookingEndTime) throws Exception {
 
@@ -92,9 +165,9 @@ public class BookingService {
         if (salonDTO.getCloseTime() != null && bookingEndTime.toLocalTime().isAfter(salonDTO.getCloseTime()))
             throw new Exception("Booking end time is later than Salon close time");
 
-        // Sử dụng query với PESSIMISTIC_WRITE lock để tránh race condition
-        List<Booking> conflictingBookings = bookingRepository.findConflictingBookings(
-                salonDTO.getId(), bookingStartTime, bookingEndTime);
+        // Sử dụng query với PESSIMISTIC_WRITE lock để tránh race condition trên cùng stylist
+        List<Booking> conflictingBookings = bookingRepository.findConflictingBookingsByStylist(
+                stylistId, bookingStartTime, bookingEndTime);
 
         return conflictingBookings.isEmpty();
     }
@@ -109,12 +182,26 @@ public class BookingService {
 
         List<ServiceOffering> offeringDTOs = new ArrayList<>();
         try {
-            offeringDTOs = offeringRepository.findAllById(bookingRequest.getServiceIds());
+            if (bookingRequest.getServiceIds() != null && !bookingRequest.getServiceIds().isEmpty()) {
+                offeringDTOs = offeringRepository.findAllById(bookingRequest.getServiceIds());
+            }
         } catch (Exception e) {
-            System.out.println("Service offering not found");
-            e.printStackTrace();
+            log.warn("Could not load service offerings for booking: {}", e.getMessage());
         }
         int totalDuration = offeringDTOs.stream().mapToInt(ServiceOffering::getDuration).sum();
+        if (totalDuration == 0) {
+            totalDuration = 45; // Default 45 mins if not specified
+        }
+
+        User user = userRepository.findById(bookingRequest.getUserId()).orElseThrow(() ->
+                new NotFoundException("User not found"));
+
+        Stylist stylist = stylistRepository.findById(bookingRequest.getStylistId()).orElseThrow(() ->
+                new NotFoundException("Stylist not found"));
+
+        if (stylist.getStatus() != null && "OFF".equalsIgnoreCase(stylist.getStatus())) {
+            throw new Exception("Stylist hiện đang tạm nghỉ, không thể nhận lịch hẹn. Vui lòng chọn Stylist khác.");
+        }
 
         LocalDateTime bookingStartTime = bookingRequest.getStartTime();
         LocalDateTime bookingEndTime = bookingStartTime.plusMinutes(totalDuration);
@@ -129,44 +216,150 @@ public class BookingService {
             e.printStackTrace();
         }
 
-        // Kiểm tra time slot availability với pessimistic lock
-        boolean isAvailable = isTimeSlotAvailable(salonDTO, bookingStartTime, bookingEndTime);
+        // Kiểm tra time slot availability với pessimistic lock trên stylist
+        boolean isAvailable = isTimeSlotAvailable(salonDTO, bookingRequest.getStylistId(), bookingStartTime, bookingEndTime);
 
         if (!isAvailable)
-            throw new Exception("Booking time existed another booking time. Please make sure time is suitable.");
+            throw new Exception("Stylist đã có lịch hẹn trong khung giờ này. Vui lòng chọn khung giờ khác.");
 
         BigDecimal totalPrice = offeringDTOs.stream().map(ServiceOffering::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        User user = userRepository.findById(bookingRequest.getUserId()).orElseThrow(() ->
-                new NotFoundException("User not found"));
+        // Xử lý áp dụng Voucher nếu có
+        BigDecimal discount = BigDecimal.ZERO;
+        String appliedVoucherCode = null;
+        if (bookingRequest.getVoucherCode() != null && !bookingRequest.getVoucherCode().trim().isEmpty()) {
+            String code = bookingRequest.getVoucherCode().trim().toUpperCase();
+            Optional<Voucher> voucherOpt = voucherRepository.findByVoucherCodeAndIsDeletedFalse(code);
+            if (voucherOpt.isPresent()) {
+                Voucher voucher = voucherOpt.get();
+                // Sử dụng voucherService để kiểm tra toàn diện: isActive, hạn dùng, minOrderAmount, usageLimitTotal
+                demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest applyReq = demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest.builder()
+                        .voucherCode(code)
+                        .orderAmount(totalPrice)
+                        .build();
+                demo.bookingsalon.Payload.Response.Business.ApplyVoucherResponse validation = voucherService.validateAndCalculate(applyReq);
 
-        Stylist stylist = stylistRepository.findById(bookingRequest.getStylistId()).orElseThrow(() ->
-                new NotFoundException("Stylist not found"));
+                if (!validation.isValid()) {
+                    throw new Exception("Voucher không thể áp dụng: " + validation.getMessage());
+                }
+
+                // Kiểm tra giới hạn số lần sử dụng cho mỗi người dùng (usageLimitPerUser)
+                if (bookingRequest.getUserId() != null && voucher.getUsageLimitPerUser() != null) {
+                    long userUsageCount = bookingRepository.countByUserIdAndVoucherCode(bookingRequest.getUserId(), code);
+                    if (userUsageCount >= voucher.getUsageLimitPerUser()) {
+                        throw new Exception("Bạn đã sử dụng hết lượt (" + voucher.getUsageLimitPerUser() + " lần) của mã voucher này!");
+                    }
+                }
+
+                discount = validation.getDiscountAmount();
+                appliedVoucherCode = voucher.getVoucherCode();
+                int updatedCount = voucherRepository.incrementUsedCountAtomic(voucher.getId());
+                if (updatedCount == 0) {
+                    throw new IllegalStateException("Mã voucher đã đạt giới hạn sử dụng tối đa!");
+                }
+
+                // Đánh dấu đã dùng nếu voucher này nằm trong ví cá nhân của user
+                if (bookingRequest.getUserId() != null) {
+                    userVoucherRepository.findByUser_IdAndVoucher_VoucherCodeAndIsUsedFalse(bookingRequest.getUserId(), code)
+                            .ifPresent(uv -> {
+                                uv.setIsUsed(true);
+                                uv.setUsedAt(LocalDateTime.now());
+                                userVoucherRepository.save(uv);
+                            });
+                }
+            } else {
+                throw new Exception("Mã voucher '" + code + "' không tồn tại trên hệ thống!");
+            }
+        }
+        BigDecimal finalTotal = totalPrice.subtract(discount).max(BigDecimal.ZERO);
+
+        String bookingCode = "BB-" + LocalDateTime.now().getYear() + "-" + UUID.randomUUID().toString().replace("-","").substring(0, 8).toUpperCase();
+        String paymentMethodStr = bookingRequest.getPaymentMethod() != null ? bookingRequest.getPaymentMethod().toUpperCase() : "CASH";
+        // C2 FIX: Mọi đơn đặt lịch ban đầu đều là UNPAID, chỉ chuyển sang PAID khi có xác nhận thanh toán thành công
+        String paymentStatusStr = "UNPAID";
 
         Booking booking = Booking.builder()
+                .bookingCode(bookingCode)
+                .customerName(bookingRequest.getCustomerName() != null ? bookingRequest.getCustomerName() : (user.getFullName() != null ? user.getFullName() : user.getUsername()))
+                .customerPhone(bookingRequest.getCustomerPhone() != null ? bookingRequest.getCustomerPhone() : user.getPhoneNumber())
+                .customerEmail(bookingRequest.getCustomerEmail() != null ? bookingRequest.getCustomerEmail() : user.getEmail())
+                .customerNotes(bookingRequest.getCustomerNotes())
                 .startTime(bookingStartTime)
                 .endTime(bookingEndTime)
                 .status(BookingStatus.PENDING)
                 .salon(salon)
-                .totalAmount(totalPrice)
+                .subtotalAmount(totalPrice)
+                .discountAmount(discount)
+                .voucherCode(appliedVoucherCode)
+                .totalAmount(finalTotal)
+                .paymentMethod(paymentMethodStr)
+                .paymentStatus(paymentStatusStr)
                 .user(user)
                 .stylist(stylist)
                 .build();
-        bookingRepository.save(booking);
+        booking = bookingRepository.save(booking);
 
-        // Bất đồng bộ gửi email xác nhận đơn hàng
-        bookingEventPublisher.publishBookingCreatedEvent(booking, user, salon);
-
+        final Booking savedBooking = booking;
         List<BookingDetail> bookingDetails = offeringDTOs.stream()
                 .map(service -> (BookingDetail) BookingDetail.builder()
-                        .booking(booking)
+                        .booking(savedBooking)
                         .serviceOffering(service)
                         .currentPrice(service.getPrice())
                         .build())
                 .toList();
 
         bookingDetailRepository.saveAll(bookingDetails);
+        booking.setBookingDetails(bookingDetails);
+
+        // Tạo bản ghi Payment giả lập
+        demo.bookingsalon.Enum.PaymentMethod methodEnum = demo.bookingsalon.Enum.PaymentMethod.COD;
+        if ("BANK_TRANSFER".equals(paymentMethodStr)) {
+            methodEnum = demo.bookingsalon.Enum.PaymentMethod.BANK_TRANSFER;
+        } else if ("VNPAY".equals(paymentMethodStr)) {
+            methodEnum = demo.bookingsalon.Enum.PaymentMethod.VNPAY;
+        }
+
+        Payment payment = Payment.builder()
+                .paymentCode("PAY-" + UUID.randomUUID().toString().replace("-","").substring(0, 10).toUpperCase())
+                .amount(finalTotal)
+                .status("PAID".equals(paymentStatusStr) ? demo.bookingsalon.Enum.PaymentStatus.SUCCESS : demo.bookingsalon.Enum.PaymentStatus.PENDING)
+                .paymentMethod(methodEnum)
+                .user(user)
+                .booking(booking)
+                .salon(salon)
+                .build();
+        paymentRepository.save(payment);
+        booking.setPayment(payment);
+
+        // Bất đồng bộ gửi email xác nhận đơn hàng
+        try {
+            bookingEventPublisher.publishBookingCreatedEvent(booking, user, salon);
+        } catch (Exception e) {
+            log.error("Could not publish booking created event: {}", e.getMessage());
+        }
+
+        // Tạo thông báo cho User qua WebSocket
+        try {
+            notificationService.notifyBookingCreated(booking);
+        } catch (Exception e) {
+            log.error("Could not create booking created notification: {}", e.getMessage());
+        }
+
+        // Thông báo tức thời tới Stylist Dashboard qua WebSocket
+        try {
+            if (stylist != null && stylist.getId() != null) {
+                Map<String, Object> wsMsg = new HashMap<>();
+                wsMsg.put("type", "NEW_BOOKING");
+                wsMsg.put("bookingId", booking.getId().toString());
+                wsMsg.put("bookingCode", booking.getBookingCode());
+                wsMsg.put("customerName", booking.getCustomerName());
+                wsMsg.put("startTime", booking.getStartTime() != null ? booking.getStartTime().toString() : "");
+                notificationWebSocketHandler.sendToStylist(stylist.getId(), wsMsg);
+            }
+        } catch (Exception e) {
+            log.error("Could not notify stylist via WebSocket: {}", e.getMessage());
+        }
 
         return bookingMapper.toBookingResponse(booking);
     }
@@ -180,6 +373,48 @@ public class BookingService {
         }
         booking.setStatus(status);
         bookingRepository.save(booking);
+
+        try {
+            if (booking.getUser() != null) {
+                if (status == BookingStatus.CONFIRMED) {
+                    notificationService.notifyBookingConfirmed(booking);
+                } else if (status == BookingStatus.COMPLETED) {
+                    notificationService.notifyReviewRequest(booking);
+                } else if (status == BookingStatus.CANCELLED) {
+                    notificationService.notifyBookingCancelled(booking);
+                } else {
+                    Notification notification = Notification.builder()
+                            .userId(booking.getUser().getId())
+                            .salonId(booking.getSalon() != null ? booking.getSalon().getId() : null)
+                            .bookingId(booking.getId())
+                            .title("Cập nhật lịch hẹn")
+                            .message("Lịch hẹn " + booking.getBookingCode() + " đã cập nhật trạng thái sang: " + status)
+                            .type("BOOKING_UPDATE")
+                            .isRead(false)
+                            .createdAt(LocalDateTime.now())
+                            .expiredAt(LocalDateTime.now().plusDays(14))
+                            .build();
+                    notificationService.createNotification(notification);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Could not create notification on status update: {}", e.getMessage());
+        }
+
+        // Báo cho Stylist Dashboard qua WebSocket
+        try {
+            if (booking.getStylist() != null && booking.getStylist().getId() != null) {
+                Map<String, Object> wsMsg = new HashMap<>();
+                wsMsg.put("type", "BOOKING_STATUS_CHANGED");
+                wsMsg.put("bookingId", booking.getId().toString());
+                wsMsg.put("bookingCode", booking.getBookingCode());
+                wsMsg.put("status", status.name());
+                notificationWebSocketHandler.sendToStylist(booking.getStylist().getId(), wsMsg);
+            }
+        } catch (Exception e) {
+            log.error("Could not push stylist status update: {}", e.getMessage());
+        }
+
         return "Update booking successfully";
     }
 
@@ -192,6 +427,22 @@ public class BookingService {
         bookingRepository.save(booking);
 
         bookingEventPublisher.publishBookingCancelledEvent(booking);
+
+        // Gửi thông báo hủy tới User và Stylist
+        try {
+            notificationService.notifyBookingCancelled(booking);
+            if (booking.getStylist() != null && booking.getStylist().getId() != null) {
+                Map<String, Object> wsMsg = new HashMap<>();
+                wsMsg.put("type", "BOOKING_STATUS_CHANGED");
+                wsMsg.put("bookingId", booking.getId().toString());
+                wsMsg.put("bookingCode", booking.getBookingCode());
+                wsMsg.put("status", "CANCELLED");
+                notificationWebSocketHandler.sendToStylist(booking.getStylist().getId(), wsMsg);
+            }
+        } catch (Exception e) {
+            log.error("Could not notify cancellation: {}", e.getMessage());
+        }
+
         return "Booking cancelled successfully";
     }
 
@@ -245,6 +496,44 @@ public class BookingService {
                 bookingRepository.countByStatusAndUserId(BookingStatus.CONFIRMED, userId),
                 bookingRepository.countByStatusAndUserId(BookingStatus.COMPLETED, userId),
                 bookingRepository.countByStatusAndUserId(BookingStatus.CANCELLED, userId)
+        );
+    }
+
+    // Lấy booking của user theo trạng thái (Đang xác nhận, Đã xác nhận, Đơn hàng đã đặt)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public List<BookingResponse> getBookingByUserIdAndStatus(UUID userId, BookingStatus status) {
+        return bookingRepository.findByUserIdAndStatus(userId, status).stream()
+                .map(bookingMapper::toBookingResponse)
+                .sorted(Comparator.comparing(BookingResponse::getStartTime).reversed())
+                .toList();
+    }
+
+    // Lấy toàn bộ booking của stylist
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public List<BookingResponse> getBookingByStylistId(UUID stylistId) {
+        return bookingRepository.findByStylistId(stylistId).stream()
+                .map(bookingMapper::toBookingResponse)
+                .sorted(Comparator.comparing(BookingResponse::getStartTime))
+                .toList();
+    }
+
+    // Lấy booking của stylist theo 4 nhóm trạng thái (Chờ xác nhận, Lịch cắt tóc, Đã hoàn thành, Đã hủy)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public List<BookingResponse> getBookingByStylistIdAndStatus(UUID stylistId, BookingStatus status) {
+        return bookingRepository.findByStylistIdAndStatus(stylistId, status).stream()
+                .map(bookingMapper::toBookingResponse)
+                .sorted(Comparator.comparing(BookingResponse::getStartTime))
+                .toList();
+    }
+
+    // Thống kê booking theo 4 nhóm trạng thái cho stylist
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public BookingStatisticsResponse getBookingStatisticsByStylist(UUID stylistId) {
+        return buildStatistics(
+                bookingRepository.countByStatusAndStylistId(BookingStatus.PENDING, stylistId),
+                bookingRepository.countByStatusAndStylistId(BookingStatus.CONFIRMED, stylistId),
+                bookingRepository.countByStatusAndStylistId(BookingStatus.COMPLETED, stylistId),
+                bookingRepository.countByStatusAndStylistId(BookingStatus.CANCELLED, stylistId)
         );
     }
 }
