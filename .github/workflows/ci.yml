@@ -110,7 +110,7 @@ jobs:
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/bookingsalon-backend
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo-app' }}
             type=ref,event=branch
             type=ref,event=tag
             type=sha,format=short,prefix=sha-
@@ -133,7 +133,7 @@ jobs:
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/bookingsalon-frontend
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo-app' }}
             type=ref,event=branch
             type=ref,event=tag
             type=sha,format=short,prefix=sha-
