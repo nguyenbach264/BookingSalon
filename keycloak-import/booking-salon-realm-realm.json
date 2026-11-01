@@ -504,7 +504,6 @@
   "webAuthnPolicyAttestationConveyancePreference": "not specified",
   "webAuthnPolicyAuthenticatorAttachment": "not specified",
   "webAuthnPolicyRequireResidentKey": "not specified",
-  "webAuthnPolicyResidentKey": "not specified",
   "webAuthnPolicyUserVerificationRequirement": "not specified",
   "webAuthnPolicyCreateTimeout": 0,
   "webAuthnPolicyAvoidSameAuthenticatorRegister": false,
@@ -518,8 +517,7 @@
   "webAuthnPolicyPasswordlessRpId": "",
   "webAuthnPolicyPasswordlessAttestationConveyancePreference": "not specified",
   "webAuthnPolicyPasswordlessAuthenticatorAttachment": "not specified",
-  "webAuthnPolicyPasswordlessRequireResidentKey": "not specified",
-  "webAuthnPolicyPasswordlessResidentKey": "required",
+  "webAuthnPolicyPasswordlessRequireResidentKey": "required",
   "webAuthnPolicyPasswordlessUserVerificationRequirement": "required",
   "webAuthnPolicyPasswordlessCreateTimeout": 0,
   "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister": false,
@@ -1794,8 +1792,7 @@
         "issuer": "https://accounts.google.com",
         "jwtAuthorizationGrantMaxAllowedAssertionExpiration": "3600",
         "defaultScope": "email profile openid"
-      },
-      "types": []
+      }
     }
   ],
   "identityProviderMappers": [
