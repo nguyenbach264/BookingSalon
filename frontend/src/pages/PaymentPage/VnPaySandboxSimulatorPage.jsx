@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Button, Input, message, Tabs, Spin, Alert } from 'antd';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
 
 // Danh sách ngân hàng giả lập phong phú
 const MOCK_BANKS = [
@@ -71,7 +72,7 @@ export default function VnPaySandboxSimulatorPage() {
     if (!vnp_TxnRef) return;
     const fetchInfo = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/api/v1/payments/simulator/order-info?txnRef=${encodeURIComponent(vnp_TxnRef)}`, {
+        const res = await axios.get(`${API_BASE_URL}/api/v1/payments/simulator/order-info?txnRef=${encodeURIComponent(vnp_TxnRef)}`, {
           withCredentials: true,
         });
         if (res.data && res.data.type === 'ORDER') {
@@ -129,7 +130,7 @@ export default function VnPaySandboxSimulatorPage() {
       await new Promise((r) => setTimeout(r, 400));
       setLoadingStep('Đồng bộ trạng thái đơn hàng vào hệ thống...');
 
-      const response = await axios.post('http://localhost:8080/api/v1/payments/simulator/process', payload, {
+      const response = await axios.post(`${API_BASE_URL}/api/v1/payments/simulator/process`, payload, {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true,
       });
