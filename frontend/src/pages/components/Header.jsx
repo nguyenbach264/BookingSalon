@@ -392,7 +392,7 @@ const Header = ({ onLoginClick }) => {
                 setSearchValue(e.target.value);
                 setShowSuggestions(true);
               }}
-              placeholder="Tìm dịch vụ cắt, uốn, nhuộm..."
+              placeholder="Tìm dịch vụ cắt"
               className="w-full bg-transparent text-gray-800 text-xs sm:text-sm pl-4 pr-10 py-[7px] focus:outline-none placeholder:text-gray-400"
             />
             <button

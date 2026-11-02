@@ -59,7 +59,7 @@ services:
   # 3. IAM AUTHENTICATION: Keycloak 26
   # ========================================================
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0
+    image: quay.io/keycloak/keycloak:26.7.0
     container_name: bookingsalon_keycloak
     restart: unless-stopped
     command: start-dev --import-realm
@@ -89,7 +89,7 @@ services:
     networks:
       - bookingsalon_net
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3"]
+      test: ["CMD-SHELL", "(exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3) || (exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3)"]
       interval: 10s
       timeout: 5s
       retries: 15
