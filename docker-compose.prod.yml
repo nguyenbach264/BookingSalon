@@ -74,6 +74,8 @@ services:
       KC_DB_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
+      KC_PROXY_HEADERS: "xforwarded"
+      KC_HOSTNAME_URL: "https://auth-bookingsalon.nguyenbach.click"
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
@@ -127,7 +129,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
 
       KEYCLOAK_SERVER_URL: http://keycloak:8080
-      KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}
+      KEYCLOAK_PUBLIC_URL: "https://auth-bookingsalon.nguyenbach.click"
       KEYCLOAK_REALM: booking-salon-realm
       KEYCLOAK_CLIENT_ID: booking-salon-admin
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
@@ -136,8 +138,8 @@ services:
       KEYCLOAK_IDP_GOOGLE_CLIENT_ID: ${KEYCLOAK_IDP_GOOGLE_CLIENT_ID}
       KEYCLOAK_IDP_GOOGLE_CLIENT_SECRET: ${KEYCLOAK_IDP_GOOGLE_CLIENT_SECRET}
 
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      CORS_ALLOWED_ORIGINS: "https://bookingsalon.nguyenbach.click"
+      FRONTEND_URL: "https://bookingsalon.nguyenbach.click"
 
       VNPAY_SIMULATOR_MODE: ${VNPAY_SIMULATOR_MODE:-true}
       VNPAY_TMN_CODE: ${VNPAY_TMN_CODE}
