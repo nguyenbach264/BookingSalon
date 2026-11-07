@@ -1,0 +1,211 @@
+services:
+  # ========================================================
+  # 1. DATABASE: MySQL 8.0
+  # ========================================================
+  mysql:
+    image: mysql:8.0
+    container_name: bookingsalon_mysql
+    restart: unless-stopped
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-time-zone=+07:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
+      MYSQL_DATABASE: ${DB_NAME:-bookingsalon_app}
+      MYSQL_USER: ${DB_USERNAME:-bookingsalon_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "${HOST_DB_PORT:-3307}:3306" # Cổng ngoài là 3307, cổng nội bộ trong Docker vẫn là 3306.
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Tự động nạp toàn bộ cấu trúc 28 bảng và dữ liệu mẫu đầy đủ lần đầu khởi tạo
+      - ./initData.sql:/docker-entrypoint-initdb.d/initData.sql:ro
+    networks:
+      - bookingsalon_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-Bach@vt05}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ========================================================
+  # 2. CACHE & LOCK: Redis 7
+  # ========================================================
+  redis:
+    image: redis:7-alpine
+    container_name: bookingsalon_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass "${REDIS_PASSWORD:-}"
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - bookingsalon_net
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD:-}\" ping | grep -q PONG || redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ========================================================
+  # 3. IAM AUTHENTICATION: Keycloak 26
+  # ========================================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    container_name: bookingsalon_keycloak
+    restart: unless-stopped
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "8081:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      # Mount thư mục chứa file export realm để tự động import khi máy mới khởi động:
+      - ./keycloak-import:/opt/keycloak/data/import:ro
+    networks:
+      - bookingsalon_net
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+  # ========================================================
+  # 4. BACKEND: Spring Boot 3.5.3 (BFF Server)
+  # ========================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: bookingsalon-backend:latest
+    container_name: bookingsalon_backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      # Kết nối Database nội bộ qua tên service 'mysql'
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-bookingsalon_app}
+      DB_USERNAME: ${DB_USERNAME:-bookingsalon_user}
+      DB_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
+
+      # Flyway: Tự động chạy migration schema cập nhật V7, V8, V9 và nạp dữ liệu an toàn
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/test-data
+      SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
+      SPRING_FLYWAY_OUT_OF_ORDER: "true"
+      SPRING_FLYWAY_IGNORE_MIGRATION_PATTERNS: "*:*"
+
+      # Kết nối Redis nội bộ qua tên service 'redis'
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+
+      # Keycloak: Server URL dùng tên container, Public URL dùng localhost cho trình duyệt 
+      KEYCLOAK_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_PUBLIC_URL: http://localhost:8081
+      KEYCLOAK_REALM: booking-salon-realm
+      KEYCLOAK_CLIENT_ID: booking-salon-admin
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_FRONTEND_CLIENT_ID: booking-salon-client
+      KEYCLOAK_IDP_GOOGLE_ENABLED: "true"
+      KEYCLOAK_IDP_GOOGLE_CLIENT_ID: ${KEYCLOAK_IDP_GOOGLE_CLIENT_ID}
+      KEYCLOAK_IDP_GOOGLE_CLIENT_SECRET: ${KEYCLOAK_IDP_GOOGLE_CLIENT_SECRET}
+
+      # Cổng & URL ứng dụng
+      CORS_ALLOWED_ORIGINS: http://localhost,http://localhost:80,http://localhost:5173,http://127.0.0.1:5173
+      FRONTEND_URL: http://localhost
+
+      # Cấu hình thanh toán & Dịch vụ bên ngoài
+      VNPAY_SIMULATOR_MODE: ${VNPAY_SIMULATOR_MODE:-true}
+      VNPAY_TMN_CODE: ${VNPAY_TMN_CODE}
+      VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET}
+      VNPAY_PAY_URL: ${VNPAY_PAY_URL:-http://localhost:5173/payment/vnpay-sandbox-simulator}
+      VNPAY_RETURN_URL: ${VNPAY_RETURN_URL:-http://localhost:8080/api/v1/payments/webhook/vnpay/return}
+      VNPAY_NOTIFY_URL: ${VNPAY_NOTIFY_URL:-http://localhost:8080/api/v1/payments/webhook/vnpay}
+
+      SEPAY_MERCHANT_ID: ${SEPAY_MERCHANT_ID}
+      SEPAY_SECRET_KEY: ${SEPAY_SECRET_KEY}
+      SEPAY_API_BASE_URL: ${SEPAY_API_BASE_URL}
+      SEPAY_WEBHOOK_API_KEY: ${SEPAY_WEBHOOK_API_KEY}
+      SEPAY_ENV: ${SEPAY_ENV:-sandbox}
+
+      PAYMENT_BANK_BIN: ${PAYMENT_BANK_BIN:-970422}
+      PAYMENT_BANK_ACCOUNT: ${PAYMENT_BANK_ACCOUNT:-0866429205}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET}
+      PAYMENT_EXPIRE_MINUTES: 15
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    ports:
+      - "8080:8080"
+    networks:
+      - bookingsalon_net
+
+  # ========================================================
+  # 5. FRONTEND: React 19 SPA + Nginx
+  # ========================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080
+        VITE_WS_URL: ws://localhost:8080
+        VITE_KEYCLOAK_URL: http://localhost:8081
+        VITE_KEYCLOAK_REALM: booking-salon-realm
+        VITE_KEYCLOAK_CLIENT_ID: booking-salon-client
+    image: bookingsalon-frontend:latest
+    container_name: bookingsalon_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"        # Truy cập cổng 80 chuẩn web
+      - "5173:80"      # Hỗ trợ mở cổng 5173 để tương thích thói quen dùng Vite dev
+    networks:
+      - bookingsalon_net
+
+# ========================================================
+# LƯU TRỮ VOLUME BỀN VỮNG
+# ========================================================
+volumes:
+  mysql_data:
+    name: bookingsalon_mysql_data
+  redis_data:
+    name: bookingsalon_redis_data
+  keycloak_data:
+    name: bookingsalon_keycloak_data
+
+# ========================================================
+# MẠNG NỘI BỘ
+# ========================================================
+networks:
+  bookingsalon_net:
+    name: bookingsalon_network
+    driver: bridge

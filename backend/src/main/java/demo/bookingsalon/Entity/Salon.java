@@ -43,7 +43,7 @@ public class Salon extends BaseEntity {
 
     @Column(name = "phone_number", nullable = false)
     @NotBlank(message = "Phone number of salon is mandatory")
-    @Pattern(regexp = "^0[3-9]\\d{8}$", message = "Phone number format is incorrect!")
+    @Pattern(regexp = "^0[2-9]\\d{8,9}$", message = "Phone number format is incorrect!")
     private String phoneNumber;
 
     @Column(name = "email", nullable = false)

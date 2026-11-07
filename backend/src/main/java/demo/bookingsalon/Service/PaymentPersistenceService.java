@@ -17,6 +17,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional
 public class PaymentPersistenceService {
     private final PaymentRepository paymentRepository;
     private final PaymentTransactionRepository transactionRepository;

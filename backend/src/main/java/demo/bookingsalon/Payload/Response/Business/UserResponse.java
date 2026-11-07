@@ -23,6 +23,26 @@ public class UserResponse {
 
     private String address;
 
+    private String gender;
+
+    private String city;
+
+    private String district;
+
+    private String ward;
+
+    private String membershipTier;
+
+    private String avatarUrl;
+
+    private boolean emailVerified;
+
+    private boolean phoneVerified;
+
+    private String voucherCode;
+
+    private java.time.LocalDateTime createdAt;
+
     private boolean enabled;
 
 }

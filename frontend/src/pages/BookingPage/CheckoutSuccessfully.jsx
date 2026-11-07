@@ -1,84 +1,188 @@
-import React, { useState, useEffect } from 'react';
-import { Input, Select, } from 'antd';
-import { Search, X, User, Trash2, CalendarCheck, MapPin, Check, ArrowLeft, ChevronUp, ChevronDown, Calendar } from 'lucide-react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  CheckCircle2,
+  CalendarCheck,
+  MapPin,
+  User,
+  Home,
+  PlusCircle,
+  Receipt,
+  Sparkles,
+} from 'lucide-react';
 import { useBooking } from '../../service/context/BookingContext';
 
-const MOCK_STYLISTS = [
-  { id: 'auto', name: '30Shine Chọn Giúp Anh', image: 'https://placehold.co/150x200/1b2a4a/ffffff?text=30Shine' },
-  { id: 1, name: 'Hiển Nguyễn', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=200&fit=crop' },
-  { id: 2, name: 'Tiến Trần', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=200&fit=crop' },
-  { id: 3, name: 'Hiếu Nguyễn', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=200&fit=crop' },
-];
+export function CheckoutSuccessfully({ onGoBack }) {
+  const {
+    selectedSalon,
+    selectedStylist,
+    selectedDate,
+    selectedTime,
+    selectedServices,
+    createdBooking,
+    paymentMethod,
+    resetBooking,
+  } = useBooking();
 
+  const navigate = useNavigate();
 
+  const formatPrice = (price) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
-export function CheckoutSuccessfully() {
-  const { selectedSalon, selectedStylist, selectedDate, selectedTime, selectedServices } = useBooking();
+  const totalAmount = selectedServices.reduce(
+    (sum, item) => sum + (Number(item.price) || 0),
+    0
+  );
 
-  const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-  const totalAmount = selectedServices.reduce((sum, item) => sum + item.price, 0);
+  const bookingCode =
+    createdBooking?.bookingCode ||
+    (createdBooking?.id ? `BB-${String(createdBooking.id).slice(0, 8).toUpperCase()}` : 'BB-2026-88888');
 
-  const onGoBack = () => {
-    console.log('Go back to home page');
-  }
+  const handleReturnHome = () => {
+    resetBooking();
+    if (onGoBack) {
+      onGoBack();
+    } else {
+      navigate('/');
+    }
+  };
+
+  const handleBookAnother = () => {
+    resetBooking();
+  };
 
   return (
-    <div className="animate-fade-in py-12 flex flex-col items-center justify-center text-center max-w-[600px] mx-auto">
-      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-500 mb-6 shadow-sm">
-        <Check className="w-10 h-10" />
+    <div className="animate-fade-in py-10 px-4 max-w-[700px] mx-auto text-center pb-20">
+      {/* Success Badge */}
+      <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600 mx-auto mb-4 shadow-sm ring-8 ring-green-50/50">
+        <CheckCircle2 className="w-11 h-11 stroke-[2.2]" />
       </div>
 
-      <h2 className="text-3xl font-black text-gray-900 mb-2">ĐẶT LỊCH THÀNH CÔNG!</h2>
-      <p className="text-gray-500 mb-8 text-lg">Mã đặt lịch của bạn là: <strong className="text-gray-900">#30S-{Math.floor(Math.random() * 90000) + 10000}</strong></p>
+      <div className="inline-flex items-center gap-1.5 text-[#2563eb] bg-blue-50 px-3 py-1 rounded-full text-xs font-bold mb-2">
+        <Sparkles size={13} className="text-[#60a5fa]" /> Đã xác nhận lịch hẹn
+      </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm w-full text-left mb-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-2 h-full bg-green-500"></div>
-        <h3 className="font-bold text-lg border-b pb-3 mb-4 text-[#1b2a4a]">Thông tin chi tiết</h3>
+      <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2">
+        ĐẶT LỊCH THÀNH CÔNG!
+      </h1>
+      <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+        Cảm ơn bạn đã lựa chọn BachBarber. Chúng tôi đã ghi nhận lịch hẹn và nhân viên sẽ sẵn sàng phục vụ bạn đúng giờ.
+      </p>
 
-        <div className="space-y-4 text-gray-700">
-          <div className="flex items-start gap-3">
-            <MapPin className="text-gray-400 mt-1 shrink-0" />
-            <div>
-              <p className="font-semibold text-gray-900">{selectedSalon?.name}</p>
-              <p className="text-sm">{selectedSalon?.address}</p>
-            </div>
+      {/* Booking Code Card */}
+      <div className="bg-gradient-to-r from-slate-900 via-[#1b2a4a] to-slate-900 text-white rounded-3xl p-6 mb-6 shadow-xl text-left relative overflow-hidden border border-slate-800">
+        <div className="absolute -right-6 -bottom-6 w-36 h-36 bg-[#60a5fa]/10 rounded-full blur-xl pointer-events-none"></div>
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 relative z-10">
+          <div>
+            <span className="text-[11px] text-[#93c5fd] uppercase font-bold tracking-wider">
+              Mã đặt lịch của bạn
+            </span>
+            <p className="text-2xl sm:text-3xl font-black tracking-wider text-white mt-1">
+              {bookingCode}
+            </p>
           </div>
-
-          <div className="flex items-start gap-3">
-            <CalendarCheck className="text-gray-400 mt-1 shrink-0" />
-            <div>
-              <p className="font-semibold text-gray-900">Thời gian cắt</p>
-              <p className="text-sm">{selectedTime} - {selectedDate === 'today' ? 'Hôm nay' : selectedDate === 'tomorrow' ? 'Ngày mai' : 'Ngày kia'}</p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <User className="text-gray-400 mt-1 shrink-0" />
-            <div>
-              <p className="font-semibold text-gray-900">Stylist phục vụ</p>
-              <p className="text-sm">{MOCK_STYLISTS.find(s => s.id === selectedStylist)?.name}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-dashed border-gray-300">
-          <p className="text-sm text-gray-500 mb-2">Các dịch vụ:</p>
-          <ul className="list-disc list-inside text-sm font-medium">
-            {selectedServices.map(s => <li key={s.id}>{s.name}</li>)}
-          </ul>
-          <div className="mt-4 pt-4 flex justify-between items-center">
-            <span className="font-bold text-gray-800">Đã thanh toán:</span>
-            <span className="text-xl font-black text-green-600">{formatPrice(totalAmount)}</span>
+          <div className="sm:text-right">
+            <span className="inline-block text-[11px] font-bold bg-green-500/20 text-green-300 border border-green-500/30 px-3 py-1 rounded-full uppercase tracking-wider">
+              ✓ Đã xác nhận
+            </span>
+            <p className="text-xs text-blue-200 mt-1">
+              {paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản (Đã thanh toán)' : 'Thanh toán trực tiếp tại Salon'}
+            </p>
           </div>
         </div>
       </div>
 
-      <button
-        onClick={onGoBack}
-        className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-8 rounded-lg transition-colors"
-      >
-        Về trang chủ
-      </button>
+      {/* Booking Detail Summary Card */}
+      <div className="bg-white rounded-3xl border border-gray-200/90 shadow-sm p-6 text-left mb-8 relative">
+        <h3 className="font-extrabold text-base text-gray-900 border-b border-gray-100 pb-3 mb-4 flex items-center gap-2">
+          <Receipt className="w-5 h-5 text-[#60a5fa]" />
+          Chi tiết lịch hẹn
+        </h3>
+
+        <div className="space-y-4 text-sm">
+          {/* Salon */}
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0 mt-0.5">
+              <MapPin className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-bold text-gray-900">
+                {selectedSalon?.salonName || selectedSalon?.name || 'BachBarber Salon'}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">{selectedSalon?.address}</p>
+            </div>
+          </div>
+
+          {/* Time & Date */}
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#2563eb] flex items-center justify-center shrink-0 mt-0.5">
+              <CalendarCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-bold text-gray-900">
+                {selectedTime} • {selectedDate}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">Vui lòng đến trước 5-10 phút để được phục vụ chu đáo nhất</p>
+            </div>
+          </div>
+
+          {/* Stylist */}
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+              <User className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-bold text-gray-900">
+                {selectedStylist?.fullName || selectedStylist?.nickname || 'Stylist chỉ định'}
+              </p>
+              <p className="text-xs text-amber-600 font-semibold mt-0.5">
+                {selectedStylist?.levelRank || 'Top Stylist'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Services List */}
+        <div className="mt-5 pt-4 border-t border-dashed border-gray-200">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5">
+            Dịch vụ đã đặt ({selectedServices.length}):
+          </p>
+          <div className="space-y-2 mb-4">
+            {selectedServices.map((s) => (
+              <div key={s.id} className="flex justify-between text-xs text-gray-700 py-0.5">
+                <span>• {s.name}</span>
+                <span className="font-bold text-gray-900">{formatPrice(s.price)}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
+            <span className="font-bold text-sm text-gray-800">Tổng chi phí:</span>
+            <span className="text-xl font-black text-[#60a5fa]">{formatPrice(totalAmount)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={handleReturnHome}
+          className="w-full sm:w-auto px-8 py-3.5 bg-[#60a5fa] hover:bg-[#3b82f6] text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-blue-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+        >
+          <Home className="w-4 h-4" />
+          Về trang chủ
+        </button>
+
+        <button
+          type="button"
+          onClick={handleBookAnother}
+          className="w-full sm:w-auto px-8 py-3.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <PlusCircle className="w-4 h-4 text-[#2563eb]" />
+          Đặt thêm lịch mới
+        </button>
+      </div>
     </div>
   );
 }

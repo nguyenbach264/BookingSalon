@@ -30,6 +30,15 @@ public class CreateBookingRequest {
 
     private BookingStatus status;
 
-    // TotalService và TotalAmount phải tự tính
+    private String customerName;
 
+    private String customerPhone;
+
+    private String customerEmail;
+
+    private String customerNotes;
+
+    private String paymentMethod;
+
+    private String voucherCode;
 }

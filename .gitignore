@@ -41,6 +41,7 @@ coverage/
 .apt_generated
 .springBeans
 .sts4-cache
+/keycloak-import/booking-salon-realm-realm.json
 
 # OS generated files
 .DS_Store
@@ -61,3 +62,5 @@ Thumbs.db
 
 # Maven wrapper
 .mvn/wrapper/maven-wrapper.jar
+
+/keycloak-import/booking-salon-realm-realm.json

@@ -9,7 +9,15 @@ import java.util.UUID;
 
 @Repository
 public interface AdminRepository extends JpaRepository<Admin, UUID> {
-    Optional<Admin> findByUsername(String username);
-    Optional<Admin> findByKeycloakId(UUID keycloakId);
+    Optional<Admin> findFirstByUsername(String username);
+    Optional<Admin> findFirstByKeycloakId(UUID keycloakId);
+
+    default Optional<Admin> findByUsername(String username) {
+        return findFirstByUsername(username);
+    }
+
+    default Optional<Admin> findByKeycloakId(UUID keycloakId) {
+        return findFirstByKeycloakId(keycloakId);
+    }
 }
 

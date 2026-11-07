@@ -1,21 +1,6 @@
-import React, { useState } from 'react';
-import { 
-  Breadcrumb, 
-  Select, 
-  Rate, 
-  Checkbox, 
-  Input, 
-  Button, 
-  Modal, 
-  Form,
-  Drawer,
-  Badge,
-  message
-} from 'antd';
-
 const Footer = () => {
   return (
-    <footer className="w-full bg-[#1b2a4a] text-white pt-12 pb-8 border-t border-gray-800">
+    <footer className="w-full bg-[#60a5fa] text-white pt-12 pb-8 border-t">
       <div className="max-w-[1280px] mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
           <h4 className="font-bold text-lg mb-4">CÔNG TY CỔ PHẦN TMDV 30SHINE</h4>
