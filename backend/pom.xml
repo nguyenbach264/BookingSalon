@@ -149,6 +149,12 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!-- Spring Session Redis (Distributed Session Management for BFF) -->
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-data-redis</artifactId>
+        </dependency>
+
         <!-- Connection Pool for Lettuce Redis -->
         <dependency>
             <groupId>org.apache.commons</groupId>
