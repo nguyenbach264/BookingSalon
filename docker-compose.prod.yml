@@ -127,6 +127,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      SPRING_SESSION_STORE_TYPE: redis
+      APP_COOKIE_SECURE: "true"
 
       KEYCLOAK_SERVER_URL: http://keycloak:8080
       KEYCLOAK_PUBLIC_URL: "https://auth-bookingsalon.nguyenbach.click"
@@ -200,6 +202,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      SPRING_SESSION_STORE_TYPE: redis
+      APP_COOKIE_SECURE: "true"
 
       KEYCLOAK_SERVER_URL: http://keycloak:8080
       KEYCLOAK_PUBLIC_URL: "https://auth-bookingsalon.nguyenbach.click"
@@ -273,6 +277,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      SPRING_SESSION_STORE_TYPE: redis
+      APP_COOKIE_SECURE: "true"
 
       KEYCLOAK_SERVER_URL: http://keycloak:8080
       KEYCLOAK_PUBLIC_URL: "https://auth-bookingsalon.nguyenbach.click"

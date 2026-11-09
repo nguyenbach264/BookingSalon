@@ -155,4 +155,65 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # ─────────────────────────────────────────────────────────────
+  # 4. CD DEPLOYMENT: Tự động deploy lên VPS Azure qua SSH
+  # Chỉ thực hiện khi merge vào master hoặc demo-app
+  # ─────────────────────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production VPS
+    needs: [docker-build-push]
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo-app')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose.prod.yml to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_PORT || 22 }}
+          source: "docker-compose.prod.yml"
+          target: "apps/bookingsalon"
+
+      - name: Execute deployment commands via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_PORT || 22 }}
+          script: |
+            set -e
+            cd ~/apps/bookingsalon
+
+            echo "📥 Kéo các Docker image mới nhất từ Docker Hub..."
+            docker compose -f docker-compose.prod.yml pull backend-1 backend-2 backend-3 frontend
+
+            echo "🚀 Khởi động và áp dụng cấu hình container mới..."
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            echo "🧹 Dọn dẹp image cũ không dùng..."
+            docker image prune -f
+
+            echo "🔍 Kiểm tra trạng thái các container sau deploy:"
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+            echo "✅ Tự động triển khai Production hoàn tất!"
+
+      - name: Verify Production Health
+        run: |
+          echo "⏳ Chờ 15s để các service ổn định..."
+          sleep 15
+          echo "Kiểm tra Frontend..."
+          curl -f -k -s -I https://bookingsalon.nguyenbach.click/ || exit 1
+          echo "Kiểm tra Backend API..."
+          curl -f -k -s -I https://api-bookingsalon.nguyenbach.click/api/salons || exit 1
+          echo "🎉 Toàn bộ hệ thống production đã cập nhật và phản hồi 200 OK!"
+
+
 

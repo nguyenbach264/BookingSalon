@@ -108,13 +108,14 @@ public class BffSessionService {
 
         // Thiết lập JSESSIONID cookie
         long cookieMaxAge = sessionTimeoutSeconds;
-        boolean isSecure = cookieSecure && (request.isSecure() || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto")));
+        boolean isHttps = request.isSecure() || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
+        boolean isSecure = cookieSecure || isHttps;
         ResponseCookie sessionCookie = ResponseCookie.from("JSESSIONID", session.getId())
                 .httpOnly(true)
                 .secure(isSecure)
                 .path("/")
                 .maxAge(cookieMaxAge)
-                .sameSite("Lax")
+                .sameSite(isSecure ? "None" : "Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, sessionCookie.toString());
 
@@ -322,14 +323,15 @@ public class BffSessionService {
         // Thu hồi token ở Keycloak
         revokeKeycloakSession(refreshToken, keycloakId);
 
-        boolean isSecure = cookieSecure && (request.isSecure() || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto")));
+        boolean isHttps = request.isSecure() || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
+        boolean isSecure = cookieSecure || isHttps;
         // Xoá cookie JSESSIONID
         ResponseCookie clearSessionCookie = ResponseCookie.from("JSESSIONID", "")
                 .httpOnly(true)
                 .secure(isSecure)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Lax")
+                .sameSite(isSecure ? "None" : "Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, clearSessionCookie.toString());
 
