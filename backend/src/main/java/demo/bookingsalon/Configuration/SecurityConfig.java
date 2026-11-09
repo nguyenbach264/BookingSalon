@@ -2,8 +2,10 @@ package demo.bookingsalon.Configuration;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +15,14 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
@@ -194,6 +204,33 @@ public class SecurityConfig {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
         return converter;
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(
+            @Value("${keycloak.server-url:http://keycloak:8080}") String serverUrl,
+            @Value("${keycloak.public-url:}") String publicUrl,
+            @Value("${keycloak.realm:booking-salon-realm}") String realm) {
+
+        String jwkSetUri = serverUrl.replaceAll("/+$", "") + "/realms/" + realm + "/protocol/openid-connect/certs";
+        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+
+        Set<String> validIssuers = new HashSet<>();
+        validIssuers.add(serverUrl.replaceAll("/+$", "") + "/realms/" + realm);
+        if (publicUrl != null && !publicUrl.isBlank()) {
+            validIssuers.add(publicUrl.replaceAll("/+$", "") + "/realms/" + realm);
+        }
+        validIssuers.add("https://auth-bookingsalon.nguyenbach.click/realms/" + realm);
+        validIssuers.add("http://localhost:8081/realms/" + realm);
+
+        OAuth2TokenValidator<Jwt> defaultValidator = JwtValidators.createDefault();
+        OAuth2TokenValidator<Jwt> issuerValidator = new JwtClaimValidator<String>(
+                JwtClaimNames.ISS,
+                iss -> iss != null && validIssuers.contains(iss)
+        );
+
+        jwtDecoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(defaultValidator, issuerValidator));
+        return jwtDecoder;
     }
 
     @Bean
