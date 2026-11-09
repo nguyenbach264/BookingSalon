@@ -172,7 +172,7 @@ jobs:
 
       - name: Validate SSH Credentials
         run: |
-          SSH_KEY="${{ secrets.PROD_SSH_KEY || secrets.PRO_SSH_KEY }}"
+          SSH_KEY="${{ secrets.PROD_SSH_KEY || secrets.PROD_SSH_KEY }}"
           if [ -z "$SSH_KEY" ]; then
             echo "❌ LỖI: Secret SSH Key đang bị RỖNG!"
             echo "Hãy kiểm tra trong Repository secrets: bạn cần có secret tên là PROD_SSH_KEY hoặc PRO_SSH_KEY."
@@ -193,7 +193,7 @@ jobs:
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY || secrets.PRO_SSH_KEY }}
+          key: ${{ secrets.PROD_SSH_KEY || secrets.PROD_SSH_KEY }}
           port: 22
           source: "docker-compose.prod.yml"
           target: "apps/bookingsalon"
@@ -203,7 +203,7 @@ jobs:
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY || secrets.PRO_SSH_KEY }}
+          key: ${{ secrets.PROD_SSH_KEY || secrets.PROD_SSH_KEY }}
           port: 22
           script: |
             set -e
