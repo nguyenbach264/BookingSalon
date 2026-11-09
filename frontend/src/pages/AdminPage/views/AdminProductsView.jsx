@@ -25,7 +25,9 @@ import {
   CheckCircleOutlined,
   WarningOutlined,
   DollarOutlined,
+  CameraOutlined,
 } from "@ant-design/icons";
+import MediaUploadModal from "../../components/MediaUploadModal";
 
 const { Option } = Select;
 
@@ -44,8 +46,18 @@ export default function AdminProductsView({
   handleSaveProduct,
   savingProduct,
   productCategories = [],
+  onReloadProducts,
 }) {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+
+  // Cloudinary Media Modal
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [selectedProductForMedia, setSelectedProductForMedia] = useState(null);
+
+  const handleOpenMediaModal = (product) => {
+    setSelectedProductForMedia(product);
+    setMediaModalOpen(true);
+  };
 
   // Detail Modal for Products KPI Cards
   const [kpiProductModalTitle, setKpiProductModalTitle] = useState("");
@@ -211,14 +223,25 @@ export default function AdminProductsView({
             {
               title: "Sản phẩm",
               key: "product",
-              width: 280,
+              width: 320,
               render: (_, r) => (
                 <div className="flex items-center gap-3">
-                  <img
-                    src={r.imageUrl}
-                    alt={r.name}
-                    className="w-12 h-12 rounded-lg object-cover border border-gray-100 flex-shrink-0"
-                  />
+                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                    <img
+                      src={r.imageUrl || "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=100"}
+                      alt={r.name}
+                      className="w-12 h-12 rounded-lg object-cover border border-gray-100"
+                    />
+                    <Button
+                      size="small"
+                      type="text"
+                      icon={<CameraOutlined className="text-green-600" />}
+                      onClick={() => handleOpenMediaModal(r)}
+                      className="text-[11px] h-5 px-1 text-green-600 hover:text-green-700 bg-green-50/70 hover:bg-green-100 rounded"
+                    >
+                      Sửa ảnh
+                    </Button>
+                  </div>
                   <div>
                     <p className="font-semibold text-sm text-gray-800 line-clamp-1 mb-0">{r.name}</p>
                     <p className="text-xs text-gray-400 mb-0">{r.categoryName}</p>
@@ -268,9 +291,18 @@ export default function AdminProductsView({
               title: "Hành động",
               key: "actions",
               fixed: "right",
-              width: 120,
+              width: 170,
               render: (_, r) => (
                 <div className="flex gap-1">
+                  <Button
+                    size="small"
+                    icon={<CameraOutlined />}
+                    onClick={() => handleOpenMediaModal(r)}
+                    className="text-green-600 border-green-200 hover:bg-green-50 text-xs"
+                    title="Sửa ảnh sản phẩm Cloudinary"
+                  >
+                    Sửa ảnh
+                  </Button>
                   <Button
                     size="small"
                     icon={<EditOutlined />}
@@ -431,6 +463,22 @@ export default function AdminProductsView({
           />
         </div>
       </Modal>
+
+      {/* CLOUDINARY MEDIA UPLOAD MODAL */}
+      <MediaUploadModal
+        open={mediaModalOpen}
+        onClose={() => {
+          setMediaModalOpen(false);
+          setSelectedProductForMedia(null);
+        }}
+        ownerType="PRODUCT"
+        ownerId={selectedProductForMedia?.id}
+        ownerName={selectedProductForMedia?.name}
+        currentImage={selectedProductForMedia?.imageUrl}
+        onSuccess={() => {
+          if (onReloadProducts) onReloadProducts();
+        }}
+      />
     </div>
   );
 }

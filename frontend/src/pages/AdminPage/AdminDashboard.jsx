@@ -1292,6 +1292,7 @@ export default function AdminDashboard() {
                   handleSaveProduct={handleSaveProduct}
                   savingProduct={savingProduct}
                   productCategories={productCategories}
+                  onReloadProducts={loadProductsAndOrders}
                 />
               )}
 

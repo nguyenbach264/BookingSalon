@@ -148,7 +148,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT,    "/api/stylists/**", "/api/stylists").hasAnyRole("ADMIN", "STYLIST")
                 .requestMatchers(HttpMethod.DELETE, "/api/stylists/**", "/api/stylists").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST,   "/api/media/**", "/api/media").hasAnyRole("ADMIN", "STYLIST")
+                .requestMatchers(HttpMethod.PATCH,  "/api/media/**", "/api/media").hasAnyRole("ADMIN", "STYLIST")
                 .requestMatchers(HttpMethod.DELETE, "/api/media/**", "/api/media").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET,    "/api/media/**", "/api/media").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2

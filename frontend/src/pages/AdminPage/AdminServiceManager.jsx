@@ -32,7 +32,9 @@ import {
   ShopOutlined,
   AppstoreOutlined,
   HistoryOutlined,
+  CameraOutlined,
 } from "@ant-design/icons";
+import MediaUploadModal from "../components/MediaUploadModal";
 import dayjs from "dayjs";
 import {
   getAdminServices,
@@ -79,6 +81,15 @@ const AdminServiceManager = () => {
   const [kpiServiceModalTitle, setKpiServiceModalTitle] = useState("");
   const [kpiServiceModalVisible, setKpiServiceModalVisible] = useState(false);
   const [kpiServiceModalList, setKpiServiceModalList] = useState([]);
+
+  // Cloudinary Media Modal
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [selectedEntityForMedia, setSelectedEntityForMedia] = useState(null);
+
+  const handleOpenMediaModal = (service) => {
+    setSelectedEntityForMedia(service);
+    setMediaModalOpen(true);
+  };
 
   const handleOpenServiceKpi = (title, list) => {
     setKpiServiceModalTitle(title);
@@ -241,16 +252,27 @@ const AdminServiceManager = () => {
       title: "Ảnh",
       dataIndex: "image",
       key: "image",
-      width: 70,
-      render: (img) => (
-        <Image
-          src={img || "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=100"}
-          alt="service"
-          width={48}
-          height={48}
-          className="rounded-lg object-cover border border-gray-200"
-          fallback="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=100"
-        />
+      width: 100,
+      render: (img, r) => (
+        <div className="flex flex-col items-center gap-1">
+          <Image
+            src={img || "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=100"}
+            alt="service"
+            width={48}
+            height={48}
+            className="rounded-lg object-cover border border-gray-200"
+            fallback="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=100"
+          />
+          <Button
+            size="small"
+            type="text"
+            icon={<CameraOutlined className="text-blue-600" />}
+            onClick={() => handleOpenMediaModal(r)}
+            className="text-[11px] h-5 px-1 text-blue-600 hover:text-blue-700 bg-blue-50/70 hover:bg-blue-100 rounded"
+          >
+            Sửa ảnh
+          </Button>
+        </div>
       ),
     },
     {
@@ -327,9 +349,20 @@ const AdminServiceManager = () => {
       title: "Hành động",
       key: "actions",
       fixed: "right",
-      width: 240,
+      width: 280,
       render: (_, r) => (
         <Space size={6}>
+          <Tooltip title="Sửa ảnh Cloudinary">
+            <Button
+              size="small"
+              icon={<CameraOutlined />}
+              onClick={() => handleOpenMediaModal(r)}
+              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+            >
+              Sửa ảnh
+            </Button>
+          </Tooltip>
+
           <Tooltip title="Chỉnh sửa thông tin">
             <Button
               size="small"
@@ -804,6 +837,20 @@ const AdminServiceManager = () => {
           />
         </div>
       </Modal>
+
+      {/* CLOUDINARY MEDIA UPLOAD MODAL */}
+      <MediaUploadModal
+        open={mediaModalOpen}
+        onClose={() => {
+          setMediaModalOpen(false);
+          setSelectedEntityForMedia(null);
+        }}
+        ownerType="SERVICE"
+        ownerId={selectedEntityForMedia?.id}
+        ownerName={selectedEntityForMedia?.name}
+        currentImage={selectedEntityForMedia?.image}
+        onSuccess={() => fetchServices()}
+      />
     </div>
   );
 };

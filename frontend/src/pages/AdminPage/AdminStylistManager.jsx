@@ -34,7 +34,9 @@ import {
   EyeOutlined,
   StarFilled,
   ExclamationCircleOutlined,
+  CameraOutlined,
 } from "@ant-design/icons";
+import MediaUploadModal from "../components/MediaUploadModal";
 import dayjs from "dayjs";
 import {
   getAdminStylists,
@@ -97,6 +99,15 @@ const AdminStylistManager = () => {
   const [kpiStylistModalTitle, setKpiStylistModalTitle] = useState("");
   const [kpiStylistModalVisible, setKpiStylistModalVisible] = useState(false);
   const [kpiStylistModalList, setKpiStylistModalList] = useState([]);
+
+  // Cloudinary Media Modal
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [selectedEntityForMedia, setSelectedEntityForMedia] = useState(null);
+
+  const handleOpenMediaModal = (stylist) => {
+    setSelectedEntityForMedia(stylist);
+    setMediaModalOpen(true);
+  };
 
   const handleOpenStylistKpi = (title, list) => {
     setKpiStylistModalTitle(title);
@@ -295,12 +306,23 @@ const AdminStylistManager = () => {
       key: "stylist",
       render: (_, r) => (
         <Space size={12}>
-          <Avatar
-            src={r.avatarUrl}
-            size={48}
-            className="border-2 border-indigo-200"
-            icon={<ScissorOutlined />}
-          />
+          <div className="flex flex-col items-center gap-1">
+            <Avatar
+              src={r.avatarUrl}
+              size={48}
+              className="border-2 border-indigo-200"
+              icon={<ScissorOutlined />}
+            />
+            <Button
+              size="small"
+              type="text"
+              icon={<CameraOutlined className="text-purple-600" />}
+              onClick={() => handleOpenMediaModal(r)}
+              className="text-[11px] h-5 px-1 text-purple-600 hover:text-purple-700 bg-purple-50/70 hover:bg-purple-100 rounded"
+            >
+              Sửa ảnh
+            </Button>
+          </div>
           <div>
             <div className="font-bold text-gray-800 text-sm">{r.fullName || r.username}</div>
             <div className="text-xs text-gray-500 font-mono">{r.phoneNumber || r.email || "—"}</div>
@@ -384,9 +406,20 @@ const AdminStylistManager = () => {
       title: "Hành động",
       key: "actions",
       fixed: "right",
-      width: 280,
+      width: 320,
       render: (_, r) => (
         <Space size={6} wrap>
+          <Tooltip title="Sửa ảnh Avatar Cloudinary">
+            <Button
+              size="small"
+              icon={<CameraOutlined />}
+              onClick={() => handleOpenMediaModal(r)}
+              className="text-purple-600 border-purple-200 hover:bg-purple-50"
+            >
+              Sửa ảnh
+            </Button>
+          </Tooltip>
+
           <Tooltip title="Xem chi tiết Stylist">
             <Button
               size="small"
@@ -1123,6 +1156,20 @@ const AdminStylistManager = () => {
           />
         </div>
       </Modal>
+
+      {/* CLOUDINARY MEDIA UPLOAD MODAL */}
+      <MediaUploadModal
+        open={mediaModalOpen}
+        onClose={() => {
+          setMediaModalOpen(false);
+          setSelectedEntityForMedia(null);
+        }}
+        ownerType="STYLIST"
+        ownerId={selectedEntityForMedia?.id}
+        ownerName={selectedEntityForMedia?.fullName || selectedEntityForMedia?.username}
+        currentImage={selectedEntityForMedia?.avatarUrl}
+        onSuccess={() => fetchStylists()}
+      />
     </div>
   );
 };

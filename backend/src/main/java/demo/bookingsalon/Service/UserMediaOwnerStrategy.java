@@ -34,5 +34,25 @@ public class UserMediaOwnerStrategy implements MediaOwnerStrategy {
                 : user.getUsername();
         return new MediaOwner(slugGenerator.generate(name != null ? name : "user"));
     }
+
+    @Override
+    public void updateOwnerImage(UUID ownerId, String imageUrl, boolean isPrimary) {
+        User user = userRepository.findById(ownerId)
+                .orElseGet(() -> userRepository.findByKeycloakId(ownerId));
+        if (user != null) {
+            user.setAvatarUrl(imageUrl);
+            userRepository.save(user);
+        }
+    }
+
+    @Override
+    public void removeOwnerImage(UUID ownerId, String imageUrl) {
+        User user = userRepository.findById(ownerId)
+                .orElseGet(() -> userRepository.findByKeycloakId(ownerId));
+        if (user != null && imageUrl != null && imageUrl.equals(user.getAvatarUrl())) {
+            user.setAvatarUrl(null);
+            userRepository.save(user);
+        }
+    }
 }
 

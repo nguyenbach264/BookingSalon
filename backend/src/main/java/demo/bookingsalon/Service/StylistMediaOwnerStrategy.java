@@ -34,5 +34,25 @@ public class StylistMediaOwnerStrategy implements MediaOwnerStrategy {
                 : stylist.getUsername();
         return new MediaOwner(slugGenerator.generate(name != null ? name : "stylist"));
     }
+
+    @Override
+    public void updateOwnerImage(UUID ownerId, String imageUrl, boolean isPrimary) {
+        Stylist stylist = stylistRepository.findById(ownerId)
+                .orElseGet(() -> stylistRepository.findByKeycloakId(ownerId).orElse(null));
+        if (stylist != null) {
+            stylist.setAvatarUrl(imageUrl);
+            stylistRepository.save(stylist);
+        }
+    }
+
+    @Override
+    public void removeOwnerImage(UUID ownerId, String imageUrl) {
+        Stylist stylist = stylistRepository.findById(ownerId)
+                .orElseGet(() -> stylistRepository.findByKeycloakId(ownerId).orElse(null));
+        if (stylist != null && imageUrl != null && imageUrl.equals(stylist.getAvatarUrl())) {
+            stylist.setAvatarUrl(null);
+            stylistRepository.save(stylist);
+        }
+    }
 }
 
