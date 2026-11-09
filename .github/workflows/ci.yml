@@ -172,7 +172,7 @@ jobs:
 
       - name: Validate SSH Credentials
         run: |
-          SSH_KEY="${{ secrets.PROD_SSH_KEY || secrets.PROD_SSH_KEY }}"
+          SSH_KEY="${{ secrets.PROD_SSH_KEY || secrets.PRO_SSH_KEY }}"
           if [ -z "$SSH_KEY" ]; then
             echo "❌ LỖI: Secret SSH Key đang bị RỖNG!"
             echo "Hãy kiểm tra trong Repository secrets: bạn cần có secret tên là PROD_SSH_KEY hoặc PRO_SSH_KEY."
@@ -193,7 +193,7 @@ jobs:
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY || secrets.PROD_SSH_KEY }}
+          key: ${{ secrets.PROD_SSH_KEY || secrets.PRO_SSH_KEY }}
           port: 22
           source: "docker-compose.prod.yml"
           target: "apps/bookingsalon"
@@ -203,7 +203,7 @@ jobs:
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY || secrets.PROD_SSH_KEY }}
+          key: ${{ secrets.PROD_SSH_KEY || secrets.PRO_SSH_KEY }}
           port: 22
           script: |
             set -e
@@ -225,13 +225,41 @@ jobs:
 
       - name: Verify Production Health
         run: |
-          echo "⏳ Chờ 15s để các service ổn định..."
-          sleep 15
           echo "Kiểm tra Frontend..."
-          curl -f -k -s -I https://bookingsalon.nguyenbach.click/ || exit 1
-          echo "Kiểm tra Backend API..."
-          curl -f -k -s -I https://api-bookingsalon.nguyenbach.click/api/salons || exit 1
-          echo "🎉 Toàn bộ hệ thống production đã cập nhật và phản hồi 200 OK!"
+          FRONTEND_READY=false
+          for i in $(seq 1 6); do
+            HTTP_CODE=$(curl -s -k -o /dev/null -w "%{http_code}" https://bookingsalon.nguyenbach.click/ || true)
+            echo "Frontend lần thử $i: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Frontend đã phản hồi 200 OK!"
+              FRONTEND_READY=true
+              break
+            fi
+            sleep 5
+          done
+          if [ "$FRONTEND_READY" != "true" ]; then
+            echo "❌ Lỗi: Frontend không phản hồi 200 OK!"
+            exit 1
+          fi
+
+          echo "⏳ Chờ và kiểm tra Backend API khởi động hoàn tất (tối đa 90s)..."
+          BACKEND_READY=false
+          for i in $(seq 1 18); do
+            HTTP_CODE=$(curl -s -k -o /dev/null -w "%{http_code}" https://api-bookingsalon.nguyenbach.click/api/salons || true)
+            echo "Backend lần thử $i: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Backend API đã khởi động và phản hồi 200 OK!"
+              BACKEND_READY=true
+              break
+            fi
+            sleep 5
+          done
+          if [ "$BACKEND_READY" != "true" ]; then
+            echo "❌ Lỗi: Backend API không khởi động kịp sau 90s (HTTP $HTTP_CODE)!"
+            exit 1
+          fi
+
+          echo "🎉 Toàn bộ hệ thống production đã cập nhật và hoạt động hoàn hảo!"
 
 
 
