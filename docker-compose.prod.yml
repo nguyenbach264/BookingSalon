@@ -242,7 +242,9 @@ services:
     ports:
       - "8082:8080"
     networks:
-      - bookingsalon_net
+      bookingsalon_net:
+        aliases:
+          - backend
 
   backend-3:
     image: ${DOCKERHUB_USERNAME:-nguyenbach}/bookingsalon-backend:${IMAGE_TAG:-latest}
@@ -313,7 +315,9 @@ services:
     ports:
       - "8083:8080"
     networks:
-      - bookingsalon_net
+      bookingsalon_net:
+        aliases:
+          - backend
 
   # ========================================================
   # 5. FRONTEND: React 19 SPA + Nginx (Image kéo từ Docker Hub)
