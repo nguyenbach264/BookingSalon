@@ -170,13 +170,31 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Validate SSH Credentials
+        run: |
+          SSH_KEY="${{ secrets.PROD_SSH_KEY || secrets.PRO_SSH_KEY }}"
+          if [ -z "$SSH_KEY" ]; then
+            echo "❌ LỖI: Secret SSH Key đang bị RỖNG!"
+            echo "Hãy kiểm tra trong Repository secrets: bạn cần có secret tên là PROD_SSH_KEY hoặc PRO_SSH_KEY."
+            exit 1
+          fi
+          if [ -z "${{ secrets.PROD_HOST }}" ]; then
+            echo "❌ LỖI: Secret PROD_HOST đang bị RỖNG!"
+            exit 1
+          fi
+          if [ -z "${{ secrets.PROD_USER }}" ]; then
+            echo "❌ LỖI: Secret PROD_USER đang bị RỖNG!"
+            exit 1
+          fi
+          echo "✅ Đã nạp thành công thông tin SSH (PROD_HOST, PROD_USER, SSH Key)."
+
       - name: Copy docker-compose.prod.yml to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          port: ${{ secrets.PROD_PORT || 22 }}
+          key: ${{ secrets.PROD_SSH_KEY || secrets.PRO_SSH_KEY }}
+          port: 22
           source: "docker-compose.prod.yml"
           target: "apps/bookingsalon"
 
@@ -185,8 +203,8 @@ jobs:
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          port: ${{ secrets.PROD_PORT || 22 }}
+          key: ${{ secrets.PROD_SSH_KEY || secrets.PRO_SSH_KEY }}
+          port: 22
           script: |
             set -e
             cd ~/apps/bookingsalon
