@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Modal, Badge, Dropdown, Avatar, Tag, Popover, Empty, Button, Spin } from 'antd';
+import { Modal, Badge, Dropdown, Avatar, Tag, Popover, Empty, Button, Spin, Drawer } from 'antd';
 import {
   Bell,
   LogOut,
@@ -17,6 +17,13 @@ import {
   AlertTriangle,
   CheckCheck,
   Clock,
+  Menu,
+  Home,
+  ShoppingBag,
+  MapPin,
+  Gift,
+  Star,
+  Phone,
 } from 'lucide-react';
 import { useNotification } from '../../service/context/NotificationContext';
 import { useAuth } from '../../auth/authProvider';
@@ -48,10 +55,17 @@ const Header = ({ onLoginClick }) => {
   const { userInfo, initialized, authenticated, logout, openLoginModal } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [allServices, setAllServices] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchContainerRef = useRef(null);
+
+  // Tự động đóng menu điều hướng và tìm kiếm trên mobile khi chuyển trang
+  useEffect(() => {
+    setMobileNavOpen(false);
+    setMobileSearchOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     getServiceOfferings()
@@ -355,23 +369,36 @@ const Header = ({ onLoginClick }) => {
   );
 
   return (
-    <header className="w-full bg-white text-gray-900 border-b border-gray-100 shadow-sm relative z-50">
+    <header
+      className="w-full bg-[#0099FF] text-white border-b border-white/20 shadow-xs relative z-50 transition-colors"
+      style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
+    >
       <div className="max-w-[1280px] mx-auto px-4 h-16 flex items-center justify-between gap-3 sm:gap-6">
 
-        {/* ── 1. LOGO (24h left block) ──────────────── */}
-        <div className="flex items-center gap-4 shrink-0">
+        {/* ── 1. LOGO & NÚT ĐIỀU HƯỚNG ẨN TRÊN MOBILE ── */}
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          {/* Nút điều hướng ẩn (Chỉ hiện trên mobile, bấm mở menu trượt) */}
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Mở menu điều hướng"
+            className="md:hidden p-2 -ml-1 rounded-xl text-white hover:bg-white/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+          >
+            <Menu size={22} />
+          </button>
+
           <div
             onClick={() => navigate('/')}
             className="flex items-center gap-2 cursor-pointer group select-none"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400 to-[#60a5fa] flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-white text-[#0099FF] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform" style={{ color: 'var(--primary-color, #0099FF)' }}>
               <Scissors size={20} className="rotate-45" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-black italic tracking-wider text-gray-900 group-hover:text-[#60a5fa] transition-colors leading-none">
+              <span className="text-xl sm:text-2xl font-black italic tracking-wider text-white transition-colors leading-none drop-shadow-xs">
                 BachBarber
               </span>
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-tight mt-0.5 hidden sm:block">
+              <span className="text-[9px] font-bold text-white/80 uppercase tracking-widest leading-tight mt-0.5 hidden sm:block">
                 Premium Salon
               </span>
             </div>
@@ -382,7 +409,7 @@ const Header = ({ onLoginClick }) => {
         <div ref={searchContainerRef} className="hidden sm:flex flex-1 max-w-xs md:max-w-sm lg:max-w-md mx-2 justify-center relative">
           <form
             onSubmit={handleSearchSubmit}
-            className="relative flex items-center w-full bg-gray-50 hover:bg-white focus-within:bg-white border border-gray-200 focus-within:border-[#60a5fa] focus-within:ring-2 focus-within:ring-[#60a5fa]/20 rounded-full transition-all duration-200 shadow-inner"
+            className="relative flex items-center w-full bg-white/20 hover:bg-white/30 focus-within:bg-white border border-white/30 focus-within:border-white rounded-full transition-all duration-200 shadow-inner group/form"
           >
             <input
               type="text"
@@ -392,13 +419,14 @@ const Header = ({ onLoginClick }) => {
                 setSearchValue(e.target.value);
                 setShowSuggestions(true);
               }}
-              placeholder="Tìm dịch vụ cắt"
-              className="w-full bg-transparent text-gray-800 text-xs sm:text-sm pl-4 pr-10 py-[7px] focus:outline-none placeholder:text-gray-400"
+              placeholder="Tìm dịch vụ cắt, uốn, tạo kiểu..."
+              className="w-full bg-transparent text-white group-focus-within/form:text-gray-900 text-xs sm:text-sm pl-4 pr-10 py-[7px] focus:outline-none placeholder:text-white/80 group-focus-within/form:placeholder:text-gray-400"
             />
             <button
               type="submit"
               aria-label="Tìm kiếm"
-              className="absolute right-1.5 w-7 h-7 flex items-center justify-center rounded-full bg-[#60a5fa] hover:bg-blue-500 text-white cursor-pointer transition-transform hover:scale-105 active:scale-95"
+              className="absolute right-1.5 w-7 h-7 flex items-center justify-center rounded-full bg-white text-[#0099FF] cursor-pointer transition-transform hover:scale-105 active:scale-95 shadow-xs"
+              style={{ color: 'var(--primary-color, #0099FF)' }}
             >
               <Search size={13} />
             </button>
@@ -406,10 +434,10 @@ const Header = ({ onLoginClick }) => {
 
           {/* Autocomplete Dropdown */}
           {showSuggestions && searchValue.trim() && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-[100] divide-y divide-gray-50">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-[100] divide-y divide-gray-50 text-gray-800">
               <div className="px-3 py-2 bg-gray-50/80 text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center justify-between">
                 <span>Gợi ý dịch vụ</span>
-                <span className="text-[10px] text-blue-600 font-semibold">{filteredSuggestions.length} kết quả</span>
+                <span className="text-[10px] text-[#0099FF] font-semibold" style={{ color: 'var(--primary-color, #0099FF)' }}>{filteredSuggestions.length} kết quả</span>
               </div>
               {filteredSuggestions.length > 0 ? (
                 filteredSuggestions.map((service) => (
@@ -422,11 +450,11 @@ const Header = ({ onLoginClick }) => {
                     className="px-3.5 py-2.5 hover:bg-blue-50/80 cursor-pointer flex items-center justify-between gap-3 transition-colors group"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-lg bg-blue-50 group-hover:bg-blue-100 text-[#60a5fa] flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 rounded-lg bg-blue-50 group-hover:bg-blue-100 text-[#0099FF] flex items-center justify-center shrink-0" style={{ color: 'var(--primary-color, #0099FF)' }}>
                         <Scissors size={14} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-gray-800 group-hover:text-blue-600 truncate mb-0">
+                        <p className="text-xs font-bold text-gray-800 group-hover:text-[#0099FF] truncate mb-0" style={{ '--tw-text-opacity': 1 }}>
                           {service.name}
                         </p>
                         <span className="text-[10px] text-gray-400">
@@ -434,7 +462,7 @@ const Header = ({ onLoginClick }) => {
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs font-bold text-blue-600 shrink-0">
+                    <span className="text-xs font-bold text-[#0099FF] shrink-0" style={{ color: 'var(--primary-color, #0099FF)' }}>
                       {new Intl.NumberFormat('vi-VN').format(service.price || 0)}đ
                     </span>
                   </div>
@@ -455,7 +483,7 @@ const Header = ({ onLoginClick }) => {
             type="button"
             onClick={() => setMobileSearchOpen(true)}
             aria-label="Tìm kiếm dịch vụ"
-            className="sm:hidden p-2 rounded-full hover:bg-gray-100 text-gray-700 active:scale-95 transition-all"
+            className="sm:hidden p-2 rounded-full hover:bg-white/20 text-white active:scale-95 transition-all"
           >
             <Search size={20} />
           </button>
@@ -475,14 +503,14 @@ const Header = ({ onLoginClick }) => {
                 onOpenChange={setNotificationOpen}
                 overlayClassName="realtime-notification-popover"
               >
-                <div className="cursor-pointer p-2 hover:bg-gray-100 rounded-full transition-colors relative">
+                <div className="cursor-pointer p-2 hover:bg-white/20 rounded-full transition-colors relative">
                   <Badge
                     count={unreadCount}
                     size="small"
                     color="#ef4444"
                     offset={[-1, 1]}
                   >
-                    <Bell className="w-5 h-5 text-gray-700 hover:text-[#60a5fa] transition-colors" />
+                    <Bell className="w-5 h-5 text-white hover:text-white/80 transition-colors" />
                   </Badge>
                 </div>
               </Popover>
@@ -494,26 +522,26 @@ const Header = ({ onLoginClick }) => {
                 trigger={['click']}
                 overlayClassName="shadow-2xl border border-gray-100 rounded-2xl min-w-[200px]"
               >
-                <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 py-1 px-1.5 sm:px-2.5 rounded-full transition-all border border-transparent hover:border-gray-200">
+                <div className="flex items-center gap-2 cursor-pointer hover:bg-white/15 py-1 px-1.5 sm:px-2.5 rounded-full transition-all border border-transparent hover:border-white/20">
                   <Avatar
                     src={
                       userInfo?.avatarUrl ||
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(
                         userInfo?.fullName || userInfo?.username || 'User'
-                      )}&background=60a5fa&color=fff`
+                      )}&background=0099FF&color=fff`
                     }
                     size={32}
-                    className="border border-blue-200 shadow-sm bg-[#60a5fa]"
+                    className="border-2 border-white shadow-sm bg-white text-[#0099FF] font-bold"
                   />
                   <div className="hidden xl:flex flex-col text-left leading-tight">
-                    <span className="font-bold text-gray-800 text-xs truncate max-w-[110px]">
+                    <span className="font-bold text-white text-xs truncate max-w-[110px]">
                       {userInfo?.fullName || userInfo?.username}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-semibold uppercase">
+                    <span className="text-[10px] text-white/80 font-semibold uppercase">
                       {userInfo?.membershipTier || 'STANDARD'}
                     </span>
                   </div>
-                  <ChevronDown size={14} className="text-gray-400 hidden xl:block" />
+                  <ChevronDown size={14} className="text-white/80 hidden xl:block" />
                 </div>
               </Dropdown>
             </div>
@@ -522,10 +550,11 @@ const Header = ({ onLoginClick }) => {
             <button
               type="button"
               onClick={onLoginClick}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs py-2 px-2 sm:px-4 rounded-full transition-all flex items-center gap-1.5 cursor-pointer"
+              className="bg-white hover:bg-white/90 text-[#0099FF] font-bold text-xs py-2 px-3 sm:px-4 rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
+              style={{ color: 'var(--primary-color, #0099FF)' }}
             >
-              <UserCircle size={20} className="text-gray-600" />
-              <span className="text-[16px] sm:block hidden">Đăng nhập</span>
+              <UserCircle size={18} />
+              <span className="text-[14px] sm:block hidden font-semibold">Đăng nhập</span>
             </button>
           )}
         </div>
@@ -578,6 +607,146 @@ const Header = ({ onLoginClick }) => {
           )}
         </div>
       )}
+
+      {/* ── 4. MOBILE NAVIGATION DRAWER (Ant Design Portal - 100% Responsive & Kín Màn Hình) ───────── */}
+      <Drawer
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        placement="left"
+        closable={false}
+        width={300}
+        styles={{
+          body: { padding: 0 },
+          mask: { backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0, 0, 0, 0.6)' },
+        }}
+        className="md:hidden"
+      >
+        <div className="flex flex-col justify-between h-full bg-white text-slate-800">
+          <div>
+            {/* Drawer Top Header */}
+            <div 
+              className="p-4 flex items-center justify-between text-white"
+              style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-white text-[#0099FF] flex items-center justify-center font-bold shadow-xs" style={{ color: 'var(--primary-color, #0099FF)' }}>
+                  <Scissors size={18} className="rotate-45" />
+                </div>
+                <div>
+                  <span className="text-lg font-black italic tracking-wider block leading-none">BachBarber</span>
+                  <span className="text-[9px] font-bold text-white/80 uppercase tracking-widest">Premium Salon</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen(false)}
+                className="p-1.5 rounded-lg text-white hover:bg-white/20 active:scale-95 cursor-pointer"
+                aria-label="Đóng menu điều hướng"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* User Account Bar */}
+            <div className="p-4 bg-slate-50 border-b border-slate-100">
+              {authenticated ? (
+                <div className="flex items-center gap-3">
+                  <Avatar
+                    src={userInfo?.avatarUrl}
+                    size={40}
+                    className="border-2 border-white shadow-xs bg-[#0099FF] text-white font-bold"
+                  >
+                    {(userInfo?.fullName || userInfo?.username || 'U')[0].toUpperCase()}
+                  </Avatar>
+                  <div className="min-w-0">
+                    <div className="font-bold text-slate-900 text-xs truncate">
+                      {userInfo?.fullName || userInfo?.username}
+                    </div>
+                    <span className="text-[10px] text-emerald-700 bg-emerald-100 font-bold px-2 py-0.5 rounded-full inline-block mt-0.5">
+                      {userInfo?.membershipTier || 'Thành viên'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileNavOpen(false);
+                    if (onLoginClick) onLoginClick();
+                    else openLoginModal();
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-95 transition-all"
+                  style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
+                >
+                  <UserCircle size={16} />
+                  <span>Đăng nhập / Đăng ký</span>
+                </button>
+              )}
+            </div>
+
+            {/* Navigation Links List */}
+            <div className="p-3 space-y-1">
+              {[
+                { label: 'Trang chủ', path: '/', icon: <Home size={18} /> },
+                { label: 'Dịch vụ Salon', path: '/service', icon: <Scissors size={18} /> },
+                { label: 'Cửa hàng mỹ phẩm', path: '/shop', icon: <ShoppingBag size={18} /> },
+                { label: 'Hệ thống Salon', path: '/salons', icon: <MapPin size={18} /> },
+                { label: 'Ưu đãi & Voucher', path: '/promotions', icon: <Gift size={18} />, badge: 'HOT' },
+                { label: 'Về chúng tôi', path: '/about', icon: <Star size={18} /> },
+              ].map((item) => {
+                const active = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
+                return (
+                  <button
+                    key={item.path}
+                    type="button"
+                    onClick={() => {
+                      setMobileNavOpen(false);
+                      navigate(item.path);
+                    }}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      active
+                        ? 'bg-blue-50 text-[#0099FF] font-extrabold'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={active ? 'text-[#0099FF]' : 'text-slate-400'}>
+                        {item.icon}
+                      </span>
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-900 uppercase">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Drawer Bottom CTA */}
+          <div className="p-4 border-t border-slate-100 bg-slate-50 space-y-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileNavOpen(false);
+                navigate('/booking');
+              }}
+              className="w-full py-3 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-95 transition-all"
+              style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
+            >
+              <Scissors size={15} />
+              <span>Đặt Lịch Cắt Tóc Ngay</span>
+            </button>
+            <div className="text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5 pt-1">
+              <Phone size={12} className="text-[#0099FF]" />
+              <span>Hotline: <strong>1900 2828</strong> (08:30 - 21:30)</span>
+            </div>
+          </div>
+        </div>
+      </Drawer>
 
     </header>
   );

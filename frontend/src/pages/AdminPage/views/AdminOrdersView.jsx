@@ -457,7 +457,7 @@ export default function AdminOrdersView({
                               "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=100&auto=format&fit=crop"
                             }
                             alt={item.productName}
-                            className="w-9 h-9 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                            className="w-9 h-9 rounded-full aspect-square object-cover border border-gray-100 flex-shrink-0"
                           />
                           <span className="font-semibold text-xs text-gray-800 line-clamp-1">
                             {item.productName}

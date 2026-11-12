@@ -1,7 +1,4 @@
 services:
-  # ========================================================
-  # 1. DATABASE: MySQL 8.0
-  # ========================================================
   mysql:
     image: mysql:8.0
     container_name: bookingsalon_mysql
@@ -11,6 +8,10 @@ services:
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
       --default-time-zone=+07:00
+      --performance_schema=OFF
+      --innodb_buffer_pool_size=128M
+      --innodb_log_buffer_size=16M
+      --max_connections=50
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
       MYSQL_DATABASE: ${DB_NAME:-bookingsalon_app}
@@ -30,10 +31,12 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 350M
 
-  # ========================================================
-  # 2. CACHE & LOCK: Redis 7
-  # ========================================================
+
   redis:
     image: redis:7-alpine
     container_name: bookingsalon_redis
@@ -54,16 +57,19 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 280M
 
-  # ========================================================
-  # 3. IAM AUTHENTICATION: Keycloak 26
-  # ========================================================
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.7.0
     container_name: bookingsalon_keycloak
     restart: unless-stopped
     command: start-dev --import-realm
     environment:
+      JAVA_OPTS_KC_HEAP: "-Xms180m -Xmx350m -XX:+UseG1GC"
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_DB: mysql
@@ -96,10 +102,12 @@ services:
       timeout: 5s
       retries: 15
       start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 450M
 
-  # ========================================================
-  # 4. BACKEND: Spring Boot (Image kéo từ Docker Hub)
-  # ========================================================
+
   backend-1:
     image: ${DOCKERHUB_USERNAME:-nguyenbach}/bookingsalon-backend:${IMAGE_TAG:-latest}
     container_name: bookingsalon_backend_1
@@ -118,6 +126,7 @@ services:
       DB_USERNAME: ${DB_USERNAME:-bookingsalon_user}
       DB_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
       JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
+      JAVA_TOOL_OPTIONS: "-Xms120m -Xmx200m -XX:+UseG1GC -XX:+UseStringDeduplication"
 
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/test-data
       SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
@@ -174,7 +183,11 @@ services:
       bookingsalon_net:
         aliases:
           - backend
-
+    deploy:
+      resources:
+        limits:
+          memory: 280M
+    
   backend-2:
     image: ${DOCKERHUB_USERNAME:-nguyenbach}/bookingsalon-backend:${IMAGE_TAG:-latest}
     container_name: bookingsalon_backend_2
@@ -193,7 +206,7 @@ services:
       DB_USERNAME: ${DB_USERNAME:-bookingsalon_user}
       DB_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
       JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
-
+      JAVA_TOOL_OPTIONS: "-Xms120m -Xmx200m -XX:+UseG1GC -XX:+UseStringDeduplication"
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/test-data
       SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
       SPRING_FLYWAY_OUT_OF_ORDER: "true"
@@ -249,6 +262,10 @@ services:
       bookingsalon_net:
         aliases:
           - backend
+    deploy:
+      resources:
+        limits:
+          memory: 280M
 
   backend-3:
     image: ${DOCKERHUB_USERNAME:-nguyenbach}/bookingsalon-backend:${IMAGE_TAG:-latest}
@@ -268,7 +285,7 @@ services:
       DB_USERNAME: ${DB_USERNAME:-bookingsalon_user}
       DB_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
       JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
-
+      JAVA_TOOL_OPTIONS: "-Xms120m -Xmx200m -XX:+UseG1GC -XX:+UseStringDeduplication"
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/test-data
       SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
       SPRING_FLYWAY_OUT_OF_ORDER: "true"
@@ -324,10 +341,12 @@ services:
       bookingsalon_net:
         aliases:
           - backend
+    deploy:
+      resources:
+        limits:
+          memory: 280M
 
-  # ========================================================
-  # 5. FRONTEND: React 19 SPA + Nginx (Image kéo từ Docker Hub)
-  # ========================================================
+
   frontend:
     image: ${DOCKERHUB_USERNAME:-nguyenbach}/bookingsalon-frontend:${IMAGE_TAG:-latest}
     container_name: bookingsalon_frontend

@@ -5,14 +5,15 @@ import AuthAxiosInjector from "./service/api/AuthAxiosInjector";
 import ScrollToTop from "./pages/components/ScrollToTop";
 import ErrorBoundary from "./pages/components/ErrorBoundary";
 import PageTitleManager from "./pages/components/PageTitleManager";
+import { THEME_CONFIG } from "./config/theme";
 
 function App() {
   return (
     <ConfigProvider
       theme={{
         token: {
-          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          colorPrimary: "#60a5fa",
+          fontFamily: THEME_CONFIG.fontFamily,
+          colorPrimary: THEME_CONFIG.primaryColor,
         },
       }}
     >

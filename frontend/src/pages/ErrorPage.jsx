@@ -29,6 +29,7 @@ export default function ErrorPage({ customError, onReset }) {
   };
 
   const handleGoBack = () => {
+    if (onReset) onReset();
     if (navigate && window.history.length > 1) {
       navigate(-1);
     } else {

@@ -8,13 +8,13 @@ export default function HomePage() {
   const { openLoginModal, authenticated } = useAuth();
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-gray-50 text-gray-900">
+    <div className="min-h-screen flex flex-col font-sans bg-white text-slate-900 overflow-x-clip">
       <LayoutHeader
         onLoginClick={() => openLoginModal()}
         isLoggedIn={authenticated}
       />
 
-      <main className="flex-1 pt-[108px]">
+      <main className="flex-1 pt-16 md:pt-[108px] overflow-x-clip">
         <Outlet />
       </main>
 

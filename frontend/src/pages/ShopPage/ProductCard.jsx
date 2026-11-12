@@ -126,7 +126,7 @@ const ProductCard = ({ product, onAddToCart, onBuyNow }) => {
           </div>
         </div>
 
-        {/* ── Button (Mockup: Outline button with blue border) ── */}
+        {/* ── Button Mua Ngay màu chủ đạo #0099FF ── */}
         <div className="pt-2 border-t border-gray-100">
           <button
             onClick={(e) => {
@@ -134,11 +134,12 @@ const ProductCard = ({ product, onAddToCart, onBuyNow }) => {
               handleCardClick();
             }}
             disabled={isOutOfStock}
-            className={`w-full py-1.5 rounded-xl font-bold text-xs uppercase transition-all duration-200 cursor-pointer ${
+            className={`w-full py-2 rounded-xl font-bold text-xs uppercase transition-all duration-200 cursor-pointer shadow-xs ${
               isOutOfStock
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                : 'border border-[#60a5fa] text-[#2563eb] hover:bg-[#60a5fa] hover:text-white active:scale-95'
+                : 'bg-[#0099FF] text-white hover:bg-[#0080d9] active:scale-95'
             }`}
+            style={!isOutOfStock ? { backgroundColor: 'var(--primary-color, #0099FF)' } : {}}
           >
             {isOutOfStock ? 'HẾT HÀNG' : 'MUA NGAY'}
           </button>

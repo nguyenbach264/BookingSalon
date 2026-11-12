@@ -38,7 +38,7 @@ public class VoucherController {
     }
 
     // Public / User APIs
-    @GetMapping("/available")
+    @GetMapping({"/available", "/public"})
     public ResponseEntity<List<VoucherDTO>> getAvailableVouchers(@RequestParam(required = false) UUID userId) {
         return ResponseEntity.ok(voucherService.getAvailableVouchers(userId));
     }

@@ -228,7 +228,7 @@ export default function SidebarAccountCard({
               <Avatar
                 size={36}
                 src={currentAvatar}
-                className="bg-emerald-600 text-white font-black shrink-0 border border-emerald-500/30"
+                className="bg-slate-900 text-white font-black shrink-0 ring-1 ring-slate-200 shadow-xs"
               >
                 {firstLetter}
               </Avatar>

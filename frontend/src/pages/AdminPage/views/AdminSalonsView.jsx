@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AdminImageAction from "../AdminImageAction";
 import {
   Row,
   Col,
@@ -385,25 +386,13 @@ export default function AdminSalonsView({
                 {/* Salon header */}
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
-                    {salon.images && salon.images.length > 0 ? (
-                      <img
-                        src={salon.images[0]}
-                        alt={salon.salonName}
-                        className="w-11 h-11 rounded-xl object-cover border border-amber-200 shadow-sm flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => handleOpenMediaModal(salon)}
-                        title="Bấm để sửa ảnh"
-                      />
-                    ) : (
-                      <div
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:opacity-80 transition-opacity ${
-                          salon.enabled ? "bg-amber-50 text-amber-600 border border-amber-200" : "bg-gray-100 text-gray-400"
-                        }`}
-                        onClick={() => handleOpenMediaModal(salon)}
-                        title="Bấm để tải ảnh"
-                      >
-                        <ShopOutlined />
-                      </div>
-                    )}
+                    <AdminImageAction
+                      src={salon.images?.[0]}
+                      alt={salon.salonName}
+                      size={44}
+                      onEdit={() => handleOpenMediaModal(salon)}
+                      fallback="https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=200"
+                    />
                     <div>
                       <h3 className="font-bold text-sm text-gray-900 mb-0.5 flex items-center gap-1.5">
                         {salon.salonName}
@@ -480,16 +469,6 @@ export default function AdminSalonsView({
                     className="text-xs bg-indigo-600 rounded-lg flex-1"
                   >
                     Thống kê chi tiết
-                  </Button>
-
-                  <Button
-                    size="small"
-                    icon={<CameraOutlined />}
-                    onClick={() => handleOpenMediaModal(salon)}
-                    className="text-xs rounded-lg text-amber-700 border-amber-200 hover:bg-amber-50"
-                    title="Sửa ảnh chi nhánh Cloudinary"
-                  >
-                    Sửa ảnh
                   </Button>
 
                   <Button

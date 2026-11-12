@@ -19,6 +19,7 @@ public class AuthResponse {
     @Builder
     public static class UserInfo {
         private UUID id;              // DB primary key
+        private UUID stylistId;       // Stylist primary key (when user is STYLIST or linked to stylist)
         private UUID keycloakId;
         private String username;
         private String fullName;

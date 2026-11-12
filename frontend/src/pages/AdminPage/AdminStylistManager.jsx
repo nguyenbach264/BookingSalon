@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import AdminImageAction from "./AdminImageAction";
 import {
   Table,
   Button,
@@ -306,23 +307,13 @@ const AdminStylistManager = () => {
       key: "stylist",
       render: (_, r) => (
         <Space size={12}>
-          <div className="flex flex-col items-center gap-1">
-            <Avatar
-              src={r.avatarUrl}
-              size={48}
-              className="border-2 border-indigo-200"
-              icon={<ScissorOutlined />}
-            />
-            <Button
-              size="small"
-              type="text"
-              icon={<CameraOutlined className="text-purple-600" />}
-              onClick={() => handleOpenMediaModal(r)}
-              className="text-[11px] h-5 px-1 text-purple-600 hover:text-purple-700 bg-purple-50/70 hover:bg-purple-100 rounded"
-            >
-              Sửa ảnh
-            </Button>
-          </div>
+          <AdminImageAction
+            src={r.avatarUrl}
+            alt={r.fullName || r.username}
+            size={48}
+            onEdit={() => handleOpenMediaModal(r)}
+            fallback="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200"
+          />
           <div>
             <div className="font-bold text-gray-800 text-sm">{r.fullName || r.username}</div>
             <div className="text-xs text-gray-500 font-mono">{r.phoneNumber || r.email || "—"}</div>
@@ -406,20 +397,9 @@ const AdminStylistManager = () => {
       title: "Hành động",
       key: "actions",
       fixed: "right",
-      width: 320,
+      width: 240,
       render: (_, r) => (
         <Space size={6} wrap>
-          <Tooltip title="Sửa ảnh Avatar Cloudinary">
-            <Button
-              size="small"
-              icon={<CameraOutlined />}
-              onClick={() => handleOpenMediaModal(r)}
-              className="text-purple-600 border-purple-200 hover:bg-purple-50"
-            >
-              Sửa ảnh
-            </Button>
-          </Tooltip>
-
           <Tooltip title="Xem chi tiết Stylist">
             <Button
               size="small"
@@ -1125,7 +1105,13 @@ const AdminStylistManager = () => {
                 dataIndex: "fullName",
                 render: (v, r) => (
                   <div className="flex items-center gap-2">
-                    <Avatar size={32} src={r.avatarUrl} icon={<ScissorOutlined />} />
+                    <AdminImageAction
+                      src={r.avatarUrl}
+                      alt={v || r.username}
+                      size={32}
+                      onEdit={() => handleOpenMediaModal(r)}
+                      fallback="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200"
+                    />
                     <div>
                       <div className="font-bold text-xs">{v || r.username}</div>
                       <div className="text-[10px] text-gray-400">{r.nickname || `@${r.username}`}</div>

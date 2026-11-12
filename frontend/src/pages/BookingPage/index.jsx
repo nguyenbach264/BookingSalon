@@ -35,7 +35,7 @@ const BookingPage = ({ onGoBack }) => {
             {/* Back button */}
             <button
               onClick={handleBackNavigation}
-              className="absolute left-4 text-gray-500 hover:text-[#60a5fa] transition-colors p-2 rounded-xl hover:bg-blue-50"
+              className="absolute left-4 text-gray-500 hover:text-[#0099FF] transition-colors p-2 rounded-xl hover:bg-blue-50"
               title="Quay lại"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -48,7 +48,7 @@ const BookingPage = ({ onGoBack }) => {
                 <div className="absolute top-[18px] sm:top-[20px] left-[calc(12.5%)] right-[calc(12.5%)] h-0.5 bg-gray-200 -z-10" />
                 {/* Progress line */}
                 <div
-                  className="absolute top-[18px] sm:top-[20px] left-[calc(12.5%)] h-0.5 bg-[#60a5fa] -z-10 transition-all duration-500"
+                  className="absolute top-[18px] sm:top-[20px] left-[calc(12.5%)] h-0.5 bg-[#0099FF] -z-10 transition-all duration-500"
                   style={{ width: `${((step - 1) / 3) * 75}%` }}
                 />
 
@@ -68,11 +68,11 @@ const BookingPage = ({ onGoBack }) => {
                       <div
                         className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all duration-300 ${
                           isCompleted
-                            ? 'bg-[#60a5fa] text-white shadow-xs'
+                            ? 'bg-[#0099FF] text-white shadow-xs'
                             : isActive
-                            ? 'bg-[#60a5fa] text-white ring-4 ring-blue-100 shadow-sm'
+                            ? 'bg-[#0099FF] text-white ring-4 ring-blue-100 shadow-sm'
                             : canClick
-                            ? 'bg-white text-gray-600 border border-gray-300 hover:border-[#60a5fa]'
+                            ? 'bg-white text-gray-600 border border-gray-300 hover:border-[#0099FF]'
                             : 'bg-gray-100 text-gray-400 border border-gray-200'
                         }`}
                       >
@@ -81,11 +81,11 @@ const BookingPage = ({ onGoBack }) => {
                       <span
                         className={`text-[10px] sm:text-xs font-semibold whitespace-nowrap transition-colors ${
                           isActive
-                            ? 'text-[#60a5fa] font-bold'
+                            ? 'text-[#0099FF] font-bold'
                             : isCompleted
                             ? 'text-gray-800 font-medium'
                             : canClick
-                            ? 'text-gray-500 hover:text-[#60a5fa]'
+                            ? 'text-gray-500 hover:text-[#0099FF]'
                             : 'text-gray-400'
                         }`}
                       >

@@ -169,6 +169,9 @@ public class BffSessionService {
             String refreshToken = (String) session.getAttribute(SESSION_REFRESH_TOKEN);
             if (refreshToken == null || refreshToken.isBlank()) {
                 log.warn("Cannot refresh token in BFF: No refresh token found in session");
+                if (currentExpiresAt != null && Instant.now().isBefore(currentExpiresAt) && currentAccessToken != null) {
+                    return currentAccessToken;
+                }
                 return null;
             }
 
@@ -185,11 +188,19 @@ public class BffSessionService {
                 if (updatedExpiresAt != null && Instant.now().isBefore(updatedExpiresAt.minusSeconds(30)) && updatedToken != null) {
                     return updatedToken;
                 }
-                // KHÔNG gọi session.invalidate() để tránh huỷ toàn bộ phiên của người dùng khi gặp race condition
+                // Nếu token hiện tại chưa quá hạn tuyệt đối (vẫn trước expiresAt), tiếp tục dùng
+                if (currentExpiresAt != null && Instant.now().isBefore(currentExpiresAt) && currentAccessToken != null) {
+                    log.info("Preserving current valid access token despite refresh hiccup");
+                    return currentAccessToken;
+                }
                 return null;
             } catch (Exception ex) {
                 log.warn("Failed to refresh token in BFF session (transient error): {}", ex.getMessage());
-                // Không hủy session khi gặp lỗi tạm thời
+                // Không hủy session khi gặp lỗi tạm thời, dùng tiếp token hiện tại nếu chưa hết hạn
+                if (currentExpiresAt != null && Instant.now().isBefore(currentExpiresAt) && currentAccessToken != null) {
+                    log.info("Preserving current valid access token despite transient error");
+                    return currentAccessToken;
+                }
                 return null;
             }
         }

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import AdminImageAction from "../AdminImageAction";
 import {
   Row,
   Col,
@@ -169,7 +170,7 @@ export default function AdminProductsView({
                 <img
                   src={p.imageUrl}
                   alt={p.name}
-                  className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                  className="w-10 h-10 rounded-full aspect-square object-cover border border-gray-100 flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-gray-800 truncate mb-0">{p.name}</p>
@@ -226,22 +227,13 @@ export default function AdminProductsView({
               width: 320,
               render: (_, r) => (
                 <div className="flex items-center gap-3">
-                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                    <img
-                      src={r.imageUrl || "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=100"}
-                      alt={r.name}
-                      className="w-12 h-12 rounded-lg object-cover border border-gray-100"
-                    />
-                    <Button
-                      size="small"
-                      type="text"
-                      icon={<CameraOutlined className="text-green-600" />}
-                      onClick={() => handleOpenMediaModal(r)}
-                      className="text-[11px] h-5 px-1 text-green-600 hover:text-green-700 bg-green-50/70 hover:bg-green-100 rounded"
-                    >
-                      Sửa ảnh
-                    </Button>
-                  </div>
+                  <AdminImageAction
+                    src={r.imageUrl}
+                    alt={r.name}
+                    size={48}
+                    onEdit={() => handleOpenMediaModal(r)}
+                    fallback="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=200"
+                  />
                   <div>
                     <p className="font-semibold text-sm text-gray-800 line-clamp-1 mb-0">{r.name}</p>
                     <p className="text-xs text-gray-400 mb-0">{r.categoryName}</p>
@@ -291,18 +283,9 @@ export default function AdminProductsView({
               title: "Hành động",
               key: "actions",
               fixed: "right",
-              width: 170,
+              width: 110,
               render: (_, r) => (
                 <div className="flex gap-1">
-                  <Button
-                    size="small"
-                    icon={<CameraOutlined />}
-                    onClick={() => handleOpenMediaModal(r)}
-                    className="text-green-600 border-green-200 hover:bg-green-50 text-xs"
-                    title="Sửa ảnh sản phẩm Cloudinary"
-                  >
-                    Sửa ảnh
-                  </Button>
                   <Button
                     size="small"
                     icon={<EditOutlined />}
@@ -426,7 +409,7 @@ export default function AdminProductsView({
                     <img
                       src={r.imageUrl}
                       alt={v}
-                      className="w-9 h-9 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                      className="w-9 h-9 rounded-full aspect-square object-cover border border-gray-100 flex-shrink-0"
                     />
                     <div>
                       <div className="font-bold text-xs text-gray-900">{v}</div>

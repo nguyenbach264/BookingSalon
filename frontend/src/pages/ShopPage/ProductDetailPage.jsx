@@ -482,16 +482,18 @@ export default function ProductDetailPage() {
                       size="large"
                       disabled={isOutOfStock}
                       onClick={handleBuyNow}
-                      className="flex-1 font-bold rounded-xl h-12 text-sm bg-[#60a5fa] hover:bg-[#3b82f6] text-white border-none shadow-md shadow-blue-200 cursor-pointer"
+                      className="flex-1 font-bold rounded-xl h-12 text-sm bg-[#0099FF] hover:bg-[#0080d9] text-white border-none shadow-md shadow-blue-200 cursor-pointer"
+                      style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
                     >
                       MUA NGAY
                     </Button>
                     <Button
                       size="large"
-                      icon={<ShoppingCartOutlined className="text-[#2563eb]" />}
+                      icon={<ShoppingCartOutlined className="text-[#0099FF]" style={{ color: 'var(--primary-color, #0099FF)' }} />}
                       disabled={isOutOfStock}
                       onClick={handleAddToCart}
-                      className="flex-1 font-bold rounded-xl h-12 text-sm border-[#60a5fa] text-[#2563eb] hover:bg-blue-50 cursor-pointer"
+                      className="flex-1 font-bold rounded-xl h-12 text-sm border-[#0099FF] text-[#0099FF] hover:bg-blue-50 cursor-pointer"
+                      style={{ borderColor: 'var(--primary-color, #0099FF)', color: 'var(--primary-color, #0099FF)' }}
                     >
                       Thêm Vào Giỏ
                     </Button>
@@ -804,8 +806,9 @@ export default function ProductDetailPage() {
                 className={`h-11 px-6 sm:px-8 rounded-xl font-bold text-xs sm:text-sm text-white transition-all flex items-center justify-center shadow-md ${
                   isOutOfStock
                     ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95'
+                    : 'bg-[#0099FF] hover:bg-[#0080d9] active:scale-95'
                 }`}
+                style={!isOutOfStock ? { backgroundColor: 'var(--primary-color, #0099FF)' } : {}}
               >
                 Mua ngay
               </button>

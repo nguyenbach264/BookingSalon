@@ -59,7 +59,7 @@ export function CheckoutSuccessfully({ onGoBack }) {
       </div>
 
       <div className="inline-flex items-center gap-1.5 text-[#2563eb] bg-blue-50 px-3 py-1 rounded-full text-xs font-bold mb-2">
-        <Sparkles size={13} className="text-[#60a5fa]" /> Đã xác nhận lịch hẹn
+        <Sparkles size={13} className="text-[#0099FF]" /> Đã xác nhận lịch hẹn
       </div>
 
       <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2">
@@ -71,7 +71,7 @@ export function CheckoutSuccessfully({ onGoBack }) {
 
       {/* Booking Code Card */}
       <div className="bg-gradient-to-r from-slate-900 via-[#1b2a4a] to-slate-900 text-white rounded-3xl p-6 mb-6 shadow-xl text-left relative overflow-hidden border border-slate-800">
-        <div className="absolute -right-6 -bottom-6 w-36 h-36 bg-[#60a5fa]/10 rounded-full blur-xl pointer-events-none"></div>
+        <div className="absolute -right-6 -bottom-6 w-36 h-36 bg-[#0099FF]/10 rounded-full blur-xl pointer-events-none"></div>
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 relative z-10">
           <div>
             <span className="text-[11px] text-[#93c5fd] uppercase font-bold tracking-wider">
@@ -95,7 +95,7 @@ export function CheckoutSuccessfully({ onGoBack }) {
       {/* Booking Detail Summary Card */}
       <div className="bg-white rounded-3xl border border-gray-200/90 shadow-sm p-6 text-left mb-8 relative">
         <h3 className="font-extrabold text-base text-gray-900 border-b border-gray-100 pb-3 mb-4 flex items-center gap-2">
-          <Receipt className="w-5 h-5 text-[#60a5fa]" />
+          <Receipt className="w-5 h-5 text-[#0099FF]" />
           Chi tiết lịch hẹn
         </h3>
 
@@ -158,7 +158,7 @@ export function CheckoutSuccessfully({ onGoBack }) {
 
           <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
             <span className="font-bold text-sm text-gray-800">Tổng chi phí:</span>
-            <span className="text-xl font-black text-[#60a5fa]">{formatPrice(totalAmount)}</span>
+            <span className="text-xl font-black text-[#0099FF]">{formatPrice(totalAmount)}</span>
           </div>
         </div>
       </div>
@@ -168,7 +168,7 @@ export function CheckoutSuccessfully({ onGoBack }) {
         <button
           type="button"
           onClick={handleReturnHome}
-          className="w-full sm:w-auto px-8 py-3.5 bg-[#60a5fa] hover:bg-[#3b82f6] text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-blue-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+          className="w-full sm:w-auto px-8 py-3.5 bg-[#0099FF] hover:bg-[#0080d9] text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-blue-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
         >
           <Home className="w-4 h-4" />
           Về trang chủ

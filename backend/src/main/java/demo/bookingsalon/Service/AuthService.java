@@ -699,8 +699,100 @@ public class AuthService {
         }
     }
 
+    private void syncUserKeycloakId(UUID keycloakId, String username) {
+        if (keycloakId == null || username == null) return;
+        try {
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user != null && (user.getKeycloakId() == null || !keycloakId.equals(user.getKeycloakId()))) {
+                user.setKeycloakId(keycloakId);
+                userRepository.save(user);
+                log.info("Auto-synced corresponding user keycloakId {} for username '{}'", keycloakId, username);
+            }
+        } catch (Exception ex) {
+            log.debug("User keycloakId sync skipped: {}", ex.getMessage());
+        }
+    }
+
     private AuthResponse.UserInfo resolveUserInfo(UUID keycloakId, String username) {
-        // 1. Try finding in Users (Customers)
+        // Xác định vai trò từ Keycloak trước (nếu có keycloakId)
+        String determinedRole = null;
+        if (keycloakId != null) {
+            determinedRole = determineRole(keycloakId, null);
+        }
+
+        // 1. ƯU TIÊN KIỂM TRA ADMIN: Nếu role từ Keycloak là ADMIN hoặc tồn tại trong adminRepository
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(determinedRole) || (
+                (keycloakId != null && adminRepository.findByKeycloakId(keycloakId).isPresent()) ||
+                (username != null && adminRepository.findByUsername(username).isPresent())
+        );
+
+        if (isAdmin) {
+            Admin admin = null;
+            if (keycloakId != null) {
+                admin = adminRepository.findByKeycloakId(keycloakId).orElse(null);
+            }
+            if (admin == null && username != null) {
+                admin = adminRepository.findByUsername(username).orElse(null);
+            }
+            if (admin != null) {
+                if (keycloakId != null && (admin.getKeycloakId() == null || !keycloakId.equals(admin.getKeycloakId()))) {
+                    admin.setKeycloakId(keycloakId);
+                    adminRepository.save(admin);
+                    log.info("Auto-synced keycloakId {} for Admin '{}'", keycloakId, admin.getUsername());
+                }
+                syncUserKeycloakId(keycloakId, username);
+                UUID actualKcId = admin.getKeycloakId() != null ? admin.getKeycloakId() : keycloakId;
+                return AuthResponse.UserInfo.builder()
+                        .id(admin.getId())
+                        .keycloakId(actualKcId)
+                        .username(admin.getUsername())
+                        .fullName(admin.getFullName())
+                        .email(admin.getEmail())
+                        .phoneNumber(admin.getPhoneNumber())
+                        .avatarUrl(resolveAvatar(admin.getAvatarUrl(), admin.getFullName(), admin.getUsername()))
+                        .role("ADMIN")
+                        .build();
+            }
+        }
+
+        // 2. ƯU TIÊN KIỂM TRA STYLIST: Nếu role từ Keycloak là STYLIST hoặc tồn tại trong stylistRepository
+        boolean isStylist = "STYLIST".equalsIgnoreCase(determinedRole) || (
+                (keycloakId != null && stylistRepository.findByKeycloakId(keycloakId).isPresent()) ||
+                (username != null && stylistRepository.findByUsername(username).isPresent())
+        );
+
+        if (isStylist) {
+            Stylist stylist = null;
+            if (keycloakId != null) {
+                stylist = stylistRepository.findByKeycloakId(keycloakId).orElse(null);
+            }
+            if (stylist == null && username != null) {
+                stylist = stylistRepository.findByUsername(username).orElse(null);
+            }
+            if (stylist != null) {
+                if (keycloakId != null && (stylist.getKeycloakId() == null || !keycloakId.equals(stylist.getKeycloakId()))) {
+                    stylist.setKeycloakId(keycloakId);
+                    stylistRepository.save(stylist);
+                    log.info("Auto-synced keycloakId {} for Stylist '{}'", keycloakId, stylist.getUsername());
+                }
+                syncUserKeycloakId(keycloakId, username);
+                UUID actualKcId = stylist.getKeycloakId() != null ? stylist.getKeycloakId() : keycloakId;
+                return AuthResponse.UserInfo.builder()
+                        .id(stylist.getId())
+                        .stylistId(stylist.getId())
+                        .keycloakId(actualKcId)
+                        .username(stylist.getUsername())
+                        .fullName(stylist.getFullName())
+                        .email(stylist.getEmail())
+                        .phoneNumber(stylist.getPhoneNumber())
+                        .avatarUrl(resolveAvatar(stylist.getAvatarUrl(), stylist.getFullName(), stylist.getUsername()))
+                        .role("STYLIST")
+                        .gender("OTHER")
+                        .build();
+            }
+        }
+
+        // 3. KIỂM TRA KHÁCH HÀNG (USERS)
         User user = null;
         if (keycloakId != null) {
             user = userRepository.findByKeycloakId(keycloakId);
@@ -715,9 +807,27 @@ public class AuthService {
                 log.info("Auto-synced keycloakId {} for User '{}'", keycloakId, user.getUsername());
             }
             UUID actualKcId = user.getKeycloakId() != null ? user.getKeycloakId() : keycloakId;
-            String role = determineRole(actualKcId, "USER");
+            String role = determinedRole != null ? determinedRole : determineRole(actualKcId, "USER");
+
+            // Nếu người dùng có vai trò STYLIST nhưng bước 2 bị sót (ví dụ tìm theo user), tra cứu stylistId
+            UUID stylistId = null;
+            if ("STYLIST".equalsIgnoreCase(role)) {
+                String name = user.getUsername();
+                Stylist linkedStylist = stylistRepository.findByKeycloakId(actualKcId)
+                        .or(() -> stylistRepository.findByUsername(name))
+                        .orElse(null);
+                if (linkedStylist != null) {
+                    stylistId = linkedStylist.getId();
+                    if (linkedStylist.getKeycloakId() == null && keycloakId != null) {
+                        linkedStylist.setKeycloakId(keycloakId);
+                        stylistRepository.save(linkedStylist);
+                    }
+                }
+            }
+
             return AuthResponse.UserInfo.builder()
-                    .id(user.getId())
+                    .id("STYLIST".equalsIgnoreCase(role) && stylistId != null ? stylistId : user.getId())
+                    .stylistId(stylistId)
                     .keycloakId(actualKcId)
                     .username(user.getUsername())
                     .fullName(user.getFullName())
@@ -738,62 +848,6 @@ public class AuthService {
                     .build();
         }
 
-        // 2. Try finding in Stylists
-        Stylist stylist = null;
-        if (keycloakId != null) {
-            stylist = stylistRepository.findByKeycloakId(keycloakId).orElse(null);
-        }
-        if (stylist == null && username != null) {
-            stylist = stylistRepository.findByUsername(username).orElse(null);
-        }
-        if (stylist != null) {
-            if (keycloakId != null && (stylist.getKeycloakId() == null || !keycloakId.equals(stylist.getKeycloakId()))) {
-                stylist.setKeycloakId(keycloakId);
-                stylistRepository.save(stylist);
-                log.info("Auto-synced keycloakId {} for Stylist '{}'", keycloakId, stylist.getUsername());
-            }
-            UUID actualKcId = stylist.getKeycloakId() != null ? stylist.getKeycloakId() : keycloakId;
-            String role = determineRole(actualKcId, "STYLIST");
-            return AuthResponse.UserInfo.builder()
-                    .id(stylist.getId())
-                    .keycloakId(actualKcId)
-                    .username(stylist.getUsername())
-                    .fullName(stylist.getFullName())
-                    .email(stylist.getEmail())
-                    .phoneNumber(stylist.getPhoneNumber())
-                    .avatarUrl(resolveAvatar(stylist.getAvatarUrl(), stylist.getFullName(), stylist.getUsername()))
-                    .role(role)
-                    .build();
-        }
-
-        // 3. Try finding in Admins
-        Admin admin = null;
-        if (keycloakId != null) {
-            admin = adminRepository.findByKeycloakId(keycloakId).orElse(null);
-        }
-        if (admin == null && username != null) {
-            admin = adminRepository.findByUsername(username).orElse(null);
-        }
-        if (admin != null) {
-            if (keycloakId != null && (admin.getKeycloakId() == null || !keycloakId.equals(admin.getKeycloakId()))) {
-                admin.setKeycloakId(keycloakId);
-                adminRepository.save(admin);
-                log.info("Auto-synced keycloakId {} for Admin '{}'", keycloakId, admin.getUsername());
-            }
-            UUID actualKcId = admin.getKeycloakId() != null ? admin.getKeycloakId() : keycloakId;
-            String role = determineRole(actualKcId, "ADMIN");
-            return AuthResponse.UserInfo.builder()
-                    .id(admin.getId())
-                    .keycloakId(actualKcId)
-                    .username(admin.getUsername())
-                    .fullName(admin.getFullName())
-                    .email(admin.getEmail())
-                    .phoneNumber(admin.getPhoneNumber())
-                    .avatarUrl(resolveAvatar(admin.getAvatarUrl(), admin.getFullName(), admin.getUsername()))
-                    .role(role)
-                    .build();
-        }
-
         return null;
     }
 
@@ -801,12 +855,17 @@ public class AuthService {
         if (keycloakId == null) return defaultRole;
         try {
             List<String> roles = roleService.getUserRealmRoles(keycloakId);
-            if (roles.contains("ADMIN")) return "ADMIN";
-            if (roles.contains("STYLIST")) return "STYLIST";
-            if (roles.contains("USER")) return "USER";
+            if (roles != null && !roles.isEmpty()) {
+                if (roles.stream().anyMatch(r -> "ADMIN".equalsIgnoreCase(r))) return "ADMIN";
+                if (roles.stream().anyMatch(r -> "STYLIST".equalsIgnoreCase(r))) return "STYLIST";
+                if (roles.stream().anyMatch(r -> "USER".equalsIgnoreCase(r))) return "USER";
+            }
         } catch (Exception e) {
             log.warn("Could not fetch Keycloak roles for {}: {}", keycloakId, e.getMessage());
         }
+        // Fallback: Kiểm tra bảng CSDL
+        if (adminRepository.findByKeycloakId(keycloakId).isPresent()) return "ADMIN";
+        if (stylistRepository.findByKeycloakId(keycloakId).isPresent()) return "STYLIST";
         return defaultRole;
     }
 

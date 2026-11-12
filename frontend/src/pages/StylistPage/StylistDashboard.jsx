@@ -67,7 +67,7 @@ import {
   getStylistStatistics,
   getBookingsByStylist,
 } from "../../service/api/bookingApi";
-import { getStylistById, getStylistServices, updateBookingStatus, updateStylistDutyStatus } from "../../service/api/adminApi";
+import { getStylistById, getStylistServices, updateBookingStatus, updateStylistDutyStatus, getMyStylistProfile } from "../../service/api/adminApi";
 
 import StylistOverview from "./views/StylistOverview";
 import StylistHaircutSchedule from "./views/StylistHaircutSchedule";
@@ -140,7 +140,11 @@ export default function StylistDashboard() {
   const navigate = useNavigate();
   const { tab } = useParams();
 
-  const stylistId = userInfo?.id;
+  const [resolvedStylistId, setResolvedStylistId] = useState(
+    userInfo?.stylistId || (userInfo?.role === "STYLIST" ? userInfo?.id : null)
+  );
+
+  const stylistId = resolvedStylistId || userInfo?.stylistId || userInfo?.id;
 
   const [stats, setStats] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -322,33 +326,52 @@ export default function StylistDashboard() {
   }, []);
 
   const loadAllDataQuietly = useCallback(async () => {
-    if (!stylistId) return;
     try {
-      const [statsData, profileData, servicesData, bookingsData] = await Promise.allSettled([
-        getStylistStatistics(stylistId),
-        getStylistById(stylistId),
-        getStylistServices(stylistId),
-        getBookingsByStylist(stylistId),
+      // 1. Luôn ưu tiên tra cứu hồ sơ chính xác của stylist đang đăng nhập
+      let activeStylistId = stylistId;
+      try {
+        const myProfile = await getMyStylistProfile();
+        if (myProfile?.id) {
+          activeStylistId = myProfile.id;
+          if (resolvedStylistId !== myProfile.id) {
+            setResolvedStylistId(myProfile.id);
+          }
+          setProfile(myProfile);
+        }
+      } catch (profileErr) {
+        if (activeStylistId) {
+          try {
+            const p = await getStylistById(activeStylistId);
+            if (p) setProfile(p);
+          } catch (e) {}
+        }
+      }
+
+      if (!activeStylistId) return;
+
+      // 2. Tải song song thống kê, dịch vụ và lịch hẹn với đúng ID stylist
+      const [statsData, servicesData, bookingsData] = await Promise.allSettled([
+        getStylistStatistics(activeStylistId),
+        getStylistServices(activeStylistId),
+        getBookingsByStylist(activeStylistId),
       ]);
 
       if (statsData.status === "fulfilled") setStats(statsData.value);
-      if (profileData.status === "fulfilled") setProfile(profileData.value);
       if (servicesData.status === "fulfilled") setServices(servicesData.value || []);
       if (bookingsData.status === "fulfilled") setAllStylistBookings(bookingsData.value || []);
     } catch (err) {
       console.error("Error quietly reloading stylist data:", err);
     }
-  }, [stylistId]);
+  }, [stylistId, resolvedStylistId]);
 
   const loadAllData = useCallback(async () => {
-    if (!stylistId) return;
     setLoading(true);
     try {
       await loadAllDataQuietly();
     } finally {
       setLoading(false);
     }
-  }, [stylistId, loadAllDataQuietly]);
+  }, [loadAllDataQuietly]);
 
   useEffect(() => {
     loadAllData();

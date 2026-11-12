@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import AdminImageAction from "./AdminImageAction";
 import {
   Table,
   Button,
@@ -252,27 +253,15 @@ const AdminServiceManager = () => {
       title: "Ảnh",
       dataIndex: "image",
       key: "image",
-      width: 100,
+      width: 80,
       render: (img, r) => (
-        <div className="flex flex-col items-center gap-1">
-          <Image
-            src={img || "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=100"}
-            alt="service"
-            width={48}
-            height={48}
-            className="rounded-lg object-cover border border-gray-200"
-            fallback="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=100"
-          />
-          <Button
-            size="small"
-            type="text"
-            icon={<CameraOutlined className="text-blue-600" />}
-            onClick={() => handleOpenMediaModal(r)}
-            className="text-[11px] h-5 px-1 text-blue-600 hover:text-blue-700 bg-blue-50/70 hover:bg-blue-100 rounded"
-          >
-            Sửa ảnh
-          </Button>
-        </div>
+        <AdminImageAction
+          src={img}
+          alt={r.name}
+          size={48}
+          onEdit={() => handleOpenMediaModal(r)}
+          fallback="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=200"
+        />
       ),
     },
     {
@@ -349,20 +338,9 @@ const AdminServiceManager = () => {
       title: "Hành động",
       key: "actions",
       fixed: "right",
-      width: 280,
+      width: 200,
       render: (_, r) => (
         <Space size={6}>
-          <Tooltip title="Sửa ảnh Cloudinary">
-            <Button
-              size="small"
-              icon={<CameraOutlined />}
-              onClick={() => handleOpenMediaModal(r)}
-              className="text-blue-600 border-blue-200 hover:bg-blue-50"
-            >
-              Sửa ảnh
-            </Button>
-          </Tooltip>
-
           <Tooltip title="Chỉnh sửa thông tin">
             <Button
               size="small"

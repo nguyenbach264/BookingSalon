@@ -5,6 +5,9 @@ import CheckoutPage from "../CheckoutPage/main";
 import HomePage from "../HomePage/main";
 import ServicePage from "../ServicePage/main";
 import HomeContent from "../HomePage/HomeContent";
+import SalonsPage from "../SalonsPage/main";
+import PromotionsPage from "../PromotionsPage/main";
+import AboutUsPage from "../AboutUsPage/main";
 import NotificationDetailPage from "../components/NotificationDetailPage";
 import BookingPage from "../BookingPage/index";
 import SelectSalon from "../BookingPage/SelectSalon";
@@ -58,6 +61,9 @@ function AppRoutes() {
         <Route path="/" element={<HomePage />}>
           <Route index element={<HomeContent />} />
           <Route path="/service" element={<ServicePage />} />
+          <Route path="/salons" element={<SalonsPage />} />
+          <Route path="/promotions" element={<PromotionsPage />} />
+          <Route path="/about" element={<AboutUsPage />} />
           <Route path="/notification_detail" element={<NotificationDetailPage />} />
           <Route
             path="/booking"

@@ -190,8 +190,8 @@ export function SelectService() {
                   onClick={() => setCategoryFilter(cat.key)}
                   className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                     isActive
-                      ? 'bg-[#60a5fa] text-white shadow-xs'
-                      : 'bg-white border border-gray-200 text-gray-700 hover:border-[#60a5fa]/60'
+                      ? 'bg-[#0099FF] text-white shadow-xs'
+                      : 'bg-white border border-gray-200 text-gray-700 hover:border-[#0099FF]/60'
                   }`}
                 >
                   {cat.label}
@@ -229,8 +229,8 @@ export function SelectService() {
                       isSuspended
                         ? 'opacity-60 cursor-not-allowed border-gray-200'
                         : isSelected
-                        ? 'border-[#60a5fa] shadow-sm ring-1 ring-[#60a5fa]/30'
-                        : 'border-gray-200/90 hover:border-[#60a5fa]/60 hover:shadow-sm'
+                        ? 'border-[#0099FF] shadow-sm ring-1 ring-[#0099FF]/30'
+                        : 'border-gray-200/90 hover:border-[#0099FF]/60 hover:shadow-sm'
                     }`}
                   >
                     <div>
@@ -242,7 +242,7 @@ export function SelectService() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-xs text-white text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-[#60a5fa]" />
+                          <Clock className="w-3 h-3 text-[#0099FF]" />
                           {srv.duration} phút
                         </div>
                       </div>
@@ -264,8 +264,8 @@ export function SelectService() {
                       <div
                         className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
                           isSelected
-                            ? 'bg-[#60a5fa] text-white shadow-xs'
-                            : 'border-2 border-gray-300 group-hover:border-[#60a5fa]'
+                            ? 'bg-[#0099FF] text-white shadow-xs'
+                            : 'border-2 border-gray-300 group-hover:border-[#0099FF]'
                         }`}
                       >
                         {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -394,13 +394,13 @@ export function SelectService() {
                       placeholder="Mode voucher"
                       value={voucherCodeInput}
                       onChange={(e) => setVoucherCodeInput(e.target.value)}
-                      className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#60a5fa]"
+                      className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0099FF]"
                     />
                     <button
                       type="button"
                       onClick={handleApplyVoucher}
                       disabled={applyingVoucher}
-                      className="px-3.5 py-2 border border-[#60a5fa] text-[#60a5fa] hover:bg-blue-50 font-bold text-xs rounded-xl transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                      className="px-3.5 py-2 border border-[#0099FF] text-[#0099FF] hover:bg-blue-50 font-bold text-xs rounded-xl transition-colors cursor-pointer shrink-0 disabled:opacity-50"
                     >
                       {applyingVoucher ? '...' : 'Áp dụng'}
                     </button>
@@ -431,7 +431,7 @@ export function SelectService() {
                   onClick={() => setStep(4)}
                   className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer ${
                     selectedServices.length > 0
-                      ? 'bg-[#60a5fa] hover:bg-[#3b82f6] text-white shadow-blue-200 active:scale-98'
+                      ? 'bg-[#0099FF] hover:bg-[#0080d9] text-white shadow-blue-200 active:scale-98'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                   }`}
                 >
