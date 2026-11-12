@@ -31,4 +31,22 @@ public class ServiceMediaOwnerStrategy implements MediaOwnerStrategy {
 
         return new MediaOwner(slugGenerator.generate(service.getName()));
     }
+
+    @Override
+    public void updateOwnerImage(UUID ownerId, String imageUrl, boolean isPrimary) {
+        serviceRepository.findById(ownerId).ifPresent(service -> {
+            service.setImage(imageUrl);
+            serviceRepository.save(service);
+        });
+    }
+
+    @Override
+    public void removeOwnerImage(UUID ownerId, String imageUrl) {
+        serviceRepository.findById(ownerId).ifPresent(service -> {
+            if (imageUrl.equals(service.getImage())) {
+                service.setImage(null);
+                serviceRepository.save(service);
+            }
+        });
+    }
 }

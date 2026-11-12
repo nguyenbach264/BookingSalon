@@ -26,6 +26,9 @@ export const deleteUser = (id) =>
 export const getStylists = () =>
   api.get("/stylists").then((r) => r.data);
 
+export const getMyStylistProfile = () =>
+  api.get("/stylists/me").then((r) => r.data);
+
 export const getStylistById = (id) =>
   api.get(`/stylists/${id}`).then((r) => r.data);
 

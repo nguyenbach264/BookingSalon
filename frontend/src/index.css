@@ -3,7 +3,22 @@
 @tailwind utilities;
 
 /*
- * Đồng bộ font chữ toàn hệ thống theo chuẩn Booking Page (Inter)
+ * ==============================================================================
+ * BIẾN MÀU CHỦ ĐẠO TOÀN ỨNG DỤNG (CENTRALIZED CSS VARIABLES)
+ * Thay đổi mã màu tại đây (hoặc tại file frontend/src/config/theme.js)
+ * ==============================================================================
+ */
+:root {
+  --primary-color: #0099FF;
+  --primary-hover: #0080d9;
+  --primary-active: #006bb3;
+  --primary-light: #e6f5ff;
+  --primary-ring: rgba(0, 153, 255, 0.25);
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/*
+ * Đồng bộ font chữ toàn hệ thống theo chuẩn gốc Inter
  */
 html,
 body,
@@ -20,6 +35,19 @@ textarea,
 .ant-modal,
 .ant-typography {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* Lớp tiện ích cho màu chủ đạo */
+.bg-theme-primary {
+  background-color: var(--primary-color, #0099FF) !important;
+}
+
+.text-theme-primary {
+  color: var(--primary-color, #0099FF) !important;
+}
+
+.border-theme-primary {
+  border-color: var(--primary-color, #0099FF) !important;
 }
 
 /*
@@ -122,18 +150,63 @@ html body.ant-scrolling-effect {
   width: 15px !important;
   height: 15px !important;
   border-radius: 9999px !important;
-  background: #60a5fa !important;
+  background: var(--primary-color, #0099FF) !important;
   border: 2px solid #ffffff !important;
   opacity: 1 !important;
-  box-shadow: 0 0 12px rgba(96, 165, 250, 0.95), 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 0 12px var(--primary-color, #0099FF), 0 2px 6px rgba(0, 0, 0, 0.3) !important;
   transform: scale(1.25) !important;
 }
 
-.no-scrollbar {
-  -ms-overflow-style: none; /* IE và Edge cũ */
-  scrollbar-width: none; /* Firefox */
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important; /* IE và Edge */
+  scrollbar-width: none !important; /* Firefox */
 }
 
-.no-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Edge Chromium */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 
+ * ==============================================================================
+ * STYLING CHO ADMIN SIDEBAR & DASHBOARD (PREMIUM SAAS LOOK)
+ * ==============================================================================
+ */
+.admin-sidebar-menu.ant-menu {
+  background: transparent !important;
+  border-inline-end: none !important;
+  padding: 0 8px !important;
+}
+
+.admin-sidebar-menu .ant-menu-item {
+  height: 42px !important;
+  line-height: 42px !important;
+  margin: 3px 0 !important;
+  padding: 0 12px !important;
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+  color: #475569 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.admin-sidebar-menu .ant-menu-item:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.admin-sidebar-menu .ant-menu-item-selected {
+  background-color: rgba(0, 153, 255, 0.09) !important;
+  color: #0099FF !important;
+  font-weight: 700 !important;
+}
+
+.admin-sidebar-menu .ant-menu-item-selected .ant-menu-item-icon {
+  color: #0099FF !important;
+}
+
+.admin-sidebar-menu .ant-menu-item-selected::after {
+  display: none !important;
 }

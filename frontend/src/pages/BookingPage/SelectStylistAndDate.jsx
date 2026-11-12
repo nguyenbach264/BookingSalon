@@ -247,13 +247,13 @@ export function SelectStylistAndDate() {
                   onClick={() => setSelectedStylist(stylist)}
                   className={`group relative rounded-2xl border-2 p-3.5 flex flex-col items-center text-center cursor-pointer transition-all duration-300 select-none ${
                     isSelected
-                      ? 'border-[#60a5fa] bg-blue-50/40 ring-4 ring-blue-50 shadow-md transform -translate-y-0.5'
-                      : 'border-gray-200 hover:border-[#60a5fa]/50 hover:bg-gray-50/50'
+                      ? 'border-[#0099FF] bg-blue-50/40 ring-4 ring-blue-50 shadow-md transform -translate-y-0.5'
+                      : 'border-gray-200 hover:border-[#0099FF]/50 hover:bg-gray-50/50'
                   }`}
                 >
                   {/* Selected check badge */}
                   {isSelected && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-[#60a5fa] text-white rounded-full flex items-center justify-center shadow-sm">
+                    <div className="absolute top-2 right-2 w-5 h-5 bg-[#0099FF] text-white rounded-full flex items-center justify-center shadow-sm">
                       <Check className="w-3.5 h-3.5 stroke-[3]" />
                     </div>
                   )}
@@ -261,7 +261,7 @@ export function SelectStylistAndDate() {
                   {/* Avatar */}
                   <div
                     className={`w-20 h-20 rounded-full overflow-hidden border-2 mb-2.5 relative ${
-                      isSelected ? 'border-[#60a5fa] ring-2 ring-blue-200' : 'border-gray-200'
+                      isSelected ? 'border-[#0099FF] ring-2 ring-blue-200' : 'border-gray-200'
                     }`}
                   >
                     <img
@@ -327,8 +327,8 @@ export function SelectStylistAndDate() {
                   onClick={() => setSelectedDate(d.iso)}
                   className={`py-3 px-2 rounded-xl flex flex-col items-center justify-center transition-all duration-200 border-2 cursor-pointer ${
                     isSelected
-                      ? 'bg-[#60a5fa] text-white border-[#60a5fa] shadow-md shadow-blue-200 transform scale-[1.02]'
-                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-[#60a5fa]/50 hover:bg-white'
+                      ? 'bg-[#0099FF] text-white border-[#0099FF] shadow-md shadow-blue-200 transform scale-[1.02]'
+                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-[#0099FF]/50 hover:bg-white'
                   }`}
                 >
                   <span
@@ -380,8 +380,8 @@ export function SelectStylistAndDate() {
                       : !slot.available
                       ? 'bg-gray-100 text-gray-300 cursor-not-allowed border border-gray-100'
                       : isSelected
-                      ? 'bg-[#60a5fa] text-white shadow-md shadow-blue-200 ring-2 ring-blue-200 scale-105'
-                      : 'bg-white text-gray-700 border border-gray-200 hover:border-[#60a5fa] hover:text-[#2563eb] hover:bg-blue-50/50'
+                      ? 'bg-[#0099FF] text-white shadow-md shadow-blue-200 ring-2 ring-blue-200 scale-105'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:border-[#0099FF] hover:text-[#2563eb] hover:bg-blue-50/50'
                   }`}
                 >
                   <span className={slot.isBooked ? 'line-through' : ''}>{slot.time}</span>
@@ -396,7 +396,7 @@ export function SelectStylistAndDate() {
           {/* Legend */}
           <div className="mt-5 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-4 text-xs text-gray-500">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-[#60a5fa] inline-block"></span>
+              <span className="w-3 h-3 rounded-md bg-[#0099FF] inline-block"></span>
               <span>Đang chọn</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -432,7 +432,7 @@ export function SelectStylistAndDate() {
           onClick={handleNext}
           className={`px-8 py-3 rounded-xl text-white font-bold text-sm shadow-md flex items-center gap-2 transition-all cursor-pointer ${
             selectedStylist && selectedTime
-              ? 'bg-[#60a5fa] hover:bg-[#3b82f6] shadow-blue-200 hover:shadow-lg transform hover:scale-[1.02] active:scale-95'
+              ? 'bg-[#0099FF] hover:bg-[#0080d9] shadow-blue-200 hover:shadow-lg transform hover:scale-[1.02] active:scale-95'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
           }`}
         >

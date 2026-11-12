@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AdminImageAction from "../AdminImageAction";
 import {
   Row,
   Col,
@@ -41,7 +42,9 @@ import {
   DeleteOutlined,
   SwapOutlined,
   UserOutlined,
+  CameraOutlined,
 } from "@ant-design/icons";
+import MediaUploadModal from "../../components/MediaUploadModal";
 import dayjs from "dayjs";
 import { createSalon, updateSalon, deleteSalon } from "../../../service/api/salonApi";
 import { assignStylistToSalon, removeStylistFromSalon } from "../../../service/api/adminApi";
@@ -65,6 +68,15 @@ export default function AdminSalonsView({
   const [editingSalon, setEditingSalon] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
+
+  // Modal Cloudinary Media
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [selectedSalonForMedia, setSelectedSalonForMedia] = useState(null);
+
+  const handleOpenMediaModal = (salon) => {
+    setSelectedSalonForMedia(salon);
+    setMediaModalOpen(true);
+  };
 
   // Modal Thêm/Xóa Stylist cho Salon
   const [stylistModalOpen, setStylistModalOpen] = useState(false);
@@ -374,11 +386,13 @@ export default function AdminSalonsView({
                 {/* Salon header */}
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg ${
-                      salon.enabled ? "bg-amber-50 text-amber-600 border border-amber-200" : "bg-gray-100 text-gray-400"
-                    }`}>
-                      <ShopOutlined />
-                    </div>
+                    <AdminImageAction
+                      src={salon.images?.[0]}
+                      alt={salon.salonName}
+                      size={44}
+                      onEdit={() => handleOpenMediaModal(salon)}
+                      fallback="https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=200"
+                    />
                     <div>
                       <h3 className="font-bold text-sm text-gray-900 mb-0.5 flex items-center gap-1.5">
                         {salon.salonName}
@@ -868,6 +882,22 @@ export default function AdminSalonsView({
           />
         </div>
       </Modal>
+
+      {/* CLOUDINARY MEDIA UPLOAD MODAL */}
+      <MediaUploadModal
+        open={mediaModalOpen}
+        onClose={() => {
+          setMediaModalOpen(false);
+          setSelectedSalonForMedia(null);
+        }}
+        ownerType="SALON"
+        ownerId={selectedSalonForMedia?.id}
+        ownerName={selectedSalonForMedia?.salonName}
+        currentImage={selectedSalonForMedia?.images?.[0]}
+        onSuccess={() => {
+          if (onReloadSalons) onReloadSalons();
+        }}
+      />
     </div>
   );
 }

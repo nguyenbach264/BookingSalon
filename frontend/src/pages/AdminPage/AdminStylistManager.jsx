@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import AdminImageAction from "./AdminImageAction";
 import {
   Table,
   Button,
@@ -34,7 +35,9 @@ import {
   EyeOutlined,
   StarFilled,
   ExclamationCircleOutlined,
+  CameraOutlined,
 } from "@ant-design/icons";
+import MediaUploadModal from "../components/MediaUploadModal";
 import dayjs from "dayjs";
 import {
   getAdminStylists,
@@ -97,6 +100,15 @@ const AdminStylistManager = () => {
   const [kpiStylistModalTitle, setKpiStylistModalTitle] = useState("");
   const [kpiStylistModalVisible, setKpiStylistModalVisible] = useState(false);
   const [kpiStylistModalList, setKpiStylistModalList] = useState([]);
+
+  // Cloudinary Media Modal
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [selectedEntityForMedia, setSelectedEntityForMedia] = useState(null);
+
+  const handleOpenMediaModal = (stylist) => {
+    setSelectedEntityForMedia(stylist);
+    setMediaModalOpen(true);
+  };
 
   const handleOpenStylistKpi = (title, list) => {
     setKpiStylistModalTitle(title);
@@ -295,11 +307,12 @@ const AdminStylistManager = () => {
       key: "stylist",
       render: (_, r) => (
         <Space size={12}>
-          <Avatar
+          <AdminImageAction
             src={r.avatarUrl}
+            alt={r.fullName || r.username}
             size={48}
-            className="border-2 border-indigo-200"
-            icon={<ScissorOutlined />}
+            onEdit={() => handleOpenMediaModal(r)}
+            fallback="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200"
           />
           <div>
             <div className="font-bold text-gray-800 text-sm">{r.fullName || r.username}</div>
@@ -384,7 +397,7 @@ const AdminStylistManager = () => {
       title: "Hành động",
       key: "actions",
       fixed: "right",
-      width: 280,
+      width: 240,
       render: (_, r) => (
         <Space size={6} wrap>
           <Tooltip title="Xem chi tiết Stylist">
@@ -1092,7 +1105,13 @@ const AdminStylistManager = () => {
                 dataIndex: "fullName",
                 render: (v, r) => (
                   <div className="flex items-center gap-2">
-                    <Avatar size={32} src={r.avatarUrl} icon={<ScissorOutlined />} />
+                    <AdminImageAction
+                      src={r.avatarUrl}
+                      alt={v || r.username}
+                      size={32}
+                      onEdit={() => handleOpenMediaModal(r)}
+                      fallback="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200"
+                    />
                     <div>
                       <div className="font-bold text-xs">{v || r.username}</div>
                       <div className="text-[10px] text-gray-400">{r.nickname || `@${r.username}`}</div>
@@ -1123,6 +1142,20 @@ const AdminStylistManager = () => {
           />
         </div>
       </Modal>
+
+      {/* CLOUDINARY MEDIA UPLOAD MODAL */}
+      <MediaUploadModal
+        open={mediaModalOpen}
+        onClose={() => {
+          setMediaModalOpen(false);
+          setSelectedEntityForMedia(null);
+        }}
+        ownerType="STYLIST"
+        ownerId={selectedEntityForMedia?.id}
+        ownerName={selectedEntityForMedia?.fullName || selectedEntityForMedia?.username}
+        currentImage={selectedEntityForMedia?.avatarUrl}
+        onSuccess={() => fetchStylists()}
+      />
     </div>
   );
 };

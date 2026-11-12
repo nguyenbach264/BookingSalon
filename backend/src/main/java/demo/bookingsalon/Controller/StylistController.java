@@ -173,6 +173,42 @@ public class StylistController {
         return ResponseEntity.ok(java.util.Map.of("avatarUrl", uploadResult.secureUrl()));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<StylistDetailDTO> getMyStylistProfile(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt) {
+        if (jwt == null) return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).build();
+        UUID keycloakId = null;
+        try {
+            keycloakId = UUID.fromString(jwt.getSubject());
+        } catch (Exception ignored) {}
+
+        String username = jwt.getClaimAsString("preferred_username");
+        String email = jwt.getClaimAsString("email");
+
+        Stylist stylist = null;
+        if (keycloakId != null) {
+            stylist = stylistRepository.findByKeycloakId(keycloakId).orElse(null);
+        }
+        if (stylist == null && username != null) {
+            stylist = stylistRepository.findByUsername(username).orElse(null);
+        }
+        if (stylist == null && email != null) {
+            stylist = stylistRepository.findByEmail(email).orElse(null);
+        }
+
+        if (stylist == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Tự động đồng bộ keycloakId nếu chưa có
+        if (keycloakId != null && (stylist.getKeycloakId() == null || !keycloakId.equals(stylist.getKeycloakId()))) {
+            stylist.setKeycloakId(keycloakId);
+            stylistRepository.save(stylist);
+        }
+
+        return ResponseEntity.ok(toDTO(stylist));
+    }
+
     @PostMapping(value = "/me/avatar", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<java.util.Map<String, String>> uploadMyStylistAvatar(
             @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt,

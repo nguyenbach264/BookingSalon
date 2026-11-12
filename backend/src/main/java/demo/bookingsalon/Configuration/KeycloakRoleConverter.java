@@ -13,23 +13,41 @@ public class KeycloakRoleConverter
 
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
+        Set<GrantedAuthority> authorities = new HashSet<>();
 
+        // 1. Trích xuất Realm Roles (chuẩn hoá chữ hoa và thêm tiền tố ROLE_)
         Map<String, Object> realmAccess = jwt.getClaim("realm_access");
-
-        if (realmAccess == null) {
-            return Collections.emptyList();
+        if (realmAccess != null && realmAccess.get("roles") instanceof Collection<?> roles) {
+            for (Object roleObj : roles) {
+                if (roleObj != null) {
+                    String role = roleObj.toString().trim().toUpperCase();
+                    if (!role.isBlank()) {
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                    }
+                }
+            }
         }
 
-        Object rolesObject = realmAccess.get("roles");
-
-        if (!(rolesObject instanceof Collection<?> roles)) {
-            return Collections.emptyList();
+        // 2. Trích xuất Client Roles từ resource_access (cho tất cả clients, ví dụ booking-salon-client, booking-salon-admin)
+        Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
+        if (resourceAccess != null) {
+            for (Object clientAccessObj : resourceAccess.values()) {
+                if (clientAccessObj instanceof Map<?, ?> clientAccessMap) {
+                    Object clientRolesObj = clientAccessMap.get("roles");
+                    if (clientRolesObj instanceof Collection<?> clientRoles) {
+                        for (Object roleObj : clientRoles) {
+                            if (roleObj != null) {
+                                String role = roleObj.toString().trim().toUpperCase();
+                                if (!role.isBlank()) {
+                                    authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        return roles.stream()
-                .map(Object::toString)
-                .map(role -> "ROLE_" + role)
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toSet());
+        return authorities;
     }
 }

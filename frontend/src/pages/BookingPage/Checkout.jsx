@@ -288,7 +288,7 @@ export function Checkout() {
           {/* Card 1: Customer Details */}
           <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/80 shadow-sm">
             <h3 className="font-extrabold text-gray-900 text-base mb-4 flex items-center gap-2">
-              <User className="w-5 h-5 text-[#60a5fa]" />
+              <User className="w-5 h-5 text-[#0099FF]" />
               Thông tin người đặt hẹn
             </h3>
 
@@ -300,7 +300,7 @@ export function Checkout() {
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#60a5fa] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#0099FF] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
                   placeholder="Nhập họ và tên của bạn"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
@@ -315,7 +315,7 @@ export function Checkout() {
                   <input
                     type="tel"
                     required
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#60a5fa] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#0099FF] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
                     placeholder="0912 345 678"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
@@ -328,7 +328,7 @@ export function Checkout() {
                   </label>
                   <input
                     type="email"
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#60a5fa] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#0099FF] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
                     placeholder="email@example.com"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
@@ -342,7 +342,7 @@ export function Checkout() {
                 </label>
                 <textarea
                   rows={2}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#60a5fa] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all resize-none"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#0099FF] focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all resize-none"
                   placeholder="Ví dụ: Cắt ngắn 2 bên, sấy phồng tự nhiên, tóc yếu..."
                   value={customerNotes}
                   onChange={(e) => setCustomerNotes(e.target.value)}
@@ -354,7 +354,7 @@ export function Checkout() {
           {/* Card 2: Payment Method */}
           <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/80 shadow-sm">
             <h3 className="font-extrabold text-gray-900 text-base mb-1.5 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-[#60a5fa]" />
+              <CreditCard className="w-5 h-5 text-[#0099FF]" />
               Phương thức thanh toán
             </h3>
             <p className="text-xs text-gray-500 mb-4">
@@ -367,8 +367,8 @@ export function Checkout() {
                 onClick={() => setPaymentMethod('CASH')}
                 className={`flex items-start gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                   paymentMethod === 'CASH'
-                    ? 'border-[#60a5fa] bg-blue-50/30 ring-2 ring-blue-100'
-                    : 'border-gray-200 hover:border-[#60a5fa]/50 hover:bg-gray-50/50'
+                    ? 'border-[#0099FF] bg-blue-50/30 ring-2 ring-blue-100'
+                    : 'border-gray-200 hover:border-[#0099FF]/50 hover:bg-gray-50/50'
                 }`}
               >
                 <input
@@ -377,7 +377,7 @@ export function Checkout() {
                   value="CASH"
                   checked={paymentMethod === 'CASH'}
                   onChange={() => setPaymentMethod('CASH')}
-                  className="mt-1 text-[#60a5fa] focus:ring-[#60a5fa]"
+                  className="mt-1 text-[#0099FF] focus:ring-[#0099FF]"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -397,8 +397,8 @@ export function Checkout() {
                 onClick={() => setPaymentMethod('BANK_TRANSFER')}
                 className={`flex items-start gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                   paymentMethod === 'BANK_TRANSFER'
-                    ? 'border-[#60a5fa] bg-blue-50/30 ring-2 ring-blue-100'
-                    : 'border-gray-200 hover:border-[#60a5fa]/50 hover:bg-gray-50/50'
+                    ? 'border-[#0099FF] bg-blue-50/30 ring-2 ring-blue-100'
+                    : 'border-gray-200 hover:border-[#0099FF]/50 hover:bg-gray-50/50'
                 }`}
               >
                 <input
@@ -407,7 +407,7 @@ export function Checkout() {
                   value="BANK_TRANSFER"
                   checked={paymentMethod === 'BANK_TRANSFER'}
                   onChange={() => setPaymentMethod('BANK_TRANSFER')}
-                  className="mt-1 text-[#60a5fa] focus:ring-[#60a5fa]"
+                  className="mt-1 text-[#0099FF] focus:ring-[#0099FF]"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -585,7 +585,7 @@ export function Checkout() {
               </div>
               <div className="flex justify-between items-center pt-2 text-base sm:text-lg font-black text-gray-900">
                 <span>Tổng thanh toán:</span>
-                <span className="text-xl font-black text-[#60a5fa]">
+                <span className="text-xl font-black text-[#0099FF]">
                   {formatPrice(finalPaymentPrice)}
                 </span>
               </div>
@@ -598,7 +598,7 @@ export function Checkout() {
               className={`w-full py-4 rounded-xl font-extrabold text-sm uppercase transition-all shadow-md flex items-center justify-center gap-2 select-none ${
                 submitting || !customerName.trim() || !customerPhone.trim()
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                  : 'bg-[#60a5fa] hover:bg-[#3b82f6] text-white cursor-pointer shadow-blue-200 hover:shadow-lg transform active:scale-[0.98]'
+                  : 'bg-[#0099FF] hover:bg-[#0080d9] text-white cursor-pointer shadow-blue-200 hover:shadow-lg transform active:scale-[0.98]'
               }`}
             >
               {submitting ? (

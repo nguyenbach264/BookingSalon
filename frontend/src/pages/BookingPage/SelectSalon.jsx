@@ -82,7 +82,7 @@ const SelectSalon = () => {
       {/* Header Banner */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-[#2563eb] text-xs font-semibold mb-3">
-          <Sparkles className="w-3.5 h-3.5 text-[#60a5fa]" /> Hệ thống Salon chuẩn quốc tế
+          <Sparkles className="w-3.5 h-3.5 text-[#0099FF]" /> Hệ thống Salon chuẩn quốc tế
         </div>
         <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
           Chọn chi nhánh Salon
@@ -119,7 +119,7 @@ const SelectSalon = () => {
                 onClick={() => setCityFilter(city.id)}
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-[#60a5fa] text-white shadow-sm shadow-blue-200'
+                    ? 'bg-[#0099FF] text-white shadow-sm shadow-blue-200'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200/80 hover:text-gray-900'
                 }`}
               >
@@ -176,13 +176,13 @@ const SelectSalon = () => {
                 onClick={() => handleSelect(salon)}
                 className={`group bg-white rounded-2xl border-2 transition-all duration-300 p-4 sm:p-5 flex flex-col justify-between cursor-pointer relative overflow-hidden ${
                   isSelected
-                    ? 'border-[#60a5fa] ring-4 ring-blue-50 shadow-md bg-blue-50/20'
-                    : 'border-gray-200 hover:border-[#60a5fa]/50 hover:shadow-md'
+                    ? 'border-[#0099FF] ring-4 ring-blue-50 shadow-md bg-blue-50/20'
+                    : 'border-gray-200 hover:border-[#0099FF]/50 hover:shadow-md'
                 }`}
               >
                 {/* Selected Badge */}
                 {isSelected && (
-                  <div className="absolute top-0 right-0 bg-[#60a5fa] text-white text-[11px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-sm">
+                  <div className="absolute top-0 right-0 bg-[#0099FF] text-white text-[11px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-sm">
                     <Check className="w-3.5 h-3.5 stroke-[3]" /> Đã chọn
                   </div>
                 )}
@@ -234,8 +234,8 @@ const SelectSalon = () => {
                     }}
                     className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-[#60a5fa] hover:bg-[#3b82f6] text-white shadow-sm shadow-blue-200'
-                        : 'bg-gray-100 text-gray-700 hover:bg-[#60a5fa] hover:text-white'
+                        ? 'bg-[#0099FF] hover:bg-[#0080d9] text-white shadow-sm shadow-blue-200'
+                        : 'bg-gray-100 text-gray-700 hover:bg-[#0099FF] hover:text-white'
                     }`}
                   >
                     {isSelected ? 'Tiếp tục bước 2' : 'Chọn salon này'}
@@ -266,7 +266,7 @@ const SelectSalon = () => {
 
             <button
               onClick={() => setStep(2)}
-              className="w-full sm:w-auto px-7 py-3 bg-[#60a5fa] hover:bg-[#3b82f6] text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-blue-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              className="w-full sm:w-auto px-7 py-3 bg-[#0099FF] hover:bg-[#0080d9] text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-blue-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               Tiếp tục chọn Stylist & Ngày giờ
               <ChevronRight className="w-4 h-4" />

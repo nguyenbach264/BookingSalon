@@ -769,22 +769,75 @@ export default function AdminDashboard() {
   }, [users, userSearch, userTierFilter]);
 
   // Sidebar Menu Items
-  const menuItems = [
-    { key: "overview", icon: <DashboardOutlined />, label: "Tổng quan" },
-    { key: "bookings", icon: <CalendarOutlined />, label: `Lịch hẹn (${bookings.length})` },
-    { key: "users", icon: <UserOutlined />, label: `Khách hàng (${users.length})` },
-    { key: "stylists", icon: <ScissorOutlined />, label: `Stylist (${stylists.length})` },
-    { key: "services", icon: <CheckSquareOutlined />, label: "Quản lý Dịch vụ" },
-    { key: "salons", icon: <ShopOutlined />, label: `Salon (${salons.length})` },
-    { key: "vouchers", icon: <GiftOutlined />, label: `Quản lý Voucher (${vouchers.length})` },
-    { key: "stats", icon: <BarChartOutlined />, label: "Phân tích & Báo cáo" },
-    { key: "products", icon: <ShopOutlined />, label: "Quản lý sản phẩm" },
-    { key: "orders", icon: <BankOutlined />, label: "Quản lý đơn hàng" },
-    { key: "reviews", icon: <ShopOutlined />, label: `Đánh giá Shop (${reviews.length})` },
-    { type: "divider" },
-    { key: "settings", icon: <SettingOutlined />, label: "Cài đặt hệ thống" },
-    { key: "logout", icon: <LogoutOutlined />, label: "Đăng xuất", danger: true },
-  ];
+  const menuItems = useMemo(() => [
+    {
+      key: "overview",
+      icon: <DashboardOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Tổng quan</span>,
+    },
+    {
+      key: "bookings",
+      icon: <CalendarOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Lịch hẹn</span>,
+    },
+    {
+      key: "users",
+      icon: <UserOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Khách hàng</span>,
+    },
+    {
+      key: "stylists",
+      icon: <ScissorOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Stylist</span>,
+    },
+    {
+      key: "services",
+      icon: <CheckSquareOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Quản lý Dịch vụ</span>,
+    },
+    {
+      key: "salons",
+      icon: <ShopOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Salon</span>,
+    },
+    {
+      key: "vouchers",
+      icon: <GiftOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Quản lý Voucher</span>,
+    },
+    {
+      key: "stats",
+      icon: <BarChartOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Phân tích & Báo cáo</span>,
+    },
+    {
+      key: "products",
+      icon: <ShopOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Quản lý sản phẩm</span>,
+    },
+    {
+      key: "orders",
+      icon: <BankOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Quản lý đơn hàng</span>,
+    },
+    {
+      key: "reviews",
+      icon: <ShopOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Đánh giá Shop</span>,
+    },
+    { type: "divider", className: "my-2 border-slate-100" },
+    {
+      key: "settings",
+      icon: <SettingOutlined className="text-[15px]" />,
+      label: <span className="text-[13px] font-semibold">Cài đặt hệ thống</span>,
+    },
+    {
+      key: "logout",
+      icon: <LogoutOutlined className="text-[15px] text-rose-500" />,
+      label: <span className="text-[13px] font-semibold text-rose-600">Đăng xuất</span>,
+      danger: true,
+    },
+  ], []);
 
   // Booking Table Columns
   const BOOKING_COLUMNS = [
@@ -1038,15 +1091,20 @@ export default function AdminDashboard() {
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white select-none">
       {/* ── TOP HEADER: Brand Title 'BachBarber' + Toggle '<' button ── */}
-      <div className="flex items-center justify-between px-3.5 py-3.5 border-b border-gray-100 bg-white shrink-0">
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100 bg-white shrink-0">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#0099FF] to-[#00b4d8] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 ring-2 ring-[#0099FF]/20">
             <ScissorOutlined />
           </div>
           {!collapsed && (
-            <span className="font-extrabold text-base tracking-tight text-gray-900 truncate">
-              BachBarber
-            </span>
+            <div className="overflow-hidden">
+              <span className="font-extrabold text-base tracking-tight text-slate-900 truncate block leading-none">
+                BachBarber
+              </span>
+              <span className="text-[9px] font-bold tracking-wider text-[#0099FF] uppercase block mt-1">
+                Admin Portal
+              </span>
+            </div>
           )}
         </div>
 
@@ -1063,7 +1121,7 @@ export default function AdminDashboard() {
                 setCollapsed(!collapsed);
               }
             }}
-            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg w-7 h-7 flex items-center justify-center shrink-0"
+            className="text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg w-7 h-7 flex items-center justify-center shrink-0 transition-colors"
           />
         </Tooltip>
       </div>
@@ -1081,7 +1139,7 @@ export default function AdminDashboard() {
               handleSelectSection(key);
             }
           }}
-          className="border-none"
+          className="border-none admin-sidebar-menu"
         />
       </div>
 
@@ -1097,7 +1155,7 @@ export default function AdminDashboard() {
   );
 
   return (
-    <Layout className="h-screen overflow-hidden bg-gray-50">
+    <Layout className="h-screen overflow-hidden bg-slate-50">
       {/* Desktop Sider: sticky full height, scrolls independently */}
       <Sider
         width={250}
@@ -1107,7 +1165,7 @@ export default function AdminDashboard() {
         collapsed={collapsed}
         onCollapse={setCollapsed}
         theme="light"
-        className="shadow-md border-r border-gray-100 hidden lg:block h-screen sticky top-0 left-0 overflow-hidden"
+        className="shadow-xs border-r border-slate-200/80 hidden lg:block h-screen sticky top-0 left-0 overflow-hidden bg-white z-40"
       >
         {sidebarContent}
       </Sider>
@@ -1125,56 +1183,19 @@ export default function AdminDashboard() {
       </Drawer>
 
       {/* Main Content Area: flex-1 h-screen flex-col overflow-hidden */}
-      <Layout className="flex-1 h-screen flex flex-col overflow-hidden">
-        {/* Header: sticky top-0 shrink-0 */}
-        <Header className="bg-white px-4 sm:px-6 md:px-8 flex items-center justify-between shadow-sm border-b border-gray-100 h-16 shrink-0 z-30">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Button
-              type="text"
-              icon={<MenuOutlined />}
-              className="lg:hidden text-lg"
-              onClick={() => setMobileOpen(true)}
-            />
-            <h1 className="text-sm sm:text-base md:text-lg font-black text-gray-800 mb-0 truncate max-w-[200px] sm:max-w-none">
-              {activeSection === "overview" && "Tổng quan hệ thống"}
-              {activeSection === "bookings" && "Quản lý Lịch hẹn"}
-              {activeSection === "users" && "Quản lý Khách hàng"}
-              {activeSection === "stylists" && "Quản lý Stylist"}
-              {activeSection === "services" && "Quản lý Dịch vụ"}
-              {activeSection === "salons" && "Danh sách Chi nhánh"}
-              {activeSection === "vouchers" && "Quản lý Voucher"}
-              {activeSection === "stats" && "Báo cáo phân tích"}
-              {activeSection === "products" && "Quản lý sản phẩm"}
-              {activeSection === "orders" && "Quản lý đơn hàng"}
-              {activeSection === "reviews" && "Đánh giá Shop"}
-              {activeSection === "settings" && "Cài đặt hệ thống"}
-            </h1>
-            <Tag color="blue" className="text-xs hidden sm:inline-block">v2.5 Enterprise</Tag>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-2 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-medium shadow-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="hidden sm:inline">Live Sync</span>
-            </div>
-            <div className="flex items-center gap-2 border-l border-gray-200 pl-3 sm:pl-4">
-              <Avatar
-                size={34}
-                src={userInfo?.avatarUrl}
-                icon={!userInfo?.avatarUrl ? <UserOutlined /> : null}
-              />
-              <span className="text-xs font-bold text-gray-700 hidden sm:block">
-                {userInfo?.fullName || userInfo?.username}
-              </span>
-            </div>
-          </div>
-        </Header>
+      <Layout className="flex-1 h-screen flex flex-col overflow-hidden bg-slate-50 relative">
+        {/* Floating Mobile Menu Button */}
+        <Button
+          type="default"
+          shape="circle"
+          icon={<MenuOutlined />}
+          onClick={() => setMobileOpen(true)}
+          className="lg:hidden fixed top-3 left-3 z-50 shadow-md bg-white border-slate-200 text-slate-700 hover:text-[#0099FF] flex items-center justify-center w-10 h-10"
+          title="Mở menu quản trị"
+        />
 
         {/* Content: independently scrollable */}
-        <Content className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+        <Content className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto bg-slate-50">
           {loading ? (
             <div className="flex justify-center items-center py-32">
               <Spin size="large" tip="Đang tải dữ liệu hệ thống..." />
@@ -1292,6 +1313,7 @@ export default function AdminDashboard() {
                   handleSaveProduct={handleSaveProduct}
                   savingProduct={savingProduct}
                   productCategories={productCategories}
+                  onReloadProducts={loadProductsAndOrders}
                 />
               )}
 

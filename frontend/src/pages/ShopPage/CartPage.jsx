@@ -17,11 +17,11 @@ const CartPage = ({ visible, onClose, cartItems, onUpdateQuantity, onRemoveItem,
       </div>
       <div className="flex justify-between items-center text-base border-t border-dashed border-gray-200 pt-3 px-1">
         <span className="text-gray-900 font-extrabold uppercase text-sm">Tổng cộng:</span>
-        <span className="font-black text-[#60a5fa] text-2xl">{formatPrice(totalPrice)}</span>
+        <span className="font-black text-[#0099FF] text-2xl">{formatPrice(totalPrice)}</span>
       </div>
       <button
         type="button"
-        className="w-full h-12 bg-[#60a5fa] hover:bg-[#3b82f6] text-white font-bold text-sm rounded-xl shadow-md shadow-blue-200 transition-all uppercase tracking-wide flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+        className="w-full h-12 bg-[#0099FF] hover:bg-[#0080d9] text-white font-bold text-sm rounded-xl shadow-md shadow-blue-200 transition-all uppercase tracking-wide flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
         onClick={onCheckout}
       >
         <span>Thanh Toán Ngay</span>
@@ -35,7 +35,7 @@ const CartPage = ({ visible, onClose, cartItems, onUpdateQuantity, onRemoveItem,
       title={
         <div className="flex items-center justify-between pr-8">
           <div className="flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-[#60a5fa]" />
+            <ShoppingBag className="w-5 h-5 text-[#0099FF]" />
             <span className="text-lg font-black text-gray-900">GIỎ HÀNG</span>
           </div>
           <span className="text-xs font-bold text-[#2563eb] bg-blue-50 px-2.5 py-1 rounded-full">
@@ -53,7 +53,7 @@ const CartPage = ({ visible, onClose, cartItems, onUpdateQuantity, onRemoveItem,
       <div className="max-h-[55vh] overflow-y-auto py-3 pr-1">
         {cartItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-gray-500 gap-3">
-            <div className="w-20 h-20 bg-blue-50/50 rounded-2xl flex items-center justify-center text-[#60a5fa]">
+            <div className="w-20 h-20 bg-blue-50/50 rounded-2xl flex items-center justify-center text-[#0099FF]">
               <ShoppingBag className="w-10 h-10 stroke-[1.5]" />
             </div>
             <p className="text-sm font-semibold text-gray-700">Giỏ hàng của bạn đang trống</p>
@@ -61,7 +61,7 @@ const CartPage = ({ visible, onClose, cartItems, onUpdateQuantity, onRemoveItem,
             <button
               type="button"
               onClick={onClose}
-              className="mt-2 px-5 py-2.5 rounded-xl bg-[#60a5fa] text-white text-xs font-bold hover:bg-[#3b82f6] shadow-sm transition-all cursor-pointer"
+              className="mt-2 px-5 py-2.5 rounded-xl bg-[#0099FF] text-white text-xs font-bold hover:bg-[#0080d9] shadow-sm transition-all cursor-pointer"
             >
               Tiếp tục mua sắm
             </button>
@@ -71,7 +71,7 @@ const CartPage = ({ visible, onClose, cartItems, onUpdateQuantity, onRemoveItem,
             {cartItems.map((item) => (
               <div
                 key={item.id}
-                className="flex gap-4 border border-gray-100 bg-white p-3.5 rounded-2xl shadow-xs group hover:border-[#60a5fa]/40 transition-colors"
+                className="flex gap-4 border border-gray-100 bg-white p-3.5 rounded-2xl shadow-xs group hover:border-[#0099FF]/40 transition-colors"
               >
                 <div className="w-20 h-20 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
                   <img

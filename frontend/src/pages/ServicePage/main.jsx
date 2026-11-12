@@ -177,7 +177,8 @@ export default function ServicePage() {
               <button
                 type="button"
                 onClick={() => setSearchParams({})}
-                className="mt-4 bg-[#60a5fa] hover:bg-[#3b82f6] text-white font-bold px-5 py-2.5 rounded-xl text-xs transition-all shadow-sm cursor-pointer"
+                className="mt-4 bg-[#0099FF] hover:bg-[#0080d9] text-white font-bold px-5 py-2.5 rounded-xl text-xs transition-all shadow-sm cursor-pointer"
+                style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
               >
                 Xem toàn bộ menu dịch vụ
               </button>
@@ -187,7 +188,7 @@ export default function ServicePage() {
           groupedServices.map((cat, idx) => (
             <div key={idx} className="mb-14">
               <div className="flex items-center gap-3 mb-6 pb-2.5 border-b border-gray-200">
-                <div className="w-2.5 h-6 bg-[#60a5fa] rounded-full" />
+                <div className="w-2.5 h-6 bg-[#0099FF] rounded-full" style={{ backgroundColor: 'var(--primary-color, #0099FF)' }} />
                 <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mb-0">
                   {cat.category}
                 </h2>
@@ -205,8 +206,8 @@ export default function ServicePage() {
                       onClick={() => setSelectedService(srv)}
                       className={`bg-white border rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer group flex flex-col hover:shadow-xl hover:-translate-y-1 ${
                         isSelected
-                          ? 'border-[#60a5fa] ring-4 ring-blue-50 shadow-md'
-                          : 'border-gray-200 hover:border-[#60a5fa]/50'
+                          ? 'border-[#0099FF] ring-4 ring-blue-50 shadow-md'
+                          : 'border-gray-200 hover:border-[#0099FF]/50'
                       }`}
                     >
                       <div className="h-44 w-full overflow-hidden bg-gray-100 relative">
@@ -218,11 +219,11 @@ export default function ServicePage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
                         <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs">
                           <span className="flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2.5 py-0.5 rounded-full">
-                            <Clock size={12} className="text-[#60a5fa]" />
+                            <Clock size={12} className="text-[#0099FF]" style={{ color: 'var(--primary-color, #0099FF)' }} />
                             {srv.time}
                           </span>
                           {isSelected && (
-                            <span className="flex items-center gap-1 bg-[#60a5fa] text-white font-bold px-2 py-0.5 rounded-full shadow-sm">
+                            <span className="flex items-center gap-1 bg-[#0099FF] text-white font-bold px-2 py-0.5 rounded-full shadow-sm" style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}>
                               <Check size={12} strokeWidth={2.5} />
                               Đã chọn
                             </span>
@@ -231,7 +232,7 @@ export default function ServicePage() {
                       </div>
 
                       <div className="p-5 flex flex-col flex-1">
-                        <h3 className="font-bold text-gray-900 text-base mb-1 group-hover:text-[#2563eb] transition-colors line-clamp-2">
+                        <h3 className="font-bold text-gray-900 text-base mb-1 group-hover:text-[#0099FF] transition-colors line-clamp-2">
                           {srv.name}
                         </h3>
                         <p className="text-gray-500 text-xs line-clamp-2 mb-4 leading-relaxed">
@@ -239,7 +240,7 @@ export default function ServicePage() {
                         </p>
 
                         <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
-                          <span className="font-black text-[#60a5fa] text-lg">
+                          <span className="font-black text-[#0099FF] text-lg" style={{ color: 'var(--primary-color, #0099FF)' }}>
                             {formatPrice(srv.price)}
                           </span>
                           <button
@@ -248,7 +249,8 @@ export default function ServicePage() {
                               e.stopPropagation();
                               handleBookService(srv);
                             }}
-                            className="bg-[#60a5fa] hover:bg-[#3b82f6] text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition-all shadow-sm shadow-blue-200 hover:shadow active:scale-95 cursor-pointer"
+                            className="bg-[#0099FF] hover:bg-[#0080d9] text-white font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm shadow-blue-200 hover:shadow active:scale-95 cursor-pointer"
+                            style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
                           >
                             Đặt lịch
                           </button>
@@ -344,7 +346,8 @@ export default function ServicePage() {
             <button
               type="button"
               onClick={() => handleBookService(selectedService)}
-              className="w-full bg-[#60a5fa] hover:bg-[#3b82f6] text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md shadow-blue-200 hover:shadow-lg active:scale-[0.98] uppercase flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-[#0099FF] hover:bg-[#0080d9] text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md shadow-blue-200 hover:shadow-lg active:scale-[0.98] uppercase flex items-center justify-center gap-2 cursor-pointer"
+              style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
             >
               <Scissors size={18} />
               Đặt lịch ngay

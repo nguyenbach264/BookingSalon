@@ -78,6 +78,9 @@ public class MediaApplicationService {
             // 7. Save DB.
             Media saved = mediaRepository.save(media);
 
+            // 8. Cập nhật ảnh vào entity sở hữu (Salon, Service, Stylist, Product, User)
+            mediaOwnerResolver.updateOwnerImage(ownerType, ownerId, uploadResult.secureUrl(), primary);
+
             return MediaResponse.from(saved);
         } catch (Exception exception) {
             // Cloudinary upload thành công nhưng DB thất bại → Xóa Cloudinary để tránh orphan file.
@@ -150,6 +153,9 @@ public class MediaApplicationService {
         // Media được chọn → primary = true.
         media.setPrimary(true);
         mediaRepository.save(media);
+
+        // Cập nhật URL primary vào entity sở hữu
+        mediaOwnerResolver.updateOwnerImage(ownerType, ownerId, media.getSecureUrl(), true);
     }
 
 
@@ -166,8 +172,10 @@ public class MediaApplicationService {
 
         // soft delete metadata.
         media.setStatus(MediaStatus.DELETED);
-
         mediaRepository.save(media);
+
+        // Gỡ ảnh khỏi entity sở hữu
+        mediaOwnerResolver.removeOwnerImage(ownerType, ownerId, media.getSecureUrl());
     }
 
 }

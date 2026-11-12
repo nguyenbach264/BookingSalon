@@ -143,15 +143,32 @@ export function AuthProvider({ children }) {
         return true;
       }
 
-      // Nếu res là 401 Unauthorized, thử refresh token ngầm 1 lần
+      // Nếu res là 401 Unauthorized, thử refresh token ngầm (có retry tránh race condition)
       if (res.status === 401) {
-        const refreshed = await refreshToken();
+        let refreshed = await refreshToken();
+        if (!refreshed) {
+          await new Promise((r) => setTimeout(r, 600));
+          refreshed = await refreshToken();
+        }
+
         if (refreshed) {
           lastCheckTimeRef.current = Date.now();
           return true;
         }
 
-        // Chỉ xác nhận đăng xuất khi chắc chắn 401 và refresh token thất bại
+        // Nếu đang ở trang dashboard (/admin hoặc /stylist) và đã có profile lưu từ trước:
+        // Giữ phiên làm việc từ cache để tránh việc tự động logout đột ngột khi mạng chập chờn hoặc Keycloak trễ nhịp
+        const isDashboard = typeof window !== "undefined" &&
+          (window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/stylist"));
+        const cached = getSavedProfile();
+        if (isDashboard && cached) {
+          console.warn("Phiên kiểm tra nền nhận 401 trên Dashboard, duy trì phiên từ cache để tránh tự động logout đột ngột.");
+          setUserInfo(cached);
+          setAuthenticated(true);
+          return true;
+        }
+
+        // Chỉ xác nhận đăng xuất khi chắc chắn 401 và refresh token thất bại trên trang công khai
         saveProfile(null);
         setUserInfo(null);
         setAuthenticated(false);

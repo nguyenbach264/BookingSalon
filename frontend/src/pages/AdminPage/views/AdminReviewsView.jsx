@@ -202,7 +202,7 @@ export default function AdminReviewsView({
                         "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=100&auto=format&fit=crop"
                       }
                       alt={r.productName || prod?.name}
-                      className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                      className="w-10 h-10 rounded-full aspect-square object-cover border border-gray-100 flex-shrink-0"
                     />
                     <div className="min-w-0">
                       <p className="font-semibold text-xs text-gray-800 line-clamp-1 mb-0">

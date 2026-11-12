@@ -11,6 +11,7 @@ import java.util.UUID;
 public interface StylistRepository extends JpaRepository<Stylist, UUID> {
     Optional<Stylist> findFirstByUsername(String username);
     Optional<Stylist> findFirstByKeycloakId(UUID keycloakId);
+    Optional<Stylist> findFirstByEmailIgnoreCase(String email);
 
     default Optional<Stylist> findByUsername(String username) {
         return findFirstByUsername(username);
@@ -18,6 +19,10 @@ public interface StylistRepository extends JpaRepository<Stylist, UUID> {
 
     default Optional<Stylist> findByKeycloakId(UUID keycloakId) {
         return findFirstByKeycloakId(keycloakId);
+    }
+
+    default Optional<Stylist> findByEmail(String email) {
+        return findFirstByEmailIgnoreCase(email);
     }
     List<Stylist> findBySalonId(UUID salonId);
     List<Stylist> findByStatus(String status);

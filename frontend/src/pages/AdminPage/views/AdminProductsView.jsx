@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import AdminImageAction from "../AdminImageAction";
 import {
   Row,
   Col,
@@ -25,7 +26,9 @@ import {
   CheckCircleOutlined,
   WarningOutlined,
   DollarOutlined,
+  CameraOutlined,
 } from "@ant-design/icons";
+import MediaUploadModal from "../../components/MediaUploadModal";
 
 const { Option } = Select;
 
@@ -44,8 +47,18 @@ export default function AdminProductsView({
   handleSaveProduct,
   savingProduct,
   productCategories = [],
+  onReloadProducts,
 }) {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+
+  // Cloudinary Media Modal
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [selectedProductForMedia, setSelectedProductForMedia] = useState(null);
+
+  const handleOpenMediaModal = (product) => {
+    setSelectedProductForMedia(product);
+    setMediaModalOpen(true);
+  };
 
   // Detail Modal for Products KPI Cards
   const [kpiProductModalTitle, setKpiProductModalTitle] = useState("");
@@ -157,7 +170,7 @@ export default function AdminProductsView({
                 <img
                   src={p.imageUrl}
                   alt={p.name}
-                  className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                  className="w-10 h-10 rounded-full aspect-square object-cover border border-gray-100 flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-gray-800 truncate mb-0">{p.name}</p>
@@ -211,13 +224,15 @@ export default function AdminProductsView({
             {
               title: "Sản phẩm",
               key: "product",
-              width: 280,
+              width: 320,
               render: (_, r) => (
                 <div className="flex items-center gap-3">
-                  <img
+                  <AdminImageAction
                     src={r.imageUrl}
                     alt={r.name}
-                    className="w-12 h-12 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                    size={48}
+                    onEdit={() => handleOpenMediaModal(r)}
+                    fallback="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=200"
                   />
                   <div>
                     <p className="font-semibold text-sm text-gray-800 line-clamp-1 mb-0">{r.name}</p>
@@ -268,7 +283,7 @@ export default function AdminProductsView({
               title: "Hành động",
               key: "actions",
               fixed: "right",
-              width: 120,
+              width: 110,
               render: (_, r) => (
                 <div className="flex gap-1">
                   <Button
@@ -394,7 +409,7 @@ export default function AdminProductsView({
                     <img
                       src={r.imageUrl}
                       alt={v}
-                      className="w-9 h-9 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                      className="w-9 h-9 rounded-full aspect-square object-cover border border-gray-100 flex-shrink-0"
                     />
                     <div>
                       <div className="font-bold text-xs text-gray-900">{v}</div>
@@ -431,6 +446,22 @@ export default function AdminProductsView({
           />
         </div>
       </Modal>
+
+      {/* CLOUDINARY MEDIA UPLOAD MODAL */}
+      <MediaUploadModal
+        open={mediaModalOpen}
+        onClose={() => {
+          setMediaModalOpen(false);
+          setSelectedProductForMedia(null);
+        }}
+        ownerType="PRODUCT"
+        ownerId={selectedProductForMedia?.id}
+        ownerName={selectedProductForMedia?.name}
+        currentImage={selectedProductForMedia?.imageUrl}
+        onSuccess={() => {
+          if (onReloadProducts) onReloadProducts();
+        }}
+      />
     </div>
   );
 }

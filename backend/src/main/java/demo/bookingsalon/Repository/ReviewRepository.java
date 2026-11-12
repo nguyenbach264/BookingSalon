@@ -25,4 +25,7 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
     @org.springframework.data.jpa.repository.Query("SELECT AVG(r.rating) FROM Review r WHERE r.salonId = :salonId")
     Double getAverageRatingBySalonId(@org.springframework.data.repository.query.Param("salonId") UUID salonId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT AVG(r.rating) FROM Review r")
+    Double getOverallAverageRating();
 }

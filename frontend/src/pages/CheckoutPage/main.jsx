@@ -401,7 +401,7 @@ const CheckoutPage = () => {
                     }}
                     className={`p-4 border rounded-xl transition-all cursor-pointer flex items-center gap-3 ${
                       selectedPaymentMethod === 'banking'
-                        ? 'border-[#60a5fa] bg-blue-50/40 shadow-xs ring-2 ring-blue-100'
+                        ? 'border-[#0099FF] bg-blue-50/40 shadow-xs ring-2 ring-blue-100'
                         : 'border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                   >
@@ -422,7 +422,7 @@ const CheckoutPage = () => {
                     }}
                     className={`p-4 border rounded-xl transition-all cursor-pointer flex items-center gap-3 ${
                       selectedPaymentMethod === 'cod'
-                        ? 'border-[#60a5fa] bg-blue-50/40 shadow-xs ring-2 ring-blue-100'
+                        ? 'border-[#0099FF] bg-blue-50/40 shadow-xs ring-2 ring-blue-100'
                         : 'border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                   >
@@ -481,7 +481,7 @@ const CheckoutPage = () => {
               )}
               <div className="flex justify-between items-center border-t border-dashed border-gray-200 pt-3">
                 <span className="text-sm font-bold text-gray-900">Tổng thanh toán:</span>
-                <span className="text-2xl font-black text-[#60a5fa]">{formatPrice(total)}</span>
+                <span className="text-2xl font-black text-[#0099FF]">{formatPrice(total)}</span>
               </div>
             </div>
 
@@ -489,7 +489,7 @@ const CheckoutPage = () => {
               type="primary"
               htmlType="submit"
               loading={submitting}
-              className="w-full h-12 bg-[#60a5fa] hover:bg-[#3b82f6] font-bold text-sm rounded-xl shadow-md shadow-blue-200 border-none uppercase tracking-wider transition-all cursor-pointer"
+              className="w-full h-12 bg-[#0099FF] hover:bg-[#0080d9] font-bold text-sm rounded-xl shadow-md shadow-blue-200 border-none uppercase tracking-wider transition-all cursor-pointer"
             >
               {submitting ? "Đang xử lý đơn hàng..." : "ĐẶT HÀNG NGAY"}
             </Button>

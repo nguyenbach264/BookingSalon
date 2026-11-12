@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import AdminImageAction from "./AdminImageAction";
 import {
   Table,
   Button,
@@ -32,7 +33,9 @@ import {
   ShopOutlined,
   AppstoreOutlined,
   HistoryOutlined,
+  CameraOutlined,
 } from "@ant-design/icons";
+import MediaUploadModal from "../components/MediaUploadModal";
 import dayjs from "dayjs";
 import {
   getAdminServices,
@@ -79,6 +82,15 @@ const AdminServiceManager = () => {
   const [kpiServiceModalTitle, setKpiServiceModalTitle] = useState("");
   const [kpiServiceModalVisible, setKpiServiceModalVisible] = useState(false);
   const [kpiServiceModalList, setKpiServiceModalList] = useState([]);
+
+  // Cloudinary Media Modal
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [selectedEntityForMedia, setSelectedEntityForMedia] = useState(null);
+
+  const handleOpenMediaModal = (service) => {
+    setSelectedEntityForMedia(service);
+    setMediaModalOpen(true);
+  };
 
   const handleOpenServiceKpi = (title, list) => {
     setKpiServiceModalTitle(title);
@@ -241,15 +253,14 @@ const AdminServiceManager = () => {
       title: "Ảnh",
       dataIndex: "image",
       key: "image",
-      width: 70,
-      render: (img) => (
-        <Image
-          src={img || "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=100"}
-          alt="service"
-          width={48}
-          height={48}
-          className="rounded-lg object-cover border border-gray-200"
-          fallback="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=100"
+      width: 80,
+      render: (img, r) => (
+        <AdminImageAction
+          src={img}
+          alt={r.name}
+          size={48}
+          onEdit={() => handleOpenMediaModal(r)}
+          fallback="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=200"
         />
       ),
     },
@@ -327,7 +338,7 @@ const AdminServiceManager = () => {
       title: "Hành động",
       key: "actions",
       fixed: "right",
-      width: 240,
+      width: 200,
       render: (_, r) => (
         <Space size={6}>
           <Tooltip title="Chỉnh sửa thông tin">
@@ -804,6 +815,20 @@ const AdminServiceManager = () => {
           />
         </div>
       </Modal>
+
+      {/* CLOUDINARY MEDIA UPLOAD MODAL */}
+      <MediaUploadModal
+        open={mediaModalOpen}
+        onClose={() => {
+          setMediaModalOpen(false);
+          setSelectedEntityForMedia(null);
+        }}
+        ownerType="SERVICE"
+        ownerId={selectedEntityForMedia?.id}
+        ownerName={selectedEntityForMedia?.name}
+        currentImage={selectedEntityForMedia?.image}
+        onSuccess={() => fetchServices()}
+      />
     </div>
   );
 };
