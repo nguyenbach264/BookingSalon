@@ -124,9 +124,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/cart/**").hasRole("USER")
                 .requestMatchers(HttpMethod.PUT,  "/api/cart/**").hasRole("USER")
                 .requestMatchers(HttpMethod.DELETE, "/api/cart/**").hasRole("USER")
-                .requestMatchers(HttpMethod.GET,  "/api/reviews", "/api/reviews/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/reviews", "/api/reviews/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/reviews/**", "/api/reviews").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET,  "/api/reviews", "/api/reviews/**", "/api/admin/reviews", "/api/admin/reviews/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/reviews", "/api/reviews/**", "/api/admin/reviews", "/api/admin/reviews/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/reviews/**", "/api/reviews", "/api/admin/reviews/**", "/api/admin/reviews").hasRole("ADMIN")
                 // STYLIST
                 .requestMatchers("/api/stylist/**", "/api/stylist").hasRole("STYLIST")
                 // ADMIN

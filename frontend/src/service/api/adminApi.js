@@ -71,10 +71,14 @@ export const updateAdminOrderStatus = (id, status) =>
   api.put(`/admin/orders/${id}/status`, null, { params: { status } }).then((r) => r.data);
 
 export const getAdminReviews = () =>
-  api.get('/reviews').then((r) => r.data);
+  api.get('/reviews').then((r) => r.data).catch(() =>
+    api.get('/admin/reviews').then((r) => r.data)
+  );
 
 export const deleteAdminReview = (id) =>
-  api.delete(`/reviews/${id}`).then((r) => r.data);
+  api.delete(`/reviews/${id}`).then((r) => r.data).catch(() =>
+    api.delete(`/admin/reviews/${id}`).then((r) => r.data)
+  );
 
 // ─────────────────────────────────────────────────────────────
 // ADMIN STYLIST MANAGEMENT APIS
