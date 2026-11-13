@@ -55,7 +55,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="hidden md:block w-full bg-[#0099FF] text-white select-none border-t border-white/20 border-b border-black/10 shadow-md sticky top-0 z-50 transition-colors"
+      className="hidden md:block w-full bg-[#0099FF] text-white select-none border-t border-white/20 border-b border-black/10 shadow-md sticky top-0 z-30 transition-colors"
       style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
     >
       <div className="max-w-[1280px] mx-auto px-4 flex items-center">
@@ -67,7 +67,7 @@ export default function Navbar() {
             type="button"
             onClick={() => navigate('/')}
             aria-label="Trang chủ"
-            className="flex items-center justify-center pl-0 pr-3 sm:pr-4 pt-3 pb-2 shrink-0 cursor-pointer"
+            className="flex items-center justify-center pl-0 pr-3 sm:pr-4 py-2.5 shrink-0 cursor-pointer"
           >
             <Home
               size={24}
@@ -87,7 +87,7 @@ export default function Navbar() {
                 key={item.key}
                 type="button"
                 onClick={() => navigate(item.path)}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3.5 pt-3 pb-2 text-xs md:text-sm font-bold tracking-wider whitespace-nowrap shrink-0 cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3.5 text-xs md:text-sm font-bold tracking-wider whitespace-nowrap shrink-0 cursor-pointer"
               >
                 <span
                   className={`py-1 border-b-2 transition-all duration-200 relative ${
