@@ -37,7 +37,12 @@ jobs:
 
       - name: Run Backend Tests & Verify
         working-directory: backend
-        run: ./mvnw clean verify -B
+        run: |
+          if command -v mvn &> /dev/null; then
+            mvn clean verify -B
+          else
+            ./mvnw clean verify -B
+          fi
 
       - name: Upload Test Report Artifact
         if: always()
