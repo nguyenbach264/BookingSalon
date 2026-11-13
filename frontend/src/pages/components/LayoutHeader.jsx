@@ -4,8 +4,22 @@ import Navbar from "./Navbar";
 
 const LayoutHeader = ({ onLoginClick, isLoggedIn }) => {
   const [showHeader, setShowHeader] = useState(true);
+  const [headerHeight, setHeaderHeight] = useState(48);
+  const headerRef = useRef(null);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
+
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight);
+      }
+    };
+
+    updateHeaderHeight();
+    window.addEventListener("resize", updateHeaderHeight);
+    return () => window.removeEventListener("resize", updateHeaderHeight);
+  }, []);
 
   useEffect(() => {
     lastScrollY.current = window.scrollY;
@@ -26,11 +40,9 @@ const LayoutHeader = ({ onLoginClick, isLoggedIn }) => {
         // Scroll đủ lớn mới xử lý chuyển trạng thái
         else if (Math.abs(diff) >= 10) {
           // Scroll xuống -> ẩn Header, Navbar dính lên top (top-0)
-          // Scroll xuống -> ẩn Header, Navbar dính lên top
           if (diff > 0) {
             setShowHeader(false);
           }
-          // Scroll lên -> hiện lại Header, Navbar về vị trí dưới Header (top-16)
           // Scroll lên -> hiện lại Header
           else {
             setShowHeader(true);
@@ -54,11 +66,14 @@ const LayoutHeader = ({ onLoginClick, isLoggedIn }) => {
 
   return (
     <div
-      className={`fixed top-0 left-0 z-[110] w-full transition-transform duration-300 ease-in-out ${
-        showHeader ? "translate-y-0" : "-translate-y-16"
-      }`}
+      className="fixed top-0 left-0 z-[110] w-full transition-transform duration-300 ease-in-out"
+      style={{
+        transform: showHeader ? "translateY(0)" : `translateY(-${headerHeight}px)`,
+      }}
     >
-      <Header onLoginClick={onLoginClick} isLoggedIn={isLoggedIn} />
+      <div ref={headerRef}>
+        <Header onLoginClick={onLoginClick} isLoggedIn={isLoggedIn} />
+      </div>
       <Navbar />
     </div>
   );

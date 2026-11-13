@@ -373,7 +373,7 @@ const Header = ({ onLoginClick }) => {
       className="w-full bg-[#0099FF] text-white border-b border-white/20 shadow-xs relative z-50 transition-colors"
       style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
     >
-      <div className="max-w-[1280px] mx-auto px-4 h-16 flex items-center justify-between gap-3 sm:gap-6">
+      <div className="max-w-[1280px] mx-auto px-4 h-12 flex items-center justify-between gap-3 sm:gap-6">
 
         {/* ── 1. LOGO & NÚT ĐIỀU HƯỚNG ẨN TRÊN MOBILE ── */}
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
@@ -398,15 +398,12 @@ const Header = ({ onLoginClick }) => {
               <span className="text-xl sm:text-2xl font-black italic tracking-wider text-white transition-colors leading-none drop-shadow-xs">
                 BachBarber
               </span>
-              <span className="text-[9px] font-bold text-white/80 uppercase tracking-widest leading-tight mt-0.5 hidden sm:block">
-                Premium Salon
-              </span>
             </div>
           </div>
         </div>
 
         {/* ── 2. CENTER SEARCH BAR (Desktop & Tablet) ────── */}
-        <div ref={searchContainerRef} className="hidden sm:flex flex-1 max-w-xs md:max-w-sm lg:max-w-md mx-2 justify-center relative">
+        <div ref={searchContainerRef} className="hidden sm:flex flex-1 max-w-xs md:max-w-sm lg:max-w-md mx-2 justify-center relative z-50">
           <form
             onSubmit={handleSearchSubmit}
             className="relative flex items-center w-full bg-white/20 hover:bg-white/30 focus-within:bg-white border border-white/30 focus-within:border-white rounded-full transition-all duration-200 shadow-inner group/form"
@@ -510,7 +507,7 @@ const Header = ({ onLoginClick }) => {
                     color="#ef4444"
                     offset={[-1, 1]}
                   >
-                    <Bell className="w-5 h-5 text-white hover:text-white/80 transition-colors" />
+                    <Bell className="mt-2 w-5 h-5 text-white hover:text-white/80 transition-colors" />
                   </Badge>
                 </div>
               </Popover>

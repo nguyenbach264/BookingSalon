@@ -12,6 +12,13 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
+  Award,
+  Zap,
+  Sparkles,
+  Gift,
+  Copy,
+  Check,
+  ShoppingBag,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getSalons } from '../../service/api/salonApi';
@@ -221,6 +228,15 @@ const TESTIMONIALS = [
 const formatPrice = (price) =>
   new Intl.NumberFormat('vi-VN').format(price) + 'đ';
 
+const CATEGORY_SHORTCUTS = [
+  { id: 'all', title: 'Tất Cả Dịch Vụ', icon: '✂️', count: '30+ gói', action: 'service' },
+  { id: 'cut', title: 'Cắt Tóc Nam & Fade', icon: '💇‍♂️', count: '12 gói', targetId: 'service-group-cut' },
+  { id: 'perm', title: 'Uốn Form Phồng', icon: '🌀', count: '8 gói', targetId: 'service-group-perm' },
+  { id: 'color', title: 'Nhuộm Thời Trang', icon: '🎨', count: '6 gói', targetId: 'service-group-color' },
+  { id: 'care', title: 'Gội Dưỡng Sinh & Spa', icon: '💆‍♂️', count: '5 gói', targetId: 'service-group-care' },
+  { id: 'shop', title: 'Sáp & Gôm Xịt Tóc', icon: '🛍️', count: 'Grooming', action: 'shop' },
+];
+
 export default function HomeContent() {
   const navigate = useNavigate();
   const { authenticated, openLoginModal } = useAuth();
@@ -393,6 +409,28 @@ export default function HomeContent() {
       openLoginModal('Quý khách cần đăng nhập để đặt lịch cuộc hẹn nhanh!', '/booking');
     } else {
       navigate('/booking');
+    }
+  };
+
+  const [copiedVoucher, setCopiedVoucher] = useState(false);
+  const handleCopyVoucher = () => {
+    navigator.clipboard.writeText('BACHBARBER20');
+    setCopiedVoucher(true);
+    setTimeout(() => setCopiedVoucher(false), 2200);
+  };
+
+  const handleCategoryClick = (cat) => {
+    if (cat.action === 'shop') {
+      navigate('/shop');
+    } else if (cat.action === 'service') {
+      navigate('/service');
+    } else if (cat.targetId) {
+      const el = document.getElementById(cat.targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        navigate('/service');
+      }
     }
   };
 
@@ -606,6 +644,159 @@ export default function HomeContent() {
         </div>
       </section>
 
+      {/* ── 2. TRUST COMMITMENTS & CORE VALUE PROPS (4 CỘT HIỆN ĐẠI) ────── */}
+      <section className="relative z-10 -mt-6 sm:-mt-8 max-w-[1280px] mx-auto px-4 w-full">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+          {/* Card 1 */}
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-400/50 transition-all duration-200 group flex items-start gap-3 sm:gap-3.5">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-amber-50 group-hover:bg-amber-100 text-amber-500 flex items-center justify-center shrink-0 transition-colors">
+              <Award size={22} className="stroke-[2.2]" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0099FF] transition-colors leading-tight">
+                100% Master Stylist
+              </h4>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-1 leading-snug">
+                Thợ chính 5+ năm tay nghề, tư vấn kiểu tóc chuẩn tỉ lệ gương mặt.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-400/50 transition-all duration-200 group flex items-start gap-3 sm:gap-3.5">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-50 group-hover:bg-blue-100 text-[#0099FF] flex items-center justify-center shrink-0 transition-colors">
+              <Zap size={22} className="stroke-[2.2]" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0099FF] transition-colors leading-tight">
+                Không Chờ Đợi 1 Phút
+              </h4>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-1 leading-snug">
+                Đến là phục vụ ngay. Cam kết tặng 50k voucher nếu để khách chờ quá 15p.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-400/50 transition-all duration-200 group flex items-start gap-3 sm:gap-3.5">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-50 group-hover:bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 transition-colors">
+              <ShieldCheck size={22} className="stroke-[2.2]" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0099FF] transition-colors leading-tight">
+                Bảo Hành Form 7 Ngày
+              </h4>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-1 leading-snug">
+                Chưa ưng ý kiểu tóc? Chỉnh sửa lại hoàn toàn miễn phí hoặc hoàn tiền.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 4 */}
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-400/50 transition-all duration-200 group flex items-start gap-3 sm:gap-3.5">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-purple-50 group-hover:bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 transition-colors">
+              <Sparkles size={22} className="stroke-[2.2]" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0099FF] transition-colors leading-tight">
+                Vô Trùng Chuẩn Y Tế
+              </h4>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-1 leading-snug">
+                Khăn mới, lưỡi dao riêng biệt 100%, khử khuẩn tia UV trước khi làm.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 3. QUICK CATEGORY PILLS & PROMO VOUCHER BANNER ─────────────── */}
+      <section className="pt-8 sm:pt-10 pb-4 max-w-[1280px] mx-auto px-4 w-full">
+        {/* Category Discovery Pills */}
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-[#0099FF] animate-pulse"></span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Khám phá nhanh danh mục dịch vụ
+            </span>
+          </div>
+          <button
+            onClick={() => navigate('/service')}
+            className="text-xs font-bold text-[#0099FF] hover:underline flex items-center gap-1 cursor-pointer"
+            style={{ color: 'var(--primary-color, #0099FF)' }}
+          >
+            <span>Tất cả 30+ dịch vụ</span>
+            <ArrowRight size={13} />
+          </button>
+        </div>
+
+        {/* Quick Filter Horizontal Scroll */}
+        <div className="flex items-center gap-2.5 overflow-x-auto pb-3 pt-1 scrollbar-none no-scrollbar">
+          {CATEGORY_SHORTCUTS.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => handleCategoryClick(cat)}
+              className="group shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-50 hover:bg-blue-50/80 border border-slate-200 hover:border-[#0099FF]/40 text-slate-700 hover:text-[#0099FF] transition-all text-xs font-semibold shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+            >
+              <span className="text-sm">{cat.icon}</span>
+              <span>{cat.title}</span>
+              <span className="text-[10px] text-slate-400 group-hover:text-[#0099FF]/70 font-normal">
+                {cat.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Exclusive Welcome Voucher Banner */}
+        <div className="mt-5 relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-sky-600 to-indigo-700 text-white p-5 sm:p-6 md:p-7 shadow-lg">
+          {/* Subtle background decoration shapes */}
+          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-black/10 blur-xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+            <div className="space-y-1.5 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-bold text-amber-200 border border-white/20 shadow-xs">
+                <Gift size={13} className="text-amber-300" />
+                <span>ƯU ĐÃI THÀNH VIÊN MỚI</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
+                Giảm 20% Cho Lần Đặt Lịch Đầu Tiên
+              </h3>
+              <p className="text-xs sm:text-sm text-blue-100 font-medium leading-relaxed">
+                Áp dụng cho toàn bộ dịch vụ Cắt Fade, Uốn Định Hình, Nhuộm Thời Trang và Combo Spa tại mọi chi nhánh Salon.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto shrink-0">
+              <div className="flex items-center justify-between sm:justify-start gap-2 bg-white/15 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/30">
+                <div className="text-left">
+                  <span className="text-[9px] uppercase tracking-wider text-blue-200 block font-semibold">Mã ưu đãi</span>
+                  <span className="text-sm sm:text-base font-black tracking-widest text-amber-300 font-mono">
+                    BACHBARBER20
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyVoucher}
+                  className="p-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
+                  title="Sao chép mã"
+                >
+                  {copiedVoucher ? <Check size={16} className="text-emerald-300" /> : <Copy size={16} />}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleBookingClick}
+                className="px-5 py-3 rounded-2xl bg-white hover:bg-blue-50 text-[#0099FF] font-black text-xs sm:text-sm shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer whitespace-nowrap text-center"
+                style={{ color: 'var(--primary-color, #0099FF)' }}
+              >
+                Đặt Lịch & Áp Mã Ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── 4. 4 NHÓM DỊCH VỤ CHỌN LỌC (4 DIV RIÊNG BIỆT - MỖI DIV 1 HÀNG 3 DỊCH VỤ CHO MÀN TO, GIẢM DẦN CHO MOBILE) ── */}
       <section className="py-12 md:py-16 bg-white overflow-hidden">
         <div className="max-w-[1280px] mx-auto px-4 w-full">
@@ -644,7 +835,8 @@ export default function HomeContent() {
               {categoryGroupsWithServices.map((group) => (
                 <div
                   key={group.id}
-                  className="bg-slate-50/70 rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/80 shadow-2xs hover:border-[#0099FF]/30 transition-all duration-300"
+                  id={`service-group-${group.id}`}
+                  className="bg-slate-50/70 rounded-3xl p-5 sm:p-7 md:p-8 border border-slate-200/80 shadow-2xs hover:border-[#0099FF]/30 transition-all duration-300 scroll-mt-24"
                 >
                   {/* Tiêu đề ở mỗi hàng tương ứng với tên thể loại */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-slate-200/70 gap-2">

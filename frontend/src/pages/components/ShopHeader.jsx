@@ -169,10 +169,10 @@ const ShopHeader = ({ onLoginClick, onRegisterClick, onCartClick, cartCount }) =
 
   return (
     <div
-      className="w-full text-white shadow-md relative transition-colors"
+      className="w-full text-white shadow-md relative z-50 transition-colors"
       style={{ backgroundColor: 'var(--primary-color, #0099FF)' }}
     >
-      <div className="max-w-[1280px] mx-auto px-4 flex items-center justify-between h-16 gap-4">
+      <div className="max-w-[1280px] mx-auto px-4 flex items-center justify-between h-12 gap-4">
         <div className="flex items-center gap-2 sm:gap-6">
           {/* Nút điều hướng ẩn Mobile */}
           <button
@@ -193,7 +193,7 @@ const ShopHeader = ({ onLoginClick, onRegisterClick, onCartClick, cartCount }) =
           </div>
 
           {/* Desktop Search Bar with Autocomplete Suggestions */}
-          <div ref={searchContainerRef} className="hidden lg:flex items-center relative w-80 xl:w-96">
+          <div ref={searchContainerRef} className="hidden lg:flex items-center relative z-50 w-80 xl:w-96">
             <form onSubmit={handleSearchSubmit} className="w-full flex items-center relative group/form">
               <input
                 type="text"

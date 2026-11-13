@@ -20,26 +20,13 @@ const getGridColumns = (width) => {
   return 2;                    // mobile
 };
 
-// Tính batchSize là BỘI SỐ của số cột trên mỗi hàng để mỗi hàng luôn được lấp đầy hoàn chỉnh:
-// - Màn lg/xl (6 cột): load 18 sản phẩm (3 hàng đầy x 6 item)
-// - Màn md (4 cột): load 16 sản phẩm (4 hàng đầy x 4 item)
-// - Màn sm (3 cột): load 15 sản phẩm (5 hàng đầy x 3 item)
-// - Màn mobile (2 cột): load 12 sản phẩm (6 hàng đầy x 2 item)
-// Chỉ có thể khuyết ở hàng cuối cùng khi đã tải HẾT sạch sản phẩm trong kho.
-const getBatchSize = (cols) => {
-  switch (cols) {
-    case 6:
-      return 18;
-    case 4:
-      return 16;
-    case 3:
-      return 15;
-    case 2:
-      return 12;
-    default:
-      return cols * 3;
-  }
-};
+// Tính batchSize = 24 (bội chung của cả 6, 4, 3, 2):
+// - Màn 6 cột (lg/xl): 4 hàng đầy (4 x 6 = 24)
+// - Màn 4 cột (md): 6 hàng đầy (6 x 4 = 24)
+// - Màn 3 cột (sm): 8 hàng đầy (8 x 3 = 24)
+// - Màn 2 cột (mobile): 12 hàng đầy (12 x 2 = 24)
+// Luôn bảo đảm ở mọi kích thước màn hình responsive, mọi lượt tải đều lấp kín 100% tất cả các hàng.
+const getBatchSize = () => 24;
 
 const PRICE_RANGES = {
   ALL: { label: 'Tất cả mức giá', min: undefined, max: undefined },
@@ -247,7 +234,6 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
       : categories.find((c) => c.slug === activeCategorySlug)?.name || 'Sản phẩm';
 
   const remainingCount = Math.max(0, totalProducts - products.length);
-  const nextLoadCount = Math.min(batchSize, remainingCount);
 
 
   return (
@@ -450,39 +436,26 @@ const Shop = ({ onAddToCart, onBuyNow }) => {
                 ))}
               </div>
 
-              {/* ── NÚT "XEM THÊM ... SẢN PHẨM ∨" (LOAD MORE) CHUẨN THẾ GIỚI DI ĐỘNG ── */}
-              {remainingCount > 0 ? (
-                <div className="mt-10 mb-8 flex flex-col items-center justify-center">
+              {/* ── NÚT "XEM THÊM" (LOAD MORE) ── */}
+              {remainingCount > 0 && (
+                <div className="mt-10 mb-8 flex justify-center">
                   <button
+                    type="button"
                     onClick={handleLoadMore}
                     disabled={loadingMore}
-                    className="px-8 py-3 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 font-bold text-sm rounded-xl border border-blue-400 hover:border-blue-500 shadow-sm transition-all duration-200 flex items-center gap-2 cursor-pointer group active:scale-95 disabled:opacity-70"
+                    className="px-10 py-3 bg-white hover:bg-blue-50 text-[#0099FF] hover:text-blue-600 font-bold text-sm rounded-xl border border-blue-300 hover:border-blue-400 shadow-xs hover:shadow-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer group active:scale-95 disabled:opacity-70"
+                    style={{ color: 'var(--primary-color, #0099FF)', borderColor: 'var(--primary-color, #60a5fa)' }}
                   >
                     {loadingMore ? (
                       <>
                         <Spin size="small" />
-                        <span>Đang tải thêm sản phẩm...</span>
+                        <span>Đang tải...</span>
                       </>
                     ) : (
-                      <>
-                        <span>Xem thêm {nextLoadCount} sản phẩm</span>
-                        <span className="text-blue-500 font-black text-sm group-hover:translate-y-0.5 transition-transform">
-                          ∨
-                        </span>
-                      </>
+                      <span>Xem thêm</span>
                     )}
                   </button>
-
-                  <span className="text-xs text-gray-400 mt-2">
-                    Đã hiển thị {products.length} / {totalProducts} sản phẩm
-                  </span>
                 </div>
-              ) : (
-                products.length > 0 && (
-                  <div className="mt-10 mb-8 text-center text-xs text-gray-400 font-medium">
-                    ✓ Đã hiển thị tất cả {totalProducts} sản phẩm
-                  </div>
-                )
               )}
             </>
           )}

@@ -108,8 +108,7 @@ public class ProductService {
     }
 
     private Sort buildSort(String sortBy) {
-        if (sortBy == null) return Sort.by(Sort.Direction.DESC, "createdAt");
-        return switch (sortBy.toLowerCase()) {
+        Sort primary = switch (sortBy != null ? sortBy.toLowerCase() : "") {
             case "price_asc", "price-asc" -> Sort.by(Sort.Direction.ASC, "price");
             case "price_desc", "price-desc" -> Sort.by(Sort.Direction.DESC, "price");
             case "popular", "best_seller" -> Sort.by(Sort.Direction.DESC, "soldCount");
@@ -117,6 +116,7 @@ public class ProductService {
             case "name_asc" -> Sort.by(Sort.Direction.ASC, "name");
             default -> Sort.by(Sort.Direction.DESC, "createdAt");
         };
+        return primary.and(Sort.by(Sort.Direction.DESC, "createdAt")).and(Sort.by(Sort.Direction.ASC, "id"));
     }
 
     public ProductDTO mapToDTO(Product p) {
