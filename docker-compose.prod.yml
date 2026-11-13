@@ -34,7 +34,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 350M
+          memory: 300M
 
 
   redis:
@@ -44,7 +44,7 @@ services:
     command: >
       redis-server
       --requirepass "${REDIS_PASSWORD:-}"
-      --maxmemory 256mb
+      --maxmemory 64mb
       --maxmemory-policy allkeys-lru
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -60,7 +60,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 280M
+          memory: 100M
 
 
   keycloak:
@@ -69,7 +69,7 @@ services:
     restart: unless-stopped
     command: start-dev --import-realm
     environment:
-      JAVA_OPTS_KC_HEAP: "-Xms180m -Xmx350m -XX:+UseG1GC"
+      JAVA_OPTS_KC_HEAP: "-Xms180m -Xmx320m -XX:+UseG1GC"
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_DB: mysql
@@ -105,7 +105,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 450M
+          memory: 500M
 
 
   backend-1:
@@ -126,7 +126,8 @@ services:
       DB_USERNAME: ${DB_USERNAME:-bookingsalon_user}
       DB_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
       JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
-      JAVA_TOOL_OPTIONS: "-Xms120m -Xmx200m -XX:+UseG1GC -XX:+UseStringDeduplication"
+      JAVA_TOOL_OPTIONS: "-Xms160m -Xmx280m -XX:+UseG1GC -XX:+UseStringDeduplication"
+      APP_KEYCLOAK_SEEDER_ENABLED: "true"
 
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/test-data
       SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
@@ -186,7 +187,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 280M
+          memory: 480M
     
   backend-2:
     image: ${DOCKERHUB_USERNAME:-nguyenbach}/bookingsalon-backend:${IMAGE_TAG:-latest}
@@ -206,7 +207,8 @@ services:
       DB_USERNAME: ${DB_USERNAME:-bookingsalon_user}
       DB_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
       JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
-      JAVA_TOOL_OPTIONS: "-Xms120m -Xmx200m -XX:+UseG1GC -XX:+UseStringDeduplication"
+      JAVA_TOOL_OPTIONS: "-Xms160m -Xmx280m -XX:+UseG1GC -XX:+UseStringDeduplication"
+      APP_KEYCLOAK_SEEDER_ENABLED: "false"
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/test-data
       SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
       SPRING_FLYWAY_OUT_OF_ORDER: "true"
@@ -265,87 +267,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 280M
-
-  backend-3:
-    image: ${DOCKERHUB_USERNAME:-nguyenbach}/bookingsalon-backend:${IMAGE_TAG:-latest}
-    container_name: bookingsalon_backend_3
-    restart: unless-stopped
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      keycloak:
-        condition: service_healthy
-    environment:
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_NAME: ${DB_NAME:-bookingsalon_app}
-      DB_USERNAME: ${DB_USERNAME:-bookingsalon_user}
-      DB_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
-      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
-      JAVA_TOOL_OPTIONS: "-Xms120m -Xmx200m -XX:+UseG1GC -XX:+UseStringDeduplication"
-      SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/test-data
-      SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
-      SPRING_FLYWAY_OUT_OF_ORDER: "true"
-      SPRING_FLYWAY_IGNORE_MIGRATION_PATTERNS: "*:*"
-
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      SPRING_SESSION_STORE_TYPE: redis
-      APP_COOKIE_SECURE: "true"
-
-      KEYCLOAK_SERVER_URL: http://keycloak:8080
-      KEYCLOAK_PUBLIC_URL: "https://auth-bookingsalon.nguyenbach.click"
-      KEYCLOAK_REALM: booking-salon-realm
-      KEYCLOAK_CLIENT_ID: booking-salon-admin
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
-      KEYCLOAK_FRONTEND_CLIENT_ID: booking-salon-client
-      KEYCLOAK_IDP_GOOGLE_ENABLED: "true"
-      KEYCLOAK_IDP_GOOGLE_CLIENT_ID: ${KEYCLOAK_IDP_GOOGLE_CLIENT_ID}
-      KEYCLOAK_IDP_GOOGLE_CLIENT_SECRET: ${KEYCLOAK_IDP_GOOGLE_CLIENT_SECRET}
-
-      CORS_ALLOWED_ORIGINS: "https://bookingsalon.nguyenbach.click,https://www.bookingsalon.nguyenbach.click"
-      FRONTEND_URL: "https://bookingsalon.nguyenbach.click"
-
-      VNPAY_SIMULATOR_MODE: ${VNPAY_SIMULATOR_MODE:-true}
-      VNPAY_TMN_CODE: ${VNPAY_TMN_CODE}
-      VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET}
-      VNPAY_PAY_URL: ${VNPAY_PAY_URL}
-      VNPAY_RETURN_URL: ${VNPAY_RETURN_URL}
-      VNPAY_NOTIFY_URL: ${VNPAY_NOTIFY_URL}
-
-      SEPAY_MERCHANT_ID: ${SEPAY_MERCHANT_ID}
-      SEPAY_SECRET_KEY: ${SEPAY_SECRET_KEY}
-      SEPAY_API_BASE_URL: ${SEPAY_API_BASE_URL}
-      SEPAY_WEBHOOK_API_KEY: ${SEPAY_WEBHOOK_API_KEY}
-      SEPAY_ENV: ${SEPAY_ENV:-sandbox}
-
-      PAYMENT_BANK_BIN: ${PAYMENT_BANK_BIN:-970422}
-      PAYMENT_BANK_ACCOUNT: ${PAYMENT_BANK_ACCOUNT:-0866429205}
-      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET}
-      PAYMENT_EXPIRE_MINUTES: 15
-      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
-      MAIL_PORT: ${MAIL_PORT:-587}
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
-
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-    ports:
-      - "8083:8080"
-    networks:
-      bookingsalon_net:
-        aliases:
-          - backend
-    deploy:
-      resources:
-        limits:
-          memory: 280M
-
+          memory: 480M
 
   frontend:
     image: ${DOCKERHUB_USERNAME:-nguyenbach}/bookingsalon-frontend:${IMAGE_TAG:-latest}
@@ -354,7 +276,6 @@ services:
     depends_on:
       - backend-1
       - backend-2
-      - backend-3
     ports:
       - "5173:80"
     networks:
