@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/reviews")
+@RequestMapping({"/api/reviews", "/api/admin/reviews"})
 public class ReviewController {
     private final ReviewService reviewService;
     private final demo.bookingsalon.Utility.SecurityUtils securityUtils;

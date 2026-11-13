@@ -9,6 +9,9 @@ import java.util.UUID;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
+    @org.springframework.data.jpa.repository.Query("SELECT r FROM Review r LEFT JOIN FETCH r.user LEFT JOIN FETCH r.product ORDER BY r.createdAt DESC")
+    List<Review> findAllWithDetails();
+
     List<Review> findByProductIdOrderByCreatedAtDesc(UUID productId);
     List<Review> findByUserIdOrderByCreatedAtDesc(UUID userId);
     List<Review> findByStylistIdOrderByCreatedAtDesc(UUID stylistId);

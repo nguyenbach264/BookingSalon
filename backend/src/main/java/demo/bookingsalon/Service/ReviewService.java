@@ -36,7 +36,7 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<ReviewDTO> getAllReviews() {
-        return reviewRepository.findAll().stream().map(reviewMapper::toReviewDTO).toList();
+        return reviewRepository.findAllWithDetails().stream().map(reviewMapper::toReviewDTO).toList();
     }
 
     @Transactional(readOnly = true)

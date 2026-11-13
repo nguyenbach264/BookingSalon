@@ -333,7 +333,11 @@ export default function AdminDashboard() {
       if (orderData.status === "fulfilled") setOrders(orderData.value || []);
       if (catData.status === "fulfilled") setProductCategories(catData.value || []);
       if (statsData.status === "fulfilled") setProductStats(statsData.value);
-      if (revsData.status === "fulfilled") setReviews(revsData.value?.content || revsData.value || []);
+      if (revsData.status === "fulfilled") {
+        setReviews(revsData.value?.content || revsData.value || []);
+      } else {
+        console.warn("Could not load reviews for admin:", revsData.reason);
+      }
     } catch (err) {
       console.error("Error loading products/orders/reviews:", err);
     }
