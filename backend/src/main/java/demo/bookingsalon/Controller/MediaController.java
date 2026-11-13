@@ -22,6 +22,13 @@ public class MediaController {
     private final MediaApplicationService mediaApplicationService;
 
     // UPLOAD ONE
+    @demo.bookingsalon.Security.RateLimit.RateLimit(
+        keyPrefix = "upload",
+        type = demo.bookingsalon.Security.RateLimit.RateLimitType.USER,
+        capacity = 10,
+        durationSeconds = 60,
+        message = "Bạn đã tải lên quá nhiều tệp tin. Vui lòng chờ 1 phút!"
+    )
     @PostMapping(
             value = "/{ownerType}/{ownerId}",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE

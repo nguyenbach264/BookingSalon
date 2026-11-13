@@ -39,4 +39,18 @@ public class MediaOwnerResolver {
 
         return strategy.resolve(ownerId);
     }
+
+    public void updateOwnerImage(MediaOwnerType ownerType, UUID ownerId, String imageUrl, boolean isPrimary) {
+        MediaOwnerStrategy strategy = strategyMap.get(ownerType);
+        if (strategy != null) {
+            strategy.updateOwnerImage(ownerId, imageUrl, isPrimary);
+        }
+    }
+
+    public void removeOwnerImage(MediaOwnerType ownerType, UUID ownerId, String imageUrl) {
+        MediaOwnerStrategy strategy = strategyMap.get(ownerType);
+        if (strategy != null) {
+            strategy.removeOwnerImage(ownerId, imageUrl);
+        }
+    }
 }

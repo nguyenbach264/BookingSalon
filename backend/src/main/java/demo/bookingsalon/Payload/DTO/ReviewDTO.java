@@ -19,11 +19,19 @@ public class ReviewDTO {
 
     private UUID productId;
 
+    private String productName;
+
     private Integer rating;
 
     private String type;
 
     private String reviewContent;
+
+    private UUID bookingId;
+
+    private UUID stylistId;
+
+    private UUID salonId;
 
     private LocalDateTime createdAt;
 }

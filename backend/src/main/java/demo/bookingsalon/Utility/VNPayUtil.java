@@ -35,15 +35,13 @@ public class VNPayUtil {
     }
     
     /**
-     * Verify chữ ký từ VNPay callback
+     * Tạo chữ ký từ danh sách tham số (tương thích 100% với verifySignature)
      */
-    public static boolean verifySignature(Map<String, String> params, String secretKey, String vnp_SecureHash) {
-        // Sắp xếp các tham số theo thứ tự alphabet (loại bỏ vnp_SecureHash và vnp_SecureHashType)
+    public static String generateSignature(Map<String, String> params, String secretKey) {
         SortedMap<String, String> sortedParams = new TreeMap<>(params);
         sortedParams.remove("vnp_SecureHash");
         sortedParams.remove("vnp_SecureHashType");
-        
-        // Xây dựng chuỗi dữ liệu để hash
+
         StringBuilder hashData = new StringBuilder();
         for (Map.Entry<String, String> entry : sortedParams.entrySet()) {
             if (entry.getValue() != null && !entry.getValue().isEmpty()) {
@@ -51,14 +49,22 @@ public class VNPayUtil {
                         .append(entry.getValue()).append("&");
             }
         }
-        
-        // Loại bỏ ký tự "&" cuối cùng
+
         if (hashData.length() > 0) {
             hashData.deleteCharAt(hashData.length() - 1);
         }
-        
-        // Tính toán chữ ký và so sánh
-        String computedHash = hmacSHA512(secretKey, hashData.toString());
+
+        return hmacSHA512(secretKey, hashData.toString());
+    }
+
+    /**
+     * Verify chữ ký từ VNPay callback
+     */
+    public static boolean verifySignature(Map<String, String> params, String secretKey, String vnp_SecureHash) {
+        if (vnp_SecureHash == null || vnp_SecureHash.isBlank()) {
+            return false;
+        }
+        String computedHash = generateSignature(params, secretKey);
         return computedHash.equalsIgnoreCase(vnp_SecureHash);
     }
     

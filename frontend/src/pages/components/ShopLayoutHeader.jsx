@@ -9,9 +9,22 @@ const ShopLayoutHeader = ({
   cartCount,
 }) => {
   const [showHeader, setShowHeader] = useState(true);
-
+  const [headerHeight, setHeaderHeight] = useState(48);
+  const headerRef = useRef(null);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
+
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight);
+      }
+    };
+
+    updateHeaderHeight();
+    window.addEventListener("resize", updateHeaderHeight);
+    return () => window.removeEventListener("resize", updateHeaderHeight);
+  }, []);
 
   useEffect(() => {
     lastScrollY.current = window.scrollY;
@@ -25,17 +38,17 @@ const ShopLayoutHeader = ({
         const currentScrollY = window.scrollY;
         const diff = currentScrollY - lastScrollY.current;
 
-        // Ở đầu trang
-        if (currentScrollY <= 0) {
+        // Ở đầu trang -> luôn hiện đầy đủ Header
+        if (currentScrollY <= 20) {
           setShowHeader(true);
         }
         // Scroll đủ lớn mới xử lý
         else if (Math.abs(diff) >= 10) {
-          // Scroll xuống
+          // Scroll xuống -> ẩn Header, Navbar dính lên top
           if (diff > 0) {
             setShowHeader(false);
           }
-          // Scroll lên
+          // Scroll lên -> hiện lại Header
           else {
             setShowHeader(true);
           }
@@ -58,18 +71,19 @@ const ShopLayoutHeader = ({
 
   return (
     <div
-      className={` 
-        fixed top-0 left-0 z-[110] w-full transition-transform duration-300 ease-in-out
-        ${showHeader ? "translate-y-0" : "-translate-y-full"}
-      `}
+      className="fixed top-0 left-0 z-[110] w-full transition-transform duration-300 ease-in-out"
+      style={{
+        transform: showHeader ? "translateY(0)" : `translateY(-${headerHeight}px)`,
+      }}
     >
-      <ShopHeader
-        onLoginClick={onLoginClick}
-        onRegisterClick={onRegisterClick}
-        onCartClick={onCartClick}
-        cartCount={cartCount}
-      />
-
+      <div ref={headerRef}>
+        <ShopHeader
+          onLoginClick={onLoginClick}
+          onRegisterClick={onRegisterClick}
+          onCartClick={onCartClick}
+          cartCount={cartCount}
+        />
+      </div>
       <Navbar />
     </div>
   );

@@ -19,6 +19,7 @@ public class AuthResponse {
     @Builder
     public static class UserInfo {
         private UUID id;              // DB primary key
+        private UUID stylistId;       // Stylist primary key (when user is STYLIST or linked to stylist)
         private UUID keycloakId;
         private String username;
         private String fullName;
@@ -26,6 +27,16 @@ public class AuthResponse {
         private String phoneNumber;
         private String avatarUrl;
         private String role;          // USER | STYLIST | ADMIN
+        private String gender;
+        private String address;
+        private String city;
+        private String district;
+        private String ward;
+        private String membershipTier;
+        private boolean emailVerified;
+        private boolean phoneVerified;
+        private String voucherCode;
+        private java.time.LocalDateTime createdAt;
     }
 }
 

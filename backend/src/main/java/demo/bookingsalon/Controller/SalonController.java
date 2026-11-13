@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("api/salon")
+@RequestMapping({"/api/salon", "/api/salons"})
 @RequiredArgsConstructor
 public class SalonController {
     private final SalonService salonService;

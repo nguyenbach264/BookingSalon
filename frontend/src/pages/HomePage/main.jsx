@@ -1,52 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Footer from '../components/Footer';
-import RegisterPage from '../ShopPage/RegisterPage';
 import LayoutHeader from '../components/LayoutHeader';
-import LoginPage from '../ShopPage/LoginPage';
 import { Outlet } from 'react-router-dom';
+import { useAuth } from '../../auth/authProvider';
 
 export default function HomePage() {
-  const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
-  const [isRegisterModalVisible, setIsRegisterModalVisible] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const { openLoginModal, authenticated } = useAuth();
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-gray-50 text-gray-900">
+    <div className="min-h-screen flex flex-col font-sans bg-white text-slate-900 overflow-x-clip">
       <LayoutHeader
-        onLoginClick={() => {
-          setIsRegisterModalVisible(false);
-          setIsLoginModalVisible(true);
-        }}
-        isLoggedIn={isLoggedIn}
-      ></LayoutHeader>
-
-      <LoginPage
-        visible={isLoginModalVisible}
-        onClose={() => setIsLoginModalVisible(false)}
-        onGoToRegister={() => {
-          setIsLoginModalVisible(false);
-          setIsRegisterModalVisible(true);
-        }}
-        onLoggedIn={() => {
-          setIsLoggedIn(true)
-          setIsLoginModalVisible(false)
-        }}
+        onLoginClick={() => openLoginModal()}
+        isLoggedIn={authenticated}
       />
 
-      <RegisterPage
-        visible={isRegisterModalVisible}
-        onClose={() => setIsRegisterModalVisible(false)}
-        onLogin={() => {
-          setIsRegisterModalVisible(false);
-          setIsLoginModalVisible(true);
-        }}
-      />
-
-      <main className="flex-1 pt-[108px]">
+      <main className="flex-1 pt-16 md:pt-[108px] overflow-x-clip">
         <Outlet />
       </main>
 
-      <Footer></Footer>
+      <Footer />
     </div>
   );
 }

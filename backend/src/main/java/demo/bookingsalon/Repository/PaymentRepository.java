@@ -23,9 +23,10 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
         SELECT p
         FROM Payment p
         WHERE p.status = :status
-            AND p.updatedAt < CURRENT_TIMESTAMP
+            AND p.createdAt < :cutoffTime
             AND p.paymentMethod <> demo.bookingsalon.Enum.PaymentMethod.COD
     """)
-    Optional<List<Payment>> findByStatusAndExpiredAt(@Param("status") PaymentStatus status);
-
+    Optional<List<Payment>> findByStatusAndCreatedBefore(
+            @Param("status") PaymentStatus status,
+            @Param("cutoffTime") LocalDateTime cutoffTime);
 }
