@@ -4,7 +4,7 @@ services:
   # ========================================================
   mysql:
     image: mysql:8.0
-    container_name: bookingsalon_mysql
+    container_name: bookingsalon_mysql_dev
     restart: unless-stopped
     command: >
       --default-authentication-plugin=mysql_native_password
@@ -12,13 +12,13 @@ services:
       --collation-server=utf8mb4_unicode_ci
       --default-time-zone=+07:00
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-rootpassword123}
       MYSQL_DATABASE: ${DB_NAME:-bookingsalon_app}
       MYSQL_USER: ${DB_USERNAME:-bookingsalon_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-rootpassword123}
       TZ: Asia/Ho_Chi_Minh
     ports:
-      - "${HOST_DB_PORT:-3307}:3306" # Cổng ngoài là 3307, cổng nội bộ trong Docker vẫn là 3306.
+      - "${HOST_DB_PORT:-3308}:3306" # Cổng ngoài là 3307, cổng nội bộ trong Docker vẫn là 3306.
     volumes:
       - mysql_data:/var/lib/mysql
       # Tự động nạp toàn bộ cấu trúc 28 bảng và dữ liệu mẫu đầy đủ lần đầu khởi tạo
@@ -26,7 +26,7 @@ services:
     networks:
       - bookingsalon_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-Bach@vt05}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-rootpassword123}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,7 +37,7 @@ services:
   # ========================================================
   redis:
     image: redis:7-alpine
-    container_name: bookingsalon_redis
+    container_name: bookingsalon_redis_dev
     restart: unless-stopped
     command: >
       redis-server
@@ -61,7 +61,7 @@ services:
   # ========================================================
   keycloak:
     image: quay.io/keycloak/keycloak:26.7.0
-    container_name: bookingsalon_keycloak
+    container_name: bookingsalon_keycloak_dev
     restart: unless-stopped
     command: start-dev --import-realm
     environment:
@@ -73,8 +73,8 @@ services:
       - "8081:8080"
     volumes:
       - keycloak_data:/opt/keycloak/data
-      # Mount thư mục chứa file export realm để tự động import khi máy mới khởi động:
-      - ./keycloak-import:/opt/keycloak/data/import:ro
+      # Tự động import realm cấu hình và toàn bộ 18 user mẫu lần đầu khởi tạo container
+      - ./keycloak-import/booking-salon-realm-realm.json:/opt/keycloak/data/import/booking-salon-realm-realm.json:ro
     networks:
       - bookingsalon_net
     healthcheck:
@@ -92,7 +92,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     image: bookingsalon-backend:latest
-    container_name: bookingsalon_backend
+    container_name: bookingsalon_backend_dev
     restart: unless-stopped
     depends_on:
       mysql:
@@ -107,7 +107,7 @@ services:
       DB_PORT: 3306
       DB_NAME: ${DB_NAME:-bookingsalon_app}
       DB_USERNAME: ${DB_USERNAME:-bookingsalon_user}
-      DB_PASSWORD: ${DB_PASSWORD:-Bach@vt05}
+      DB_PASSWORD: ${DB_PASSWORD:-rootpassword123}
       JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
 
       # Flyway: Tự động chạy migration schema cập nhật V7, V8, V9 và nạp dữ liệu an toàn
@@ -126,11 +126,11 @@ services:
       KEYCLOAK_PUBLIC_URL: http://localhost:8081
       KEYCLOAK_REALM: booking-salon-realm
       KEYCLOAK_CLIENT_ID: booking-salon-admin
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-dev-local-secret-booking-salon-2026}
       KEYCLOAK_FRONTEND_CLIENT_ID: booking-salon-client
       KEYCLOAK_IDP_GOOGLE_ENABLED: "true"
-      KEYCLOAK_IDP_GOOGLE_CLIENT_ID: ${KEYCLOAK_IDP_GOOGLE_CLIENT_ID}
-      KEYCLOAK_IDP_GOOGLE_CLIENT_SECRET: ${KEYCLOAK_IDP_GOOGLE_CLIENT_SECRET}
+      KEYCLOAK_IDP_GOOGLE_CLIENT_ID: ${KEYCLOAK_IDP_GOOGLE_CLIENT_ID:-}
+      KEYCLOAK_IDP_GOOGLE_CLIENT_SECRET: ${KEYCLOAK_IDP_GOOGLE_CLIENT_SECRET:-}
 
       # Cổng & URL ứng dụng
       CORS_ALLOWED_ORIGINS: http://localhost,http://localhost:80,http://localhost:5173,http://127.0.0.1:5173
@@ -138,30 +138,30 @@ services:
 
       # Cấu hình thanh toán & Dịch vụ bên ngoài
       VNPAY_SIMULATOR_MODE: ${VNPAY_SIMULATOR_MODE:-true}
-      VNPAY_TMN_CODE: ${VNPAY_TMN_CODE}
-      VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET}
+      VNPAY_TMN_CODE: ${VNPAY_TMN_CODE:-DEMOVNPAY}
+      VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET:-DEMOHASHSECRETKEY2026}
       VNPAY_PAY_URL: ${VNPAY_PAY_URL:-http://localhost:5173/payment/vnpay-sandbox-simulator}
       VNPAY_RETURN_URL: ${VNPAY_RETURN_URL:-http://localhost:8080/api/v1/payments/webhook/vnpay/return}
       VNPAY_NOTIFY_URL: ${VNPAY_NOTIFY_URL:-http://localhost:8080/api/v1/payments/webhook/vnpay}
 
-      SEPAY_MERCHANT_ID: ${SEPAY_MERCHANT_ID}
-      SEPAY_SECRET_KEY: ${SEPAY_SECRET_KEY}
-      SEPAY_API_BASE_URL: ${SEPAY_API_BASE_URL}
-      SEPAY_WEBHOOK_API_KEY: ${SEPAY_WEBHOOK_API_KEY}
+      SEPAY_MERCHANT_ID: ${SEPAY_MERCHANT_ID:-}
+      SEPAY_SECRET_KEY: ${SEPAY_SECRET_KEY:-}
+      SEPAY_API_BASE_URL: ${SEPAY_API_BASE_URL:-https://my.sepay.vn}
+      SEPAY_WEBHOOK_API_KEY: ${SEPAY_WEBHOOK_API_KEY:-demo_webhook_key}
       SEPAY_ENV: ${SEPAY_ENV:-sandbox}
 
       PAYMENT_BANK_BIN: ${PAYMENT_BANK_BIN:-970422}
-      PAYMENT_BANK_ACCOUNT: ${PAYMENT_BANK_ACCOUNT:-0866429205}
-      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET}
+      PAYMENT_BANK_ACCOUNT: ${PAYMENT_BANK_ACCOUNT:-0123456789}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-demo_webhook_secret}
       PAYMENT_EXPIRE_MINUTES: 15
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_USERNAME: ${MAIL_USERNAME:-demo@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-demopassword}
 
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-demo_cloud}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-demo_key}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-demo_secret}
     ports:
       - "8080:8080"
     networks:
@@ -181,7 +181,7 @@ services:
         VITE_KEYCLOAK_REALM: booking-salon-realm
         VITE_KEYCLOAK_CLIENT_ID: booking-salon-client
     image: bookingsalon-frontend:latest
-    container_name: bookingsalon_frontend
+    container_name: bookingsalon_frontend_dev
     restart: unless-stopped
     depends_on:
       - backend
