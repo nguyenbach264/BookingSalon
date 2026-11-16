@@ -30,9 +30,9 @@ import {
   CheckCircleOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { getSalonById, getSalons } from "../../../service/api/salonApi";
-import { getAllBookings } from "../../../service/api/bookingApi";
-import { getStylists } from "../../../service/api/adminApi";
+import { getSalonById, getSalons } from "../../../services/api/salonApi";
+import { getAllBookings } from "../../../services/api/bookingApi";
+import { getStylists } from "../../../services/api/adminApi";
 
 const formatCurrency = (val) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val ?? 0);

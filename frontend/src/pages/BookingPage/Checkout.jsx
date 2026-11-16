@@ -16,11 +16,11 @@ import {
   Tag,
   X,
 } from 'lucide-react';
-import { useBooking } from '../../service/context/BookingContext';
-import { useAuth } from '../../auth/authProvider';
-import { createBooking } from '../../service/api/bookingApi';
-import { getAvailableVouchers, applyVoucher } from '../../service/api/voucherApi';
-import { TopCenterNotificationModal } from '../components/TopCenterNotificationModal';
+import { useBooking } from '../../context/BookingContext';
+import { useAuth } from '../../auth/AuthProvider';
+import { createBooking } from '../../services/api/bookingApi';
+import { getAvailableVouchers, applyVoucher } from '../../services/api/voucherApi';
+import { TopCenterNotificationModal } from '../../components/TopCenterNotificationModal';
 
 export function Checkout() {
   const {

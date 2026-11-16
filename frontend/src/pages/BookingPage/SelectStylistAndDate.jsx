@@ -10,8 +10,8 @@ import {
   ChevronRight,
   Check,
 } from 'lucide-react';
-import { useBooking } from '../../service/context/BookingContext';
-import { getStylistsBySalon, getAllStylists, getStylistBookedSlots } from '../../service/api/bookingApi';
+import { useBooking } from '../../context/BookingContext';
+import { getStylistsBySalon, getAllStylists, getStylistBookedSlots } from '../../services/api/bookingApi';
 
 const DEFAULT_AVATARS = [
   'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80',

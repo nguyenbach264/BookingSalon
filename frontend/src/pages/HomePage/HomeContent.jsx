@@ -21,11 +21,11 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getSalons } from '../../service/api/salonApi';
-import { getServiceOfferings } from '../../service/api/serviceApi';
-import { useAuth } from '../../auth/authProvider';
-import { useBooking } from '../../service/context/BookingContext';
-import { DB_BASELINE_SERVICES, normalizeService } from '../../service/baselineServices';
+import { getSalons } from '../../services/api/salonApi';
+import { getServiceOfferings } from '../../services/api/serviceApi';
+import { useAuth } from '../../auth/AuthProvider';
+import { useBooking } from '../../context/BookingContext';
+import { DB_BASELINE_SERVICES, normalizeService } from '../../services/baselineServices';
 
 // 4 nhóm dịch vụ cốt lõi theo phong cách Salon cao cấp
 const SERVICE_GROUPS = [

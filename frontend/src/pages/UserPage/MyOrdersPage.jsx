@@ -15,9 +15,9 @@ import {
   MapPin
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../auth/authProvider';
-import orderApi from '../../service/api/orderApi';
-import notificationWs from '../../service/websocket/notificationWebSocket';
+import { useAuth } from '../../auth/AuthProvider';
+import orderApi from '../../services/api/orderApi';
+import notificationWs from '../../services/websocket/notificationWebSocket';
 
 export default function MyOrdersPage() {
   const navigate = useNavigate();

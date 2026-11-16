@@ -43,7 +43,7 @@ import {
   HomeOutlined,
   ShoppingOutlined,
 } from "@ant-design/icons";
-import { updateUser, resetUserPassword, deleteUser, getUserDetailSummary } from "../../../service/api/adminApi";
+import { updateUser, resetUserPassword, deleteUser, getUserDetailSummary } from "../../../services/api/adminApi";
 
 const { Option } = Select;
 

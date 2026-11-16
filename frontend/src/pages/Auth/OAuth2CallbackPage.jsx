@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Spin, Alert, Button } from "antd";
-import { useAuth } from "../../auth/authProvider";
+import { useAuth } from "../../auth/AuthProvider";
 import { useRoleRedirect } from "../../hooks/useRoleRedirect";
 
 export default function OAuth2CallbackPage() {

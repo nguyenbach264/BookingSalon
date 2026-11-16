@@ -3,7 +3,7 @@ import { Check, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SelectSalon from './SelectSalon';
 import { SelectStylistAndDate } from './SelectStylistAndDate';
-import { useBooking } from '../../service/context/BookingContext';
+import { useBooking } from '../../context/BookingContext';
 import { SelectService } from './SelectService';
 import { Checkout } from './Checkout';
 import { CheckoutSuccessfully } from './CheckoutSuccessfully';

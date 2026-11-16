@@ -28,14 +28,14 @@ import {
   CloseCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../auth/authProvider';
+import { useAuth } from '../../auth/AuthProvider';
 import {
   getMyBookings,
   getMyReviews,
   submitReview,
   cancelMyBooking,
-} from '../../service/api/userApi';
-import notificationWs from '../../service/websocket/notificationWebSocket';
+} from '../../services/api/userApi';
+import notificationWs from '../../services/websocket/notificationWebSocket';
 
 const { TextArea } = Input;
 

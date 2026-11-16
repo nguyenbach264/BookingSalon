@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 import { Card, Avatar, Tag, Button, message, Spin, Tooltip } from "antd";
 import { UserOutlined, CameraOutlined, UploadOutlined, LoadingOutlined } from "@ant-design/icons";
-import { uploadStylistAvatar } from "../../../service/api/adminApi";
-import { useAuth } from "../../../auth/authProvider";
+import { uploadStylistAvatar } from "../../../services/api/adminApi";
+import { useAuth } from "../../../auth/AuthProvider";
 
 export default function StylistProfile({ profile, userInfo, formatCurrency, onAvatarUpdated }) {
   const { checkCurrentSession } = useAuth();

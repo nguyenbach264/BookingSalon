@@ -13,10 +13,10 @@ import {
   Scissors,
   Trash2,
 } from 'lucide-react';
-import { useBooking } from '../../service/context/BookingContext';
-import { getServiceOfferings } from '../../service/api/serviceApi';
-import { applyVoucher } from '../../service/api/voucherApi';
-import { DB_BASELINE_SERVICES, normalizeService } from '../../service/baselineServices';
+import { useBooking } from '../../context/BookingContext';
+import { getServiceOfferings } from '../../services/api/serviceApi';
+import { applyVoucher } from '../../services/api/voucherApi';
+import { DB_BASELINE_SERVICES, normalizeService } from '../../services/baselineServices';
 
 export function SelectService() {
   const {

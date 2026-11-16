@@ -33,14 +33,14 @@ import {
   UploadOutlined,
   LoadingOutlined,
 } from '@ant-design/icons';
-import { useAuth } from '../../auth/authProvider';
+import { useAuth } from '../../auth/AuthProvider';
 import {
   getMyProfile,
   updateMyProfile,
   sendVerifyEmailOtp,
   verifyEmailOtp,
   uploadUserAvatar,
-} from '../../service/api/userApi';
+} from '../../services/api/userApi';
 
 const { Option } = Select;
 

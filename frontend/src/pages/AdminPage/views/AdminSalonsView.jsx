@@ -44,10 +44,10 @@ import {
   UserOutlined,
   CameraOutlined,
 } from "@ant-design/icons";
-import MediaUploadModal from "../../components/MediaUploadModal";
+import MediaUploadModal from "../../../components/MediaUploadModal";
 import dayjs from "dayjs";
-import { createSalon, updateSalon, deleteSalon } from "../../../service/api/salonApi";
-import { assignStylistToSalon, removeStylistFromSalon } from "../../../service/api/adminApi";
+import { createSalon, updateSalon, deleteSalon } from "../../../services/api/salonApi";
+import { assignStylistToSalon, removeStylistFromSalon } from "../../../services/api/adminApi";
 
 const { Option } = Select;
 

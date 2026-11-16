@@ -1,10 +1,10 @@
 import { BrowserRouter } from "react-router-dom";
 import { ConfigProvider } from "antd";
-import AppRoutes from "./pages/Routes/AppRoutes";
-import AuthAxiosInjector from "./service/api/AuthAxiosInjector";
-import ScrollToTop from "./pages/components/ScrollToTop";
-import ErrorBoundary from "./pages/components/ErrorBoundary";
-import PageTitleManager from "./pages/components/PageTitleManager";
+import AppRoutes from "./routes/AppRoutes";
+import AuthAxiosInjector from "./services/api/AuthAxiosInjector";
+import ScrollToTop from "./components/ScrollToTop";
+import ErrorBoundary from "./components/ErrorBoundary";
+import PageTitleManager from "./components/PageTitleManager";
 import { THEME_CONFIG } from "./config/theme";
 
 function App() {

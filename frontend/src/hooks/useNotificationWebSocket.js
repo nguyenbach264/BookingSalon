@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import notificationWebSocket from "../service/websocket/notificationWebSocket.js";
+import notificationWebSocket from "../services/websocket/notificationWebSocket.js";
 import { WS_REVIEW_URL } from "../config/api.js";
 
 const useNotificationWebSocket = (productId, onNewReview) => {

@@ -10,7 +10,7 @@ import {
   Receipt,
   Sparkles,
 } from 'lucide-react';
-import { useBooking } from '../../service/context/BookingContext';
+import { useBooking } from '../../context/BookingContext';
 
 export function CheckoutSuccessfully({ onGoBack }) {
   const {

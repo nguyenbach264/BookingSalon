@@ -33,8 +33,8 @@ import {
   LeftOutlined,
   RightOutlined,
 } from "@ant-design/icons";
-import SidebarAccountCard from "../components/SidebarAccountCard";
-import { useAuth } from "../../auth/authProvider";
+import SidebarAccountCard from "../../components/SidebarAccountCard";
+import { useAuth } from "../../auth/AuthProvider";
 import { useNavigate, useParams } from "react-router-dom";
 
 const TAB_TO_KEY = {
@@ -100,11 +100,11 @@ const KEY_TO_TAB = {
   reviews: "review",
   settings: "settings",
 };
-import { getGlobalStatistics, getAllBookings } from "../../service/api/bookingApi";
-import { getUsers, getStylists, updateBookingStatus, getStylistServices } from "../../service/api/adminApi";
-import { getSalons } from "../../service/api/salonApi";
-import { getServiceOfferings } from "../../service/api/serviceApi";
-import { getAdminVouchers, createVoucher, deleteVoucher } from "../../service/api/voucherApi";
+import { getGlobalStatistics, getAllBookings } from "../../services/api/bookingApi";
+import { getUsers, getStylists, updateBookingStatus, getStylistServices } from "../../services/api/adminApi";
+import { getSalons } from "../../services/api/salonApi";
+import { getServiceOfferings } from "../../services/api/serviceApi";
+import { getAdminVouchers, createVoucher, deleteVoucher } from "../../services/api/voucherApi";
 import {
   getAdminProducts,
   createAdminProduct,
@@ -115,9 +115,9 @@ import {
   updateAdminOrderStatus,
   getAdminReviews,
   deleteAdminReview,
-} from "../../service/api/adminApi";
-import { getProductCategories } from "../../service/api/productApi";
-import notificationWs from "../../service/websocket/notificationWebSocket";
+} from "../../services/api/adminApi";
+import { getProductCategories } from "../../services/api/productApi";
+import notificationWs from "../../services/websocket/notificationWebSocket";
 
 import AdminStylistManager from "./AdminStylistManager";
 import AdminServiceManager from "./AdminServiceManager";

@@ -12,13 +12,13 @@ import {
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, updateQuantity, removeItem } from '../../redux/cartSlice';
-import { useAuth } from '../../auth/authProvider';
-import productApi from '../../service/api/productApi';
-import api from '../../service/api/axiosApi';
+import { useAuth } from '../../auth/AuthProvider';
+import productApi from '../../services/api/productApi';
+import api from '../../services/api/axiosApi';
 import ProductCard from './ProductCard';
-import ShopLayoutHeader from '../components/ShopLayoutHeader';
-import Footer from '../components/Footer';
-import CartPage from './CartPage';
+import ShopLayoutHeader from '../../components/ShopLayoutHeader';
+import Footer from '../../components/Footer';
+import CartPage from '../CartPage';
 
 const formatCurrency = (val) => {
   const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^0-9.]/g, ''));

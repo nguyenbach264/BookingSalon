@@ -28,7 +28,7 @@ import {
   DollarOutlined,
   CameraOutlined,
 } from "@ant-design/icons";
-import MediaUploadModal from "../../components/MediaUploadModal";
+import MediaUploadModal from "../../../components/MediaUploadModal";
 
 const { Option } = Select;
 

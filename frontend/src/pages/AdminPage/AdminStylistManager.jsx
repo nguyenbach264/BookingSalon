@@ -37,7 +37,7 @@ import {
   ExclamationCircleOutlined,
   CameraOutlined,
 } from "@ant-design/icons";
-import MediaUploadModal from "../components/MediaUploadModal";
+import MediaUploadModal from "../../components/MediaUploadModal";
 import dayjs from "dayjs";
 import {
   getAdminStylists,
@@ -49,8 +49,8 @@ import {
   getStylistPayroll,
   getEligibleUsersForPromotion,
   getAdminServices,
-} from "../../service/api/adminApi";
-import { getSalons } from "../../service/api/salonApi";
+} from "../../services/api/adminApi";
+import { getSalons } from "../../services/api/salonApi";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;

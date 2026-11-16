@@ -35,7 +35,7 @@ import {
   HistoryOutlined,
   CameraOutlined,
 } from "@ant-design/icons";
-import MediaUploadModal from "../components/MediaUploadModal";
+import MediaUploadModal from "../../components/MediaUploadModal";
 import dayjs from "dayjs";
 import {
   getAdminServices,
@@ -45,9 +45,9 @@ import {
   createServiceSuspension,
   getServiceSuspensions,
   deactivateServiceSuspension,
-} from "../../service/api/adminApi";
-import { getSalons } from "../../service/api/salonApi";
-import { getServiceCategories } from "../../service/api/serviceApi";
+} from "../../services/api/adminApi";
+import { getSalons } from "../../services/api/salonApi";
+import { getServiceCategories } from "../../services/api/serviceApi";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;

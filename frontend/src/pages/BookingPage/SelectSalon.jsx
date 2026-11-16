@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Spin } from 'antd';
 import { Search, MapPin, Clock, Phone, Check, ChevronRight, Sparkles, Building2 } from 'lucide-react';
-import { useBooking } from '../../service/context/BookingContext';
-import { getSalons } from '../../service/api/salonApi';
+import { useBooking } from '../../context/BookingContext';
+import { getSalons } from '../../services/api/salonApi';
 
 const DEFAULT_SALON_IMAGES = [
   'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=600&auto=format&fit=crop&q=80',

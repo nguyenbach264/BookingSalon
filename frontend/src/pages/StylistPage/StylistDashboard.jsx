@@ -30,8 +30,8 @@ import {
   LeftOutlined,
   RightOutlined,
 } from "@ant-design/icons";
-import SidebarAccountCard from "../components/SidebarAccountCard";
-import { useAuth } from "../../auth/authProvider";
+import SidebarAccountCard from "../../components/SidebarAccountCard";
+import { useAuth } from "../../auth/AuthProvider";
 import { useNavigate, useParams } from "react-router-dom";
 
 const STYLIST_TAB_MAP = {
@@ -62,12 +62,12 @@ const STYLIST_KEY_TO_TAB = {
   services: "services",
   profile: "profile",
 };
-import notificationWs from "../../service/websocket/notificationWebSocket";
+import notificationWs from "../../services/websocket/notificationWebSocket";
 import {
   getStylistStatistics,
   getBookingsByStylist,
-} from "../../service/api/bookingApi";
-import { getStylistById, getStylistServices, updateBookingStatus, updateStylistDutyStatus, getMyStylistProfile } from "../../service/api/adminApi";
+} from "../../services/api/bookingApi";
+import { getStylistById, getStylistServices, updateBookingStatus, updateStylistDutyStatus, getMyStylistProfile } from "../../services/api/adminApi";
 
 import StylistOverview from "./views/StylistOverview";
 import StylistHaircutSchedule from "./views/StylistHaircutSchedule";
