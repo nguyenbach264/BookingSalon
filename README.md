@@ -6,15 +6,16 @@
 
 ## 📑 Mục lục
 1. [Tổng quan Kiến trúc Hệ thống](#1-tổng-quan-kiến-trúc-hệ-thống)
-2. [Hướng dẫn Khởi chạy Nhanh (Zero-Config)](#2-hướng-dẫn-khởi-chạy-nhanh-zero-config)
-3. [Danh sách Tài khoản Thử nghiệm](#3-danh-sách-tài-khoản-thử-nghiệm)
-4. [Các Chức năng & Workflow Kỹ thuật Cốt lõi](#4-các-chức-năng--workflow-kỹ-thuật-cốt-lõi)
-   - [Bảo mật BFF & Xác thực Keycloak](#41-bảo-mật-bff--xác-thực-keycloak)
-   - [Đặt lịch & Chống Race Condition (Double-Booking)](#42-đặt-lịch--chống-race-condition-double-booking)
-   - [Điều phối Lịch hẹn Thời gian thực (Real-time WebSocket)](#43-điều-phối-lịch-hẹn-thời-gian-thực-real-time-websocket)
-   - [Thanh toán Trực tuyến & Idempotent Webhook](#44-thanh-toán-trực-tuyến--idempotent-webhook)
-5. [Quy trình CI/CD Pipeline](#5-quy-trình-cicd-pipeline)
-6. [Các lệnh Vận hành & Xử lý sự cố (Troubleshooting)](#6-các-lệnh-vận-hành--xử-lý-sự-cố-troubleshooting)
+2. [Cấu trúc Dự án Chuẩn mực (Project Layout)](#2-cấu-trúc-dự-án-chuẩn-mực-project-layout)
+3. [Hướng dẫn Khởi chạy Nhanh (Zero-Config)](#3-hướng-dẫn-khởi-chạy-nhanh-zero-config)
+4. [Danh sách Tài khoản Thử nghiệm](#4-danh-sách-tài-khoản-thử-nghiệm)
+5. [Các Chức năng & Workflow Kỹ thuật Cốt lõi](#5-các-chức-năng--workflow-kỹ-thuật-cốt-lõi)
+   - [Bảo mật BFF & Xác thực Keycloak](#51-bảo-mật-bff--xác-thực-keycloak)
+   - [Đặt lịch & Chống Race Condition (Double-Booking)](#52-đặt-lịch--chống-race-condition-double-booking)
+   - [Điều phối Lịch hẹn Thời gian thực (Real-time WebSocket)](#53-điều-phối-lịch-hẹn-thời-gian-thực-real-time-websocket)
+   - [Thanh toán Trực tuyến & Idempotent Webhook](#54-thanh-toán-trực-tuyến--idempotent-webhook)
+6. [Quy trình CI/CD Pipeline](#6-quy-trình-cicd-pipeline)
+7. [Các lệnh Vận hành & Xử lý sự cố (Troubleshooting)](#7-các-lệnh-vận-hành--xử-lý-sự-cố-troubleshooting)
 
 ---
 
@@ -61,7 +62,71 @@ flowchart TB
 
 ---
 
-## 2. Hướng dẫn Khởi chạy Nhanh (Zero-Config)
+## 2. Cấu trúc Dự án Chuẩn mực (Project Layout)
+
+Dự án được tái cấu trúc theo các tiêu chuẩn công nghiệp (**Oracle & Google Java Style Guide**, **React Production Best Practices**):
+
+```text
+BookingSalon/
+├── backend/                                # Spring Boot 3.5.3 (Java 21)
+│   ├── src/main/java/demo/bookingsalon/
+│   │   ├── config/                         # Các cấu hình hệ thống (Redis, Keycloak, Async, ShedLock...)
+│   │   ├── controller/                     # REST API Controllers (Admin, Booking, Order, Stylist...)
+│   │   │   └── keycloak/                   # Keycloak Admin Client Controllers
+│   │   ├── dto/                            # Data Transfer Objects & Payloads
+│   │   │   ├── admin/                      # DTO dành riêng cho Admin
+│   │   │   ├── request/                    # Request Body (Business & Keycloak)
+│   │   │   └── response/                   # API Response Wrapper (Business, Keycloak, Common Page)
+│   │   ├── entity/                         # JPA Entities (28 bảng quan hệ)
+│   │   ├── enums/                          # Hệ thống Enums chuẩn mực (tránh reserved keyword)
+│   │   ├── event/                          # Domain Events nội bộ (Spring ApplicationEvent)
+│   │   ├── exception/                      # Global Exception Handling & Custom Exceptions
+│   │   ├── factory/                        # Factory Pattern khởi tạo Strategy
+│   │   ├── handler/                        # WebSocket Session & STOMP Handler
+│   │   ├── listener/                       # Async Event Listeners (Email, Payment)
+│   │   ├── mapper/                         # MapStruct Mappers ánh xạ Entity <-> DTO
+│   │   ├── publisher/                      # Event Publishers
+│   │   ├── repository/                     # Spring Data JPA Repositories
+│   │   ├── scheduler/                      # Cron Jobs & Scheduled Tasks (ShedLock)
+│   │   ├── security/                       # Security Filters & Distributed Rate Limiting (Token Bucket)
+│   │   ├── service/                        # Business Services & Keycloak Integration
+│   │   │   └── idempotency/                # Redis Idempotent Execution Service
+│   │   ├── storage/                        # Cloudinary Media Storage Strategy
+│   │   ├── strategy/                       # Strategy Pattern thanh toán (VNPay, Sepay, COD, Bank)
+│   │   ├── util/                           # Helper Utilities thuần túy (Signature, QR, Slug...)
+│   │   └── validation/                     # Custom Validators
+│   └── src/test/java/demo/bookingsalon/    # 95 Test Cases (Unit & Integration Tests)
+│
+├── frontend/                               # React 19 + Vite 8 SPA
+│   ├── src/
+│   │   ├── auth/                           # Keycloak OIDC Client & AuthProvider Context
+│   │   ├── components/                     # Reusable Components phân tầng chuyên nghiệp
+│   │   │   ├── layout/                     # Header, Footer, Navbar, Skeletons...
+│   │   │   ├── common/                     # ErrorBoundary, ScrollToTop, PageTitle...
+│   │   │   └── modals/                     # MediaUpload, Notification, Auth Modals...
+│   │   ├── context/                        # Global State Contexts (Booking, Notification)
+│   │   ├── hooks/                          # Custom Hooks (WebSocket STOMP, Review, Roles)
+│   │   ├── pages/                          # Các trang nghiệp vụ (Gom nhóm theo Domain)
+│   │   │   ├── Auth/                       # Login, Register, OTP Verification, OAuth2 Callback
+│   │   │   ├── BookingPage/                # Luồng đặt lịch hẹn 5 bước
+│   │   │   ├── CartPage/                   # Quản lý giỏ hàng độc lập
+│   │   │   ├── ShopPage/                   # Cửa hàng sản phẩm chăm sóc tóc
+│   │   │   ├── StylistPage/                # Dashboard điều phối lịch hẹn thợ
+│   │   │   └── AdminPage/                  # Dashboard quản trị doanh thu & salon
+│   │   ├── redux/                          # Redux Toolkit State Management
+│   │   ├── routes/                         # Định tuyến AppRoutes & ProtectedRoute theo Role
+│   │   └── services/                       # API Clients & WebSocket Services
+│
+├── keycloak-import/                        # File export cấu hình Realm & 18 tài khoản test
+├── docker-compose.yml                      # Cấu hình cụm Docker 5 containers (Local Dev)
+├── docker-compose.prod.yml                 # Cấu hình cụm Docker Production (VPS Azure)
+├── initData.sql                            # Tự động nạp toàn bộ cấu trúc & dữ liệu 28 bảng
+└── README.md                               # Hướng dẫn chi tiết dự án
+```
+
+---
+
+## 3. Hướng dẫn Khởi chạy Nhanh (Zero-Config)
 
 Dự án đã được đóng gói theo triết lý **Zero-Config**: Toàn bộ dữ liệu nghiệp vụ, cấu hình Realm Keycloak, tài khoản test và secret nội bộ đã được cấu hình sẵn fallback an toàn. Người mới clone dự án về **không cần tạo file `.env`** và **không cần cài đặt môi trường Java hay Node.js**.
 
@@ -95,7 +160,7 @@ docker compose up -d --build
 
 ---
 
-## 3. Danh sách Tài khoản Thử nghiệm
+## 4. Danh sách Tài khoản Thử nghiệm
 
 Hệ thống đã nạp sẵn danh sách người dùng mẫu tương ứng với các quyền hạn khác nhau để bạn có thể đăng nhập trải nghiệm ngay lập tức:
 
@@ -117,9 +182,9 @@ Hệ thống đã nạp sẵn danh sách người dùng mẫu tương ứng vớ
 
 ---
 
-## 4. Các Chức năng & Workflow Kỹ thuật Cốt lõi
+## 5. Các Chức năng & Workflow Kỹ thuật Cốt lõi
 
-### 4.1. Bảo mật BFF & Xác thực Keycloak
+### 5.1. Bảo mật BFF & Xác thực Keycloak
 Dự án áp dụng mô hình **Backend-For-Frontend (BFF)** hiện đại nhằm loại bỏ nguy cơ rò rỉ JWT Token trên LocalStorage của trình duyệt:
 
 ```mermaid
@@ -147,7 +212,7 @@ sequenceDiagram
 
 ---
 
-### 4.2. Đặt lịch & Chống Race Condition (Double-Booking)
+### 5.2. Đặt lịch & Chống Race Condition (Double-Booking)
 Vấn đề nan giải nhất của hệ thống Salon là **nhiều khách hàng cùng bấm đặt 1 Stylist vào cùng 1 khung giờ tại cùng 1 giây**. Hệ thống giải quyết triệt để bằng cơ chế 3 lớp bảo vệ:
 
 ```mermaid
@@ -167,7 +232,7 @@ flowchart TD
 
 ---
 
-### 4.3. Điều phối Lịch hẹn Thời gian thực (Real-time WebSocket)
+### 5.3. Điều phối Lịch hẹn Thời gian thực (Real-time WebSocket)
 * **Giao thức:** Native WebSocket kết hợp STOMP Sub-protocol và SockJS fallback.
 * **Độ trễ:** Dưới **50ms** từ khi khách hàng hoàn tất đặt lịch đến khi màn hình của Stylist hiển thị thẻ lịch hẹn mới.
 * **Cơ chế chịu lỗi:** 
@@ -177,7 +242,7 @@ flowchart TD
 
 ---
 
-### 4.4. Thanh toán Trực tuyến & Idempotent Webhook
+### 5.4. Thanh toán Trực tuyến & Idempotent Webhook
 * **VNPay Simulator Mode:** Tích hợp cổng thanh toán VNPay Sandbox với chế độ giả lập cục bộ (Local Simulator) giúp lập trình viên kiểm thử trọn vẹn luồng thanh toán mà không cần cấu hình IP tĩnh hay ngrok.
 * **Sepay VietQR Automation:** Hỗ trợ quét mã QR ngân hàng tự động nhận diện giao dịch.
 * **Chống thanh toán trùng lặp (Idempotent Webhook):**
@@ -185,27 +250,27 @@ flowchart TD
 
 ---
 
-## 5. Quy trình CI/CD Pipeline
+## 6. Quy trình CI/CD Pipeline
 
 Mã nguồn được tích hợp quy trình kiểm thử và triển khai tự động qua **GitHub Actions** (`.github/workflows/ci.yml`):
 
 ```mermaid
 flowchart LR
-    Push["Git Push (master / demo-app)"] --> TestStage["1. Automated Testing\n- 53 Unit Tests\n- Maven Clean Verify\n- Frontend Lint & Build"]
+    Push["Git Push (master / demo-app)"] --> TestStage["1. Automated Testing\n- 95 Unit & Integration Tests\n- Maven Clean Verify\n- Frontend Lint & Build"]
     TestStage --> DockerStage["2. Build & Push Image\n- Multi-arch Docker Build\n- Push to Docker Hub"]
     DockerStage --> DeployStage["3. Continuous Deployment\n- SSH to Azure VPS\n- Zero-Downtime Rolling Update\n- Healthcheck Verification (200 OK)"]
 ```
 
 * **Kiểm soát chất lượng (Automated Testing):**
-  * Chạy toàn bộ **53/53 test cases** kiểm thử toàn diện các service: Order, Booking Lifecycle, Payment Webhook, Email OTP, Voucher Engine, Review...
-  * Kiểm tra chất lượng mã nguồn Frontend bằng `oxlint` (0 lỗi).
+  * Chạy toàn bộ **95 test cases** (Unit & Integration tests) kiểm thử toàn diện các service, controller, security, payment strategy: Order, Booking Lifecycle, Payment Webhook, Email OTP, Voucher Engine, Review, Rate Limiting...
+  * Kiểm tra chất lượng mã nguồn Frontend bằng `oxlint` (0 lỗi) và build hoàn tất không lỗi.
 * **Bảo vệ Secret giữa các môi trường:**
   * Môi trường **Local**: Tự động sử dụng secret dev công khai an toàn, không lo rò rỉ.
   * Môi trường **Production (VPS)**: Toàn bộ secret (SSH key, DB password, Keycloak Client Secret thật) được lưu trữ mã hóa trong **GitHub Repository Secrets**, tách biệt hoàn toàn với mã nguồn.
 
 ---
 
-## 6. Các lệnh Vận hành & Xử lý sự cố (Troubleshooting)
+## 7. Các lệnh Vận hành & Xử lý sự cố (Troubleshooting)
 
 ### Kiểm tra trạng thái các container đang chạy
 ```bash
