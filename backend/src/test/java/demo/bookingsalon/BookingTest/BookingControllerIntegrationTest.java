@@ -1,13 +1,13 @@
 package demo.bookingsalon.BookingTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.bookingsalon.Controller.BookingController;
-import demo.bookingsalon.Enum.BookingStatus;
-import demo.bookingsalon.Payload.Request.Business.CreateBookingRequest;
-import demo.bookingsalon.Payload.Response.Business.BookingResponse;
-import demo.bookingsalon.Service.BffSessionService;
-import demo.bookingsalon.Service.BookingService;
-import demo.bookingsalon.Utility.SecurityUtils;
+import demo.bookingsalon.controller.BookingController;
+import demo.bookingsalon.enums.BookingStatus;
+import demo.bookingsalon.dto.request.business.CreateBookingRequest;
+import demo.bookingsalon.dto.response.business.BookingResponse;
+import demo.bookingsalon.service.BffSessionService;
+import demo.bookingsalon.service.BookingService;
+import demo.bookingsalon.util.SecurityUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

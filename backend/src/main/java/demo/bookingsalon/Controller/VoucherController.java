@@ -1,10 +1,10 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Payload.DTO.VoucherDTO;
-import demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest;
-import demo.bookingsalon.Payload.Request.Business.CreateVoucherRequest;
-import demo.bookingsalon.Payload.Response.Business.ApplyVoucherResponse;
-import demo.bookingsalon.Service.VoucherService;
+import demo.bookingsalon.dto.VoucherDTO;
+import demo.bookingsalon.dto.request.business.ApplyVoucherRequest;
+import demo.bookingsalon.dto.request.business.CreateVoucherRequest;
+import demo.bookingsalon.dto.response.business.ApplyVoucherResponse;
+import demo.bookingsalon.service.VoucherService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -43,9 +43,9 @@ public class VoucherController {
         return ResponseEntity.ok(voucherService.getAvailableVouchers(userId));
     }
 
-    @demo.bookingsalon.Security.RateLimit.RateLimit(
+    @demo.bookingsalon.security.ratelimit.RateLimit(
         keyPrefix = "voucher",
-        type = demo.bookingsalon.Security.RateLimit.RateLimitType.IP_OR_USER,
+        type = demo.bookingsalon.security.ratelimit.RateLimitType.IP_OR_USER,
         capacity = 10,
         durationSeconds = 60,
         message = "Bạn đã thử kiểm tra voucher quá nhiều lần. Vui lòng chờ 1 phút trước khi thử lại!"

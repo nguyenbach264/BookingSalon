@@ -1,7 +1,7 @@
-package demo.bookingsalon.Repository;
+package demo.bookingsalon.repository;
 
-import demo.bookingsalon.Entity.Order;
-import demo.bookingsalon.Enum.OrderStatus;
+import demo.bookingsalon.entity.Order;
+import demo.bookingsalon.enums.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

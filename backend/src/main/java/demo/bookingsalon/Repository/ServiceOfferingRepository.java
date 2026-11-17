@@ -1,6 +1,6 @@
-package demo.bookingsalon.Repository;
+package demo.bookingsalon.repository;
 
-import demo.bookingsalon.Entity.ServiceOffering;
+import demo.bookingsalon.entity.ServiceOffering;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

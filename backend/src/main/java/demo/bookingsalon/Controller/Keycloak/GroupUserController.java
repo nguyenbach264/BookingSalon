@@ -1,10 +1,10 @@
-package demo.bookingsalon.Controller.Keycloak;
+package demo.bookingsalon.controller.keycloak;
 
-import demo.bookingsalon.Payload.Request.Keycloak.CreateGroupRequest;
-import demo.bookingsalon.Payload.Request.Keycloak.UpdateGroupRequest;
-import demo.bookingsalon.Payload.Response.Keycloak.GroupUserResponse;
-import demo.bookingsalon.Payload.Response.Business.UserResponse;
-import demo.bookingsalon.Service.Keycloak.GroupUserService;
+import demo.bookingsalon.dto.request.keycloak.CreateGroupRequest;
+import demo.bookingsalon.dto.request.keycloak.UpdateGroupRequest;
+import demo.bookingsalon.dto.response.keycloak.GroupUserResponse;
+import demo.bookingsalon.dto.response.business.UserResponse;
+import demo.bookingsalon.service.keycloak.GroupUserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,6 +1,6 @@
-package demo.bookingsalon.Service.Keycloak;
+package demo.bookingsalon.service.keycloak;
 
-import demo.bookingsalon.Payload.Request.Keycloak.CreateRoleRequest;
+import demo.bookingsalon.dto.request.keycloak.CreateRoleRequest;
 import jakarta.ws.rs.WebApplicationException;
 import lombok.RequiredArgsConstructor;
 import org.keycloak.admin.client.Keycloak;

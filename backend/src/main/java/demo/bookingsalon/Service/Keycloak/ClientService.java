@@ -1,10 +1,10 @@
-package demo.bookingsalon.Service.Keycloak;
+package demo.bookingsalon.service.keycloak;
 
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Mapper.ClientMapper;
-import demo.bookingsalon.Payload.Request.Keycloak.CreateClientRequest;
-import demo.bookingsalon.Payload.Request.Keycloak.UpdateClientRequest;
-import demo.bookingsalon.Payload.Response.Keycloak.ClientResponse;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.mapper.ClientMapper;
+import demo.bookingsalon.dto.request.keycloak.CreateClientRequest;
+import demo.bookingsalon.dto.request.keycloak.UpdateClientRequest;
+import demo.bookingsalon.dto.response.keycloak.ClientResponse;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;

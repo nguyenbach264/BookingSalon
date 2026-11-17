@@ -1,7 +1,7 @@
-package demo.bookingsalon.Service.Keycloak;
+package demo.bookingsalon.service.keycloak;
 
-import demo.bookingsalon.Payload.Response.Keycloak.SessionResponse;
-import demo.bookingsalon.Payload.Response.Keycloak.SessionSummaryResponse;
+import demo.bookingsalon.dto.response.keycloak.SessionResponse;
+import demo.bookingsalon.dto.response.keycloak.SessionSummaryResponse;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;

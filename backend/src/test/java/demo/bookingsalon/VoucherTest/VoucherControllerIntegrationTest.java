@@ -1,12 +1,12 @@
 package demo.bookingsalon.VoucherTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.bookingsalon.Controller.VoucherController;
-import demo.bookingsalon.Payload.DTO.VoucherDTO;
-import demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest;
-import demo.bookingsalon.Payload.Response.Business.ApplyVoucherResponse;
-import demo.bookingsalon.Service.BffSessionService;
-import demo.bookingsalon.Service.VoucherService;
+import demo.bookingsalon.controller.VoucherController;
+import demo.bookingsalon.dto.VoucherDTO;
+import demo.bookingsalon.dto.request.business.ApplyVoucherRequest;
+import demo.bookingsalon.dto.response.business.ApplyVoucherResponse;
+import demo.bookingsalon.service.BffSessionService;
+import demo.bookingsalon.service.VoucherService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

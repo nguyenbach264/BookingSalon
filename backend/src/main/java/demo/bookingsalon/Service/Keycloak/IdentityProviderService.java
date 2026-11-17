@@ -1,4 +1,4 @@
-package demo.bookingsalon.Service.Keycloak;
+package demo.bookingsalon.service.keycloak;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,11 +16,11 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import demo.bookingsalon.Payload.Request.Keycloak.CreateIdentityProviderMapperRequest;
-import demo.bookingsalon.Payload.Request.Keycloak.CreateIdentityProviderRequest;
-import demo.bookingsalon.Payload.Request.Keycloak.UpdateIdentityProviderRequest;
-import demo.bookingsalon.Payload.Response.Keycloak.IdentityProviderMapperResponse;
-import demo.bookingsalon.Payload.Response.Keycloak.IdentityProviderResponse;
+import demo.bookingsalon.dto.request.keycloak.CreateIdentityProviderMapperRequest;
+import demo.bookingsalon.dto.request.keycloak.CreateIdentityProviderRequest;
+import demo.bookingsalon.dto.request.keycloak.UpdateIdentityProviderRequest;
+import demo.bookingsalon.dto.response.keycloak.IdentityProviderMapperResponse;
+import demo.bookingsalon.dto.response.keycloak.IdentityProviderResponse;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 

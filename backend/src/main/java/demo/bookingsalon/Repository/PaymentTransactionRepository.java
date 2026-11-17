@@ -1,6 +1,6 @@
-package demo.bookingsalon.Repository;
+package demo.bookingsalon.repository;
 
-import demo.bookingsalon.Entity.PaymentTransaction;
+import demo.bookingsalon.entity.PaymentTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

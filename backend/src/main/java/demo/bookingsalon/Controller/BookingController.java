@@ -1,11 +1,11 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Enum.BookingStatus;
-import demo.bookingsalon.Payload.Request.Business.CreateBookingRequest;
-import demo.bookingsalon.Payload.Response.Business.BookingResponse;
-import demo.bookingsalon.Payload.Response.Business.BookingStatisticsResponse;
-import demo.bookingsalon.Payload.Response.Common.PageResponse;
-import demo.bookingsalon.Service.BookingService;
+import demo.bookingsalon.enums.BookingStatus;
+import demo.bookingsalon.dto.request.business.CreateBookingRequest;
+import demo.bookingsalon.dto.response.business.BookingResponse;
+import demo.bookingsalon.dto.response.business.BookingStatisticsResponse;
+import demo.bookingsalon.dto.response.common.PageResponse;
+import demo.bookingsalon.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,15 +15,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-import demo.bookingsalon.Security.RateLimit.RateLimit;
-import demo.bookingsalon.Security.RateLimit.RateLimitType;
+import demo.bookingsalon.security.ratelimit.RateLimit;
+import demo.bookingsalon.security.ratelimit.RateLimitType;
 
 @RestController
 @RequestMapping({"/api/booking", "/api/bookings"})
 @RequiredArgsConstructor
 public class BookingController {
     private final BookingService bookingService;
-    private final demo.bookingsalon.Utility.SecurityUtils securityUtils;
+    private final demo.bookingsalon.util.SecurityUtils securityUtils;
 
     @GetMapping()
     public ResponseEntity<?> getBookings(

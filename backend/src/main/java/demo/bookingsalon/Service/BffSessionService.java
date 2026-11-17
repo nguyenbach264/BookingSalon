@@ -1,4 +1,4 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
 import java.time.Instant;
 import java.util.ArrayList;

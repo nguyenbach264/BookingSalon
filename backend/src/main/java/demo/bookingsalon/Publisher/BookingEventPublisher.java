@@ -1,10 +1,10 @@
-package demo.bookingsalon.Publisher;
+package demo.bookingsalon.publisher;
 
-import demo.bookingsalon.Entity.Booking;
-import demo.bookingsalon.Entity.Salon;
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Event.BookingCancelledEvent;
-import demo.bookingsalon.Event.BookingCreatedEvent;
+import demo.bookingsalon.entity.Booking;
+import demo.bookingsalon.entity.Salon;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.event.BookingCancelledEvent;
+import demo.bookingsalon.event.BookingCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;

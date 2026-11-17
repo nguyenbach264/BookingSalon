@@ -1,4 +1,4 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;

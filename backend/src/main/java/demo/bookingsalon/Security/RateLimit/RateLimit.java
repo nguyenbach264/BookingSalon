@@ -1,4 +1,4 @@
-package demo.bookingsalon.Security.RateLimit;
+package demo.bookingsalon.security.ratelimit;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

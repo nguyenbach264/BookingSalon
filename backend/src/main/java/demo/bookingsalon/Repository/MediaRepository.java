@@ -1,8 +1,8 @@
-package demo.bookingsalon.Repository;
+package demo.bookingsalon.repository;
 
-import demo.bookingsalon.Entity.Media;
-import demo.bookingsalon.Enum.MediaOwnerType;
-import demo.bookingsalon.Enum.MediaStatus;
+import demo.bookingsalon.entity.Media;
+import demo.bookingsalon.enums.MediaOwnerType;
+import demo.bookingsalon.enums.MediaStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

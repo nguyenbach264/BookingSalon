@@ -1,7 +1,7 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Payload.DTO.ReviewDTO;
-import demo.bookingsalon.Service.ReviewService;
+import demo.bookingsalon.dto.ReviewDTO;
+import demo.bookingsalon.service.ReviewService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping({"/api/reviews", "/api/admin/reviews"})
 public class ReviewController {
     private final ReviewService reviewService;
-    private final demo.bookingsalon.Utility.SecurityUtils securityUtils;
+    private final demo.bookingsalon.util.SecurityUtils securityUtils;
 
     @GetMapping
     public ResponseEntity<?> getAllReviews() {
@@ -30,9 +30,9 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByProductId(productId));
     }
 
-    @demo.bookingsalon.Security.RateLimit.RateLimit(
+    @demo.bookingsalon.security.ratelimit.RateLimit(
         keyPrefix = "review",
-        type = demo.bookingsalon.Security.RateLimit.RateLimitType.USER,
+        type = demo.bookingsalon.security.ratelimit.RateLimitType.USER,
         capacity = 3,
         durationSeconds = 60,
         message = "Bạn đang gửi đánh giá quá nhanh. Vui lòng chờ 1 phút!"

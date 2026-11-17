@@ -1,4 +1,4 @@
-package demo.bookingsalon.Event;
+package demo.bookingsalon.event;
 
 public class UserCreatedEvent {
 }

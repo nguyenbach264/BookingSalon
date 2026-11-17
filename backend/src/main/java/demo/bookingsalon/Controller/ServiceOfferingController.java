@@ -1,8 +1,8 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Entity.ServiceOffering;
-import demo.bookingsalon.Payload.DTO.ServiceOfferingDTO;
-import demo.bookingsalon.Service.ServiceOfferingService;
+import demo.bookingsalon.entity.ServiceOffering;
+import demo.bookingsalon.dto.ServiceOfferingDTO;
+import demo.bookingsalon.service.ServiceOfferingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

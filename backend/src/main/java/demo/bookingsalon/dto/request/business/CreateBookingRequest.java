@@ -1,0 +1,44 @@
+package demo.bookingsalon.dto.request.business;
+
+import demo.bookingsalon.enums.BookingStatus;
+import demo.bookingsalon.enums.PaymentMethod;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class CreateBookingRequest {
+
+    private UUID salonId;
+
+    private UUID userId;
+
+    private UUID stylistId;
+
+    private LocalDateTime startTime;
+
+    private List<UUID> serviceIds;
+
+    private BookingStatus status;
+
+    private String customerName;
+
+    private String customerPhone;
+
+    private String customerEmail;
+
+    private String customerNotes;
+
+    private String paymentMethod;
+
+    private String voucherCode;
+}

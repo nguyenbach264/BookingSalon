@@ -1,10 +1,10 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Payload.Admin.AdminServiceRequest;
-import demo.bookingsalon.Payload.Admin.CreateServiceSuspensionRequest;
-import demo.bookingsalon.Payload.Admin.ServiceSuspensionResponse;
-import demo.bookingsalon.Payload.DTO.ServiceOfferingDTO;
-import demo.bookingsalon.Service.AdminServiceOfferingService;
+import demo.bookingsalon.dto.admin.AdminServiceRequest;
+import demo.bookingsalon.dto.admin.CreateServiceSuspensionRequest;
+import demo.bookingsalon.dto.admin.ServiceSuspensionResponse;
+import demo.bookingsalon.dto.ServiceOfferingDTO;
+import demo.bookingsalon.service.AdminServiceOfferingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

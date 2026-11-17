@@ -1,6 +1,6 @@
-package demo.bookingsalon.Repository;
+package demo.bookingsalon.repository;
 
-import demo.bookingsalon.Entity.BankTransferInfo;
+import demo.bookingsalon.entity.BankTransferInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

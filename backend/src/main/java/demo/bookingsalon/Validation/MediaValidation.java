@@ -1,6 +1,6 @@
-package demo.bookingsalon.Validation;
+package demo.bookingsalon.validation;
 
-import demo.bookingsalon.Exception.MediaValidationException;
+import demo.bookingsalon.exception.MediaValidationException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 

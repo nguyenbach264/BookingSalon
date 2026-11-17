@@ -1,8 +1,8 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
-import demo.bookingsalon.Enum.MediaOwnerType;
-import demo.bookingsalon.Repository.SalonRepository;
-import demo.bookingsalon.Utility.SlugGenerator;
+import demo.bookingsalon.enums.MediaOwnerType;
+import demo.bookingsalon.repository.SalonRepository;
+import demo.bookingsalon.util.SlugGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

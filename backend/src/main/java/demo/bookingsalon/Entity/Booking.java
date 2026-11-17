@@ -1,6 +1,6 @@
-package demo.bookingsalon.Entity;
+package demo.bookingsalon.entity;
 
-import demo.bookingsalon.Enum.BookingStatus;
+import demo.bookingsalon.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

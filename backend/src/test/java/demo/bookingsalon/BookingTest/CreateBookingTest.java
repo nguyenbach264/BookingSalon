@@ -1,20 +1,20 @@
 package demo.bookingsalon.BookingTest;
 
-import demo.bookingsalon.Entity.*;
-import demo.bookingsalon.Enum.BookingStatus;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Mapper.BookingMapper;
-import demo.bookingsalon.Mapper.SalonMapper;
-import demo.bookingsalon.Payload.DTO.SalonDTO;
-import demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest;
-import demo.bookingsalon.Payload.Request.Business.CreateBookingRequest;
-import demo.bookingsalon.Payload.Response.Business.ApplyVoucherResponse;
-import demo.bookingsalon.Payload.Response.Business.BookingResponse;
-import demo.bookingsalon.Publisher.BookingEventPublisher;
-import demo.bookingsalon.Repository.*;
-import demo.bookingsalon.Service.BookingService;
-import demo.bookingsalon.Service.NotificationService;
-import demo.bookingsalon.Service.VoucherService;
+import demo.bookingsalon.entity.*;
+import demo.bookingsalon.enums.BookingStatus;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.mapper.BookingMapper;
+import demo.bookingsalon.mapper.SalonMapper;
+import demo.bookingsalon.dto.SalonDTO;
+import demo.bookingsalon.dto.request.business.ApplyVoucherRequest;
+import demo.bookingsalon.dto.request.business.CreateBookingRequest;
+import demo.bookingsalon.dto.response.business.ApplyVoucherResponse;
+import demo.bookingsalon.dto.response.business.BookingResponse;
+import demo.bookingsalon.publisher.BookingEventPublisher;
+import demo.bookingsalon.repository.*;
+import demo.bookingsalon.service.BookingService;
+import demo.bookingsalon.service.NotificationService;
+import demo.bookingsalon.service.VoucherService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -78,7 +78,7 @@ public class CreateBookingTest {
     private NotificationService notificationService;
 
     @Mock
-    private demo.bookingsalon.Handler.NotificationWebSocketHandler notificationWebSocketHandler;
+    private demo.bookingsalon.handler.NotificationWebSocketHandler notificationWebSocketHandler;
 
     @InjectMocks
     private BookingService bookingService;

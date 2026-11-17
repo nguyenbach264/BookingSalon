@@ -1,4 +1,4 @@
-package demo.bookingsalon.Exception;
+package demo.bookingsalon.exception;
 
 public class QrGenerateException extends RuntimeException {
     public QrGenerateException(String message) {

@@ -1,7 +1,7 @@
-package demo.bookingsalon.Storage;
+package demo.bookingsalon.storage;
 
 
-import demo.bookingsalon.Enum.MediaOwnerType;
+import demo.bookingsalon.enums.MediaOwnerType;
 
 import java.util.UUID;
 

@@ -1,8 +1,8 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Payload.DTO.ProductCategoryDTO;
-import demo.bookingsalon.Payload.DTO.ProductDTO;
-import demo.bookingsalon.Service.ProductService;
+import demo.bookingsalon.dto.ProductCategoryDTO;
+import demo.bookingsalon.dto.ProductDTO;
+import demo.bookingsalon.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

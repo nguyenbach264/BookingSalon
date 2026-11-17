@@ -1,13 +1,13 @@
 package demo.bookingsalon.ProductTest;
 
-import demo.bookingsalon.Entity.Product;
-import demo.bookingsalon.Entity.ProductCategory;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Payload.DTO.ProductCategoryDTO;
-import demo.bookingsalon.Payload.DTO.ProductDTO;
-import demo.bookingsalon.Repository.ProductCategoryRepository;
-import demo.bookingsalon.Repository.ProductRepository;
-import demo.bookingsalon.Service.ProductService;
+import demo.bookingsalon.entity.Product;
+import demo.bookingsalon.entity.ProductCategory;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.dto.ProductCategoryDTO;
+import demo.bookingsalon.dto.ProductDTO;
+import demo.bookingsalon.repository.ProductCategoryRepository;
+import demo.bookingsalon.repository.ProductRepository;
+import demo.bookingsalon.service.ProductService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

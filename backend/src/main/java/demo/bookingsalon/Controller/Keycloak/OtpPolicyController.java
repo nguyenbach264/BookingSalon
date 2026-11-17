@@ -1,10 +1,10 @@
-package demo.bookingsalon.Controller.Keycloak;
+package demo.bookingsalon.controller.keycloak;
 
-import demo.bookingsalon.Payload.Request.Keycloak.OtpPolicyRequest;
-import demo.bookingsalon.Payload.Request.Keycloak.UpdateExecutionRequirementRequest;
-import demo.bookingsalon.Payload.Response.Keycloak.CredentialResponse;
-import demo.bookingsalon.Payload.Response.Keycloak.OtpStatusResponse;
-import demo.bookingsalon.Service.Keycloak.OtpPolicyService;
+import demo.bookingsalon.dto.request.keycloak.OtpPolicyRequest;
+import demo.bookingsalon.dto.request.keycloak.UpdateExecutionRequirementRequest;
+import demo.bookingsalon.dto.response.keycloak.CredentialResponse;
+import demo.bookingsalon.dto.response.keycloak.OtpStatusResponse;
+import demo.bookingsalon.service.keycloak.OtpPolicyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

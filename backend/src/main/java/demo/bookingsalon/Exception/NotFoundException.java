@@ -1,4 +1,4 @@
-package demo.bookingsalon.Exception;
+package demo.bookingsalon.exception;
 
 public class NotFoundException extends RuntimeException {
     public NotFoundException(String message) {

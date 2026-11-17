@@ -1,10 +1,10 @@
-package demo.bookingsalon.Service.Keycloak;
+package demo.bookingsalon.service.keycloak;
 
-import demo.bookingsalon.Mapper.UserMapper;
-import demo.bookingsalon.Payload.Request.Keycloak.CreateGroupRequest;
-import demo.bookingsalon.Payload.Request.Keycloak.UpdateGroupRequest;
-import demo.bookingsalon.Payload.Response.Keycloak.GroupUserResponse;
-import demo.bookingsalon.Payload.Response.Business.UserResponse;
+import demo.bookingsalon.mapper.UserMapper;
+import demo.bookingsalon.dto.request.keycloak.CreateGroupRequest;
+import demo.bookingsalon.dto.request.keycloak.UpdateGroupRequest;
+import demo.bookingsalon.dto.response.keycloak.GroupUserResponse;
+import demo.bookingsalon.dto.response.business.UserResponse;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;

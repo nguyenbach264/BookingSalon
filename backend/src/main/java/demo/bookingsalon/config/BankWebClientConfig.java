@@ -1,0 +1,25 @@
+package demo.bookingsalon.config;
+
+import lombok.Getter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+
+@Getter
+@Component
+public class BankWebClientConfig {
+    @Bean
+    public WebClient.Builder webClientBuilder() {
+        return WebClient.builder();
+    }
+
+    @Bean
+    public WebClient bankWebClient(SepayConfig sepayConfig) {
+        return WebClient.builder()
+                .baseUrl(sepayConfig.getApiBaseUrl())
+                .defaultHeader("Authorization", "Bearer " + sepayConfig.getBasicAuthHeader())
+                .codecs(configurer ->
+                        configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
+                .build();
+    }
+}

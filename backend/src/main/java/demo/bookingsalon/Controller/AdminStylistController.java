@@ -1,9 +1,9 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Payload.Admin.*;
-import demo.bookingsalon.Payload.DTO.ServiceOfferingDTO;
-import demo.bookingsalon.Service.AdminStylistService;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.dto.admin.*;
+import demo.bookingsalon.dto.ServiceOfferingDTO;
+import demo.bookingsalon.service.AdminStylistService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

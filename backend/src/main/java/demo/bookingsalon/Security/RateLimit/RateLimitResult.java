@@ -1,4 +1,4 @@
-package demo.bookingsalon.Security.RateLimit;
+package demo.bookingsalon.security.ratelimit;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

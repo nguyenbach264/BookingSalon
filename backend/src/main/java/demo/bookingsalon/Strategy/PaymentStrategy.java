@@ -1,10 +1,10 @@
-package demo.bookingsalon.Strategy;
+package demo.bookingsalon.strategy;
 
-import demo.bookingsalon.Entity.Payment;
-import demo.bookingsalon.Entity.PaymentTransaction;
-import demo.bookingsalon.Enum.PaymentMethod;
-import demo.bookingsalon.Payload.Request.Business.CreatePaymentRequest;
-import demo.bookingsalon.Payload.Response.Business.PaymentResponse;
+import demo.bookingsalon.entity.Payment;
+import demo.bookingsalon.entity.PaymentTransaction;
+import demo.bookingsalon.enums.PaymentMethod;
+import demo.bookingsalon.dto.request.business.CreatePaymentRequest;
+import demo.bookingsalon.dto.response.business.PaymentResponse;
 
 import java.math.BigDecimal;
 import java.util.Map;

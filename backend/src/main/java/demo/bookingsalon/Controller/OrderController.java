@@ -1,11 +1,11 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Exception.PaymentException;
-import demo.bookingsalon.Payload.Request.Business.CreateOrderRequest;
-import demo.bookingsalon.Payload.Response.Business.OrderResponse;
-import demo.bookingsalon.Repository.UserRepository;
-import demo.bookingsalon.Service.OrderService;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.exception.PaymentException;
+import demo.bookingsalon.dto.request.business.CreateOrderRequest;
+import demo.bookingsalon.dto.response.business.OrderResponse;
+import demo.bookingsalon.repository.UserRepository;
+import demo.bookingsalon.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-import demo.bookingsalon.Security.RateLimit.RateLimit;
-import demo.bookingsalon.Security.RateLimit.RateLimitType;
+import demo.bookingsalon.security.ratelimit.RateLimit;
+import demo.bookingsalon.security.ratelimit.RateLimitType;
 
 @RestController
 @RequestMapping("/api/orders")

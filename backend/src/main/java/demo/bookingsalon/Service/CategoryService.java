@@ -1,11 +1,11 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
-import demo.bookingsalon.Entity.Category;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Mapper.CategoryMapper;
-import demo.bookingsalon.Payload.DTO.CategoryDTO;
-import demo.bookingsalon.Payload.DTO.SalonDTO;
-import demo.bookingsalon.Repository.CategoryRepository;
+import demo.bookingsalon.entity.Category;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.mapper.CategoryMapper;
+import demo.bookingsalon.dto.CategoryDTO;
+import demo.bookingsalon.dto.SalonDTO;
+import demo.bookingsalon.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

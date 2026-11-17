@@ -1,11 +1,11 @@
 package demo.bookingsalon.ReviewTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.bookingsalon.Controller.ReviewController;
-import demo.bookingsalon.Payload.DTO.ReviewDTO;
-import demo.bookingsalon.Service.BffSessionService;
-import demo.bookingsalon.Service.ReviewService;
-import demo.bookingsalon.Utility.SecurityUtils;
+import demo.bookingsalon.controller.ReviewController;
+import demo.bookingsalon.dto.ReviewDTO;
+import demo.bookingsalon.service.BffSessionService;
+import demo.bookingsalon.service.ReviewService;
+import demo.bookingsalon.util.SecurityUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

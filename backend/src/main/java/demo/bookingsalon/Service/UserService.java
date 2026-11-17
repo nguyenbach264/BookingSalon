@@ -1,4 +1,4 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,31 +12,31 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import demo.bookingsalon.Entity.Booking;
-import demo.bookingsalon.Entity.Cart;
-import demo.bookingsalon.Entity.Order;
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Enum.RoleApp;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Mapper.BookingMapper;
-import demo.bookingsalon.Mapper.UserMapper;
-import demo.bookingsalon.Payload.Request.Business.CreateUserRequest;
-import demo.bookingsalon.Payload.Request.Business.UpdateUserRequest;
-import demo.bookingsalon.Payload.Response.Business.BookingResponse;
-import demo.bookingsalon.Payload.Response.Business.OrderResponse;
-import demo.bookingsalon.Payload.Response.Business.UserDetailSummaryResponse;
-import demo.bookingsalon.Payload.Response.Business.UserResponse;
-import demo.bookingsalon.Repository.BookingRepository;
-import demo.bookingsalon.Repository.OrderRepository;
-import demo.bookingsalon.Repository.UserRepository;
-import demo.bookingsalon.Service.Keycloak.RoleService;
+import demo.bookingsalon.entity.Booking;
+import demo.bookingsalon.entity.Cart;
+import demo.bookingsalon.entity.Order;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.enums.RoleApp;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.mapper.BookingMapper;
+import demo.bookingsalon.mapper.UserMapper;
+import demo.bookingsalon.dto.request.business.CreateUserRequest;
+import demo.bookingsalon.dto.request.business.UpdateUserRequest;
+import demo.bookingsalon.dto.response.business.BookingResponse;
+import demo.bookingsalon.dto.response.business.OrderResponse;
+import demo.bookingsalon.dto.response.business.UserDetailSummaryResponse;
+import demo.bookingsalon.dto.response.business.UserResponse;
+import demo.bookingsalon.repository.BookingRepository;
+import demo.bookingsalon.repository.OrderRepository;
+import demo.bookingsalon.repository.UserRepository;
+import demo.bookingsalon.service.keycloak.RoleService;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import demo.bookingsalon.Payload.Response.Common.PageResponse;
+import demo.bookingsalon.dto.response.common.PageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -62,8 +62,8 @@ public class UserService {
     private final OrderRepository orderRepository;
     private final BookingMapper bookingMapper;
     private final OrderService orderService;
-    private final demo.bookingsalon.Storage.MediaStorageService mediaStorageService;
-    private final demo.bookingsalon.Validation.MediaValidation mediaValidation;
+    private final demo.bookingsalon.storage.MediaStorageService mediaStorageService;
+    private final demo.bookingsalon.validation.MediaValidation mediaValidation;
 
     @Value("${keycloak.realm}")
     private String realm;
@@ -208,8 +208,8 @@ public class UserService {
 
         BigDecimal totalBookingSpent = bookingResponses.stream()
                 .filter(b -> b.getStatus() != null &&
-                        (b.getStatus() == demo.bookingsalon.Enum.BookingStatus.COMPLETED ||
-                         b.getStatus() == demo.bookingsalon.Enum.BookingStatus.CONFIRMED))
+                        (b.getStatus() == demo.bookingsalon.enums.BookingStatus.COMPLETED ||
+                         b.getStatus() == demo.bookingsalon.enums.BookingStatus.CONFIRMED))
                 .map(b -> b.getTotalAmount() != null ? b.getTotalAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -236,7 +236,7 @@ public class UserService {
                 .toList();
 
         BigDecimal totalOrderSpent = orderResponses.stream()
-                .filter(o -> o.getStatus() != null && o.getStatus() != demo.bookingsalon.Enum.OrderStatus.CANCELLED)
+                .filter(o -> o.getStatus() != null && o.getStatus() != demo.bookingsalon.enums.OrderStatus.CANCELLED)
                 .map(o -> o.getFinalAmount() != null ? o.getFinalAmount() :
                           (o.getTotalAmount() != null ? o.getTotalAmount() : BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

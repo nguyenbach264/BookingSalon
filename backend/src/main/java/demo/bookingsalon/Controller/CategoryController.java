@@ -1,8 +1,8 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Payload.DTO.CategoryDTO;
-import demo.bookingsalon.Payload.DTO.SalonDTO;
-import demo.bookingsalon.Service.CategoryService;
+import demo.bookingsalon.dto.CategoryDTO;
+import demo.bookingsalon.dto.SalonDTO;
+import demo.bookingsalon.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

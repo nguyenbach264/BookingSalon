@@ -1,7 +1,7 @@
-package demo.bookingsalon.Entity;
+package demo.bookingsalon.entity;
 
-import demo.bookingsalon.Enum.MediaOwnerType;
-import demo.bookingsalon.Enum.MediaStatus;
+import demo.bookingsalon.enums.MediaOwnerType;
+import demo.bookingsalon.enums.MediaStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

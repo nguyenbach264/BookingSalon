@@ -1,9 +1,9 @@
-package demo.bookingsalon.Mapper;
+package demo.bookingsalon.mapper;
 
-import demo.bookingsalon.Entity.Payment;
-import demo.bookingsalon.Entity.PaymentTransaction;
-import demo.bookingsalon.Payload.Response.Business.PaymentResponse;
-import demo.bookingsalon.Payload.Response.Business.PaymentTransactionResponse;
+import demo.bookingsalon.entity.Payment;
+import demo.bookingsalon.entity.PaymentTransaction;
+import demo.bookingsalon.dto.response.business.PaymentResponse;
+import demo.bookingsalon.dto.response.business.PaymentTransactionResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

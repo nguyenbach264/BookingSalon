@@ -1,4 +1,4 @@
-package demo.bookingsalon.Exception;
+package demo.bookingsalon.exception;
 
 public class PaymentException extends RuntimeException {
     public PaymentException(String message) {

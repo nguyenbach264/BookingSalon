@@ -1,8 +1,8 @@
-package demo.bookingsalon.Mapper;
+package demo.bookingsalon.mapper;
 
-import demo.bookingsalon.Entity.Review;
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Payload.DTO.ReviewDTO;
+import demo.bookingsalon.entity.Review;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.dto.ReviewDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

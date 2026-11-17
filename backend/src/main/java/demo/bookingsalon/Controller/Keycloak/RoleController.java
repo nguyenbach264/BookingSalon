@@ -1,7 +1,7 @@
-package demo.bookingsalon.Controller.Keycloak;
+package demo.bookingsalon.controller.keycloak;
 
-import demo.bookingsalon.Payload.Request.Keycloak.CreateRoleRequest;
-import demo.bookingsalon.Service.Keycloak.RoleService;
+import demo.bookingsalon.dto.request.keycloak.CreateRoleRequest;
+import demo.bookingsalon.service.keycloak.RoleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

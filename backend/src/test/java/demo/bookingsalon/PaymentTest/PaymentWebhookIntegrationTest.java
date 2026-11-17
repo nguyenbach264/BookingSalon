@@ -1,12 +1,12 @@
 package demo.bookingsalon.PaymentTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.bookingsalon.Configuration.VnPayConfig;
-import demo.bookingsalon.Controller.PaymentController;
-import demo.bookingsalon.Repository.OrderRepository;
-import demo.bookingsalon.Service.PaymentApplicationService;
-import demo.bookingsalon.Service.PaymentWebhookService;
-import demo.bookingsalon.Utility.VNPayUtil;
+import demo.bookingsalon.config.VnPayConfig;
+import demo.bookingsalon.controller.PaymentController;
+import demo.bookingsalon.repository.OrderRepository;
+import demo.bookingsalon.service.PaymentApplicationService;
+import demo.bookingsalon.service.PaymentWebhookService;
+import demo.bookingsalon.util.VNPayUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +51,7 @@ public class PaymentWebhookIntegrationTest {
     private OrderRepository orderRepository;
 
     @MockitoBean
-    private demo.bookingsalon.Configuration.WebSocketAuthInterceptor webSocketAuthInterceptor;
+    private demo.bookingsalon.config.WebSocketAuthInterceptor webSocketAuthInterceptor;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;

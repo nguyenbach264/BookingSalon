@@ -1,9 +1,9 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Entity.Stylist;
-import demo.bookingsalon.Entity.StylistService;
-import demo.bookingsalon.Repository.StylistRepository;
-import demo.bookingsalon.Repository.StylistServiceRepository;
+import demo.bookingsalon.entity.Stylist;
+import demo.bookingsalon.entity.StylistService;
+import demo.bookingsalon.repository.StylistRepository;
+import demo.bookingsalon.repository.StylistServiceRepository;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +22,10 @@ public class StylistController {
 
     private final StylistRepository stylistRepository;
     private final StylistServiceRepository stylistServiceRepository;
-    private final demo.bookingsalon.Repository.ReviewRepository reviewRepository;
-    private final demo.bookingsalon.Storage.MediaStorageService mediaStorageService;
-    private final demo.bookingsalon.Validation.MediaValidation mediaValidation;
-    private final demo.bookingsalon.Repository.UserRepository userRepository;
+    private final demo.bookingsalon.repository.ReviewRepository reviewRepository;
+    private final demo.bookingsalon.storage.MediaStorageService mediaStorageService;
+    private final demo.bookingsalon.validation.MediaValidation mediaValidation;
+    private final demo.bookingsalon.repository.UserRepository userRepository;
 
     @Data
     @Builder
@@ -123,7 +123,7 @@ public class StylistController {
             return ResponseEntity.badRequest().body(java.util.Map.of("message", "Thiếu trường active"));
         }
         Stylist s = stylistRepository.findById(id)
-                .orElseThrow(() -> new demo.bookingsalon.Exception.NotFoundException("Stylist không tồn tại"));
+                .orElseThrow(() -> new demo.bookingsalon.exception.NotFoundException("Stylist không tồn tại"));
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
 
         if (Boolean.TRUE.equals(active)) {
@@ -156,14 +156,14 @@ public class StylistController {
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         mediaValidation.validate(file);
         Stylist stylist = stylistRepository.findById(id)
-                .orElseThrow(() -> new demo.bookingsalon.Exception.NotFoundException("Stylist không tồn tại"));
+                .orElseThrow(() -> new demo.bookingsalon.exception.NotFoundException("Stylist không tồn tại"));
 
         var uploadResult = mediaStorageService.upload(file, "booking-salon/avatars/stylists/" + id);
         stylist.setAvatarUrl(uploadResult.secureUrl());
         stylistRepository.save(stylist);
 
         if (stylist.getKeycloakId() != null) {
-            demo.bookingsalon.Entity.User user = userRepository.findByKeycloakId(stylist.getKeycloakId());
+            demo.bookingsalon.entity.User user = userRepository.findByKeycloakId(stylist.getKeycloakId());
             if (user != null) {
                 user.setAvatarUrl(uploadResult.secureUrl());
                 userRepository.save(user);
@@ -218,13 +218,13 @@ public class StylistController {
         mediaValidation.validate(file);
 
         Stylist stylist = stylistRepository.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new demo.bookingsalon.Exception.NotFoundException("Stylist không tồn tại"));
+                .orElseThrow(() -> new demo.bookingsalon.exception.NotFoundException("Stylist không tồn tại"));
 
         var uploadResult = mediaStorageService.upload(file, "booking-salon/avatars/stylists/" + stylist.getId());
         stylist.setAvatarUrl(uploadResult.secureUrl());
         stylistRepository.save(stylist);
 
-        demo.bookingsalon.Entity.User user = userRepository.findByKeycloakId(keycloakId);
+        demo.bookingsalon.entity.User user = userRepository.findByKeycloakId(keycloakId);
         if (user != null) {
             user.setAvatarUrl(uploadResult.secureUrl());
             userRepository.save(user);

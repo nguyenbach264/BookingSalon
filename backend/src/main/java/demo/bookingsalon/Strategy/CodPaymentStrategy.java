@@ -1,11 +1,11 @@
-package demo.bookingsalon.Strategy;
+package demo.bookingsalon.strategy;
 
-import demo.bookingsalon.Entity.Payment;
-import demo.bookingsalon.Entity.PaymentTransaction;
-import demo.bookingsalon.Enum.PaymentMethod;
-import demo.bookingsalon.Enum.PaymentStatus;
-import demo.bookingsalon.Payload.Request.Business.CreatePaymentRequest;
-import demo.bookingsalon.Payload.Response.Business.PaymentResponse;
+import demo.bookingsalon.entity.Payment;
+import demo.bookingsalon.entity.PaymentTransaction;
+import demo.bookingsalon.enums.PaymentMethod;
+import demo.bookingsalon.enums.PaymentStatus;
+import demo.bookingsalon.dto.request.business.CreatePaymentRequest;
+import demo.bookingsalon.dto.response.business.PaymentResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

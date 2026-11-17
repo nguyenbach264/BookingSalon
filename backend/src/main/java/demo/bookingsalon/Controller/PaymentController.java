@@ -1,11 +1,11 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Configuration.VnPayConfig;
-import demo.bookingsalon.Payload.Request.Business.CreatePaymentRequest;
-import demo.bookingsalon.Payload.Response.Business.PaymentResponse;
-import demo.bookingsalon.Service.PaymentApplicationService;
-import demo.bookingsalon.Service.PaymentWebhookService;
-import demo.bookingsalon.Utility.VNPayUtil;
+import demo.bookingsalon.config.VnPayConfig;
+import demo.bookingsalon.dto.request.business.CreatePaymentRequest;
+import demo.bookingsalon.dto.response.business.PaymentResponse;
+import demo.bookingsalon.service.PaymentApplicationService;
+import demo.bookingsalon.service.PaymentWebhookService;
+import demo.bookingsalon.util.VNPayUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class PaymentController {
     private final PaymentApplicationService paymentService;
     private final PaymentWebhookService paymentWebhookService;
     private final VnPayConfig vnPayConfig;
-    private final demo.bookingsalon.Repository.OrderRepository orderRepository;
+    private final demo.bookingsalon.repository.OrderRepository orderRepository;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendBaseUrl;
@@ -40,9 +40,9 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPayments());
     }
 
-    @demo.bookingsalon.Security.RateLimit.RateLimit(
+    @demo.bookingsalon.security.ratelimit.RateLimit(
         keyPrefix = "payment",
-        type = demo.bookingsalon.Security.RateLimit.RateLimitType.IP_OR_USER,
+        type = demo.bookingsalon.security.ratelimit.RateLimitType.IP_OR_USER,
         capacity = 5,
         durationSeconds = 60,
         message = "Bạn đang gửi yêu cầu thanh toán quá nhanh. Vui lòng chờ 1 phút!"

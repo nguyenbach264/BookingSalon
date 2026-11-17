@@ -1,13 +1,13 @@
 package demo.bookingsalon.AuthTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.bookingsalon.Controller.AuthController;
-import demo.bookingsalon.Payload.Request.Business.LoginRequest;
-import demo.bookingsalon.Payload.Request.Business.SendOtpRequest;
-import demo.bookingsalon.Payload.Request.Business.VerifyOtpRequest;
-import demo.bookingsalon.Payload.Response.Business.AuthResponse;
-import demo.bookingsalon.Service.AuthService;
-import demo.bookingsalon.Service.BffSessionService;
+import demo.bookingsalon.controller.AuthController;
+import demo.bookingsalon.dto.request.business.LoginRequest;
+import demo.bookingsalon.dto.request.business.SendOtpRequest;
+import demo.bookingsalon.dto.request.business.VerifyOtpRequest;
+import demo.bookingsalon.dto.response.business.AuthResponse;
+import demo.bookingsalon.service.AuthService;
+import demo.bookingsalon.service.BffSessionService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

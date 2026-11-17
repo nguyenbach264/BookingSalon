@@ -1,6 +1,6 @@
 package demo.bookingsalon;
 
-import demo.bookingsalon.Utility.DotenvLoader;
+import demo.bookingsalon.util.DotenvLoader;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;

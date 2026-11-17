@@ -1,7 +1,7 @@
-package demo.bookingsalon.Factory;
+package demo.bookingsalon.factory;
 
-import demo.bookingsalon.Enum.PaymentMethod;
-import demo.bookingsalon.Strategy.PaymentStrategy;
+import demo.bookingsalon.enums.PaymentMethod;
+import demo.bookingsalon.strategy.PaymentStrategy;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

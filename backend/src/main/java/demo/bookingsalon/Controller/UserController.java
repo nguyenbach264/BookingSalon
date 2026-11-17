@@ -1,11 +1,11 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Payload.Request.Keycloak.ResetPasswordRequest;
-import demo.bookingsalon.Payload.Request.Business.UpdateUserRequest;
-import demo.bookingsalon.Payload.Response.Business.UserResponse;
-import demo.bookingsalon.Payload.Response.Common.PageResponse;
-import demo.bookingsalon.Service.Keycloak.RoleService;
-import demo.bookingsalon.Service.UserService;
+import demo.bookingsalon.dto.request.keycloak.ResetPasswordRequest;
+import demo.bookingsalon.dto.request.business.UpdateUserRequest;
+import demo.bookingsalon.dto.response.business.UserResponse;
+import demo.bookingsalon.dto.response.common.PageResponse;
+import demo.bookingsalon.service.keycloak.RoleService;
+import demo.bookingsalon.service.UserService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -94,7 +94,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/details")
-    public ResponseEntity<demo.bookingsalon.Payload.Response.Business.UserDetailSummaryResponse> getUserDetailSummary(@PathVariable UUID id) {
+    public ResponseEntity<demo.bookingsalon.dto.response.business.UserDetailSummaryResponse> getUserDetailSummary(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getUserDetailSummary(id));
     }
 
@@ -105,7 +105,7 @@ public class UserController {
 
     @GetMapping("/{id}/roles")
     public List<String> getRoles(@PathVariable UUID id) {
-        demo.bookingsalon.Entity.User user = userService.getUserEntityById(id);
+        demo.bookingsalon.entity.User user = userService.getUserEntityById(id);
         UUID keycloakId = (user != null && user.getKeycloakId() != null) ? user.getKeycloakId() : id;
         return roleService.getUserRealmRoles(keycloakId);
     }

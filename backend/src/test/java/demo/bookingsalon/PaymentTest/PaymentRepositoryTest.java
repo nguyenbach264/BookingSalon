@@ -1,10 +1,10 @@
 package demo.bookingsalon.PaymentTest;
 
-import demo.bookingsalon.Entity.*;
-import demo.bookingsalon.Enum.BookingStatus;
-import demo.bookingsalon.Enum.PaymentMethod;
-import demo.bookingsalon.Enum.PaymentStatus;
-import demo.bookingsalon.Repository.*;
+import demo.bookingsalon.entity.*;
+import demo.bookingsalon.enums.BookingStatus;
+import demo.bookingsalon.enums.PaymentMethod;
+import demo.bookingsalon.enums.PaymentStatus;
+import demo.bookingsalon.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

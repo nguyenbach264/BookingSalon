@@ -1,10 +1,10 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
-import demo.bookingsalon.Entity.Salon;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Mapper.SalonMapper;
-import demo.bookingsalon.Payload.DTO.SalonDTO;
-import demo.bookingsalon.Repository.SalonRepository;
+import demo.bookingsalon.entity.Salon;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.mapper.SalonMapper;
+import demo.bookingsalon.dto.SalonDTO;
+import demo.bookingsalon.repository.SalonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

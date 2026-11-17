@@ -1,4 +1,4 @@
-package demo.bookingsalon.Entity;
+package demo.bookingsalon.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;

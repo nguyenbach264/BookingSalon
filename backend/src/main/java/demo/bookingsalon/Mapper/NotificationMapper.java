@@ -1,7 +1,7 @@
-package demo.bookingsalon.Mapper;
+package demo.bookingsalon.mapper;
 
-import demo.bookingsalon.Entity.Notification;
-import demo.bookingsalon.Payload.DTO.NotificationDTO;
+import demo.bookingsalon.entity.Notification;
+import demo.bookingsalon.dto.NotificationDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

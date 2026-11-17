@@ -1,10 +1,10 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Enum.MediaOwnerType;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Repository.UserRepository;
-import demo.bookingsalon.Utility.SlugGenerator;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.enums.MediaOwnerType;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.repository.UserRepository;
+import demo.bookingsalon.util.SlugGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

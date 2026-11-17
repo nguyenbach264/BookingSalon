@@ -1,4 +1,4 @@
-package demo.bookingsalon.Security.RateLimit;
+package demo.bookingsalon.security.ratelimit;
 
 public enum RateLimitType {
     /**

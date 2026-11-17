@@ -1,15 +1,15 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
-import demo.bookingsalon.Entity.Media;
-import demo.bookingsalon.Enum.MediaOwnerType;
-import demo.bookingsalon.Enum.MediaStatus;
-import demo.bookingsalon.Payload.Response.Business.MediaResponse;
-import demo.bookingsalon.Payload.Response.Business.MediaUploadResponse;
-import demo.bookingsalon.Repository.MediaRepository;
-import demo.bookingsalon.Storage.MediaFolderResolver;
-import demo.bookingsalon.Storage.MediaStorageService;
-import demo.bookingsalon.Utility.SlugGenerator;
-import demo.bookingsalon.Validation.MediaValidation;
+import demo.bookingsalon.entity.Media;
+import demo.bookingsalon.enums.MediaOwnerType;
+import demo.bookingsalon.enums.MediaStatus;
+import demo.bookingsalon.dto.response.business.MediaResponse;
+import demo.bookingsalon.dto.response.business.MediaUploadResponse;
+import demo.bookingsalon.repository.MediaRepository;
+import demo.bookingsalon.storage.MediaFolderResolver;
+import demo.bookingsalon.storage.MediaStorageService;
+import demo.bookingsalon.util.SlugGenerator;
+import demo.bookingsalon.validation.MediaValidation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,4 +1,4 @@
-package demo.bookingsalon.Security.RateLimit;
+package demo.bookingsalon.security.ratelimit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

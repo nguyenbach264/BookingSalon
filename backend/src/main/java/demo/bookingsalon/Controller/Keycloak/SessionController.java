@@ -1,8 +1,8 @@
-package demo.bookingsalon.Controller.Keycloak;
+package demo.bookingsalon.controller.keycloak;
 
-import demo.bookingsalon.Payload.Response.Keycloak.SessionResponse;
-import demo.bookingsalon.Payload.Response.Keycloak.SessionSummaryResponse;
-import demo.bookingsalon.Service.Keycloak.SessionService;
+import demo.bookingsalon.dto.response.keycloak.SessionResponse;
+import demo.bookingsalon.dto.response.keycloak.SessionSummaryResponse;
+import demo.bookingsalon.service.keycloak.SessionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

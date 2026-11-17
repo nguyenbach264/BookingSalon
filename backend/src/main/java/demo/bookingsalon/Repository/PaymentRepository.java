@@ -1,7 +1,7 @@
-package demo.bookingsalon.Repository;
+package demo.bookingsalon.repository;
 
-import demo.bookingsalon.Entity.Payment;
-import demo.bookingsalon.Enum.PaymentStatus;
+import demo.bookingsalon.entity.Payment;
+import demo.bookingsalon.enums.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,7 +24,7 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
         FROM Payment p
         WHERE p.status = :status
             AND p.createdAt < :cutoffTime
-            AND p.paymentMethod <> demo.bookingsalon.Enum.PaymentMethod.COD
+            AND p.paymentMethod <> demo.bookingsalon.enums.PaymentMethod.COD
     """)
     Optional<List<Payment>> findByStatusAndCreatedBefore(
             @Param("status") PaymentStatus status,

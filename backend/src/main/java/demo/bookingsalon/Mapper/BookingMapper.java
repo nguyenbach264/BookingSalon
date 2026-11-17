@@ -1,9 +1,9 @@
-package demo.bookingsalon.Mapper;
+package demo.bookingsalon.mapper;
 
-import demo.bookingsalon.Entity.Booking;
-import demo.bookingsalon.Entity.BookingDetail;
-import demo.bookingsalon.Payload.DTO.BookingDTO;
-import demo.bookingsalon.Payload.Response.Business.BookingResponse;
+import demo.bookingsalon.entity.Booking;
+import demo.bookingsalon.entity.BookingDetail;
+import demo.bookingsalon.dto.BookingDTO;
+import demo.bookingsalon.dto.response.business.BookingResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -35,7 +35,7 @@ public interface BookingMapper {
     BookingResponse toBookingResponse(Booking booking);
 
     @Named("safeSalonId")
-    default UUID safeSalonId(demo.bookingsalon.Entity.Salon salon) {
+    default UUID safeSalonId(demo.bookingsalon.entity.Salon salon) {
         try {
             return salon != null ? salon.getId() : null;
         } catch (Exception e) {
@@ -44,7 +44,7 @@ public interface BookingMapper {
     }
 
     @Named("safeSalonName")
-    default String safeSalonName(demo.bookingsalon.Entity.Salon salon) {
+    default String safeSalonName(demo.bookingsalon.entity.Salon salon) {
         try {
             return salon != null ? salon.getSalonName() : "Chi nhánh";
         } catch (Exception e) {
@@ -53,7 +53,7 @@ public interface BookingMapper {
     }
 
     @Named("safeSalonAddress")
-    default String safeSalonAddress(demo.bookingsalon.Entity.Salon salon) {
+    default String safeSalonAddress(demo.bookingsalon.entity.Salon salon) {
         try {
             return salon != null ? salon.getAddress() : "—";
         } catch (Exception e) {
@@ -62,7 +62,7 @@ public interface BookingMapper {
     }
 
     @Named("safeUserId")
-    default UUID safeUserId(demo.bookingsalon.Entity.User user) {
+    default UUID safeUserId(demo.bookingsalon.entity.User user) {
         try {
             return user != null ? user.getId() : null;
         } catch (Exception e) {
@@ -71,7 +71,7 @@ public interface BookingMapper {
     }
 
     @Named("safeStylistId")
-    default UUID safeStylistId(demo.bookingsalon.Entity.Stylist stylist) {
+    default UUID safeStylistId(demo.bookingsalon.entity.Stylist stylist) {
         try {
             return stylist != null ? stylist.getId() : null;
         } catch (Exception e) {
@@ -80,7 +80,7 @@ public interface BookingMapper {
     }
 
     @Named("safeStylistName")
-    default String safeStylistName(demo.bookingsalon.Entity.Stylist stylist) {
+    default String safeStylistName(demo.bookingsalon.entity.Stylist stylist) {
         try {
             return stylist != null ? stylist.getFullName() : "Chuyên viên";
         } catch (Exception e) {

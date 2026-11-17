@@ -1,11 +1,11 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Mapper.SalonMapper;
-import demo.bookingsalon.Mapper.ServiceOfferingMapper;
-import demo.bookingsalon.Payload.DTO.PublicSystemSummaryDTO;
-import demo.bookingsalon.Payload.DTO.SalonDTO;
-import demo.bookingsalon.Payload.DTO.ServiceOfferingDTO;
-import demo.bookingsalon.Repository.*;
+import demo.bookingsalon.mapper.SalonMapper;
+import demo.bookingsalon.mapper.ServiceOfferingMapper;
+import demo.bookingsalon.dto.PublicSystemSummaryDTO;
+import demo.bookingsalon.dto.SalonDTO;
+import demo.bookingsalon.dto.ServiceOfferingDTO;
+import demo.bookingsalon.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;

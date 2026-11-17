@@ -1,7 +1,7 @@
 package demo.bookingsalon.SalonTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.bookingsalon.Payload.DTO.SalonDTO;
+import demo.bookingsalon.dto.SalonDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

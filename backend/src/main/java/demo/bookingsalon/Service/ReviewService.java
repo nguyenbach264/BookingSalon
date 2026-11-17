@@ -1,17 +1,17 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.bookingsalon.Entity.Product;
-import demo.bookingsalon.Entity.Review;
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Handler.NotificationWebSocketHandler;
-import demo.bookingsalon.Mapper.ReviewMapper;
-import demo.bookingsalon.Payload.DTO.ReviewDTO;
-import demo.bookingsalon.Repository.ProductRepository;
-import demo.bookingsalon.Repository.ReviewRepository;
-import demo.bookingsalon.Repository.UserRepository;
+import demo.bookingsalon.entity.Product;
+import demo.bookingsalon.entity.Review;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.handler.NotificationWebSocketHandler;
+import demo.bookingsalon.mapper.ReviewMapper;
+import demo.bookingsalon.dto.ReviewDTO;
+import demo.bookingsalon.repository.ProductRepository;
+import demo.bookingsalon.repository.ReviewRepository;
+import demo.bookingsalon.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,8 +28,8 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final demo.bookingsalon.Repository.BookingRepository bookingRepository;
-    private final demo.bookingsalon.Repository.StylistRepository stylistRepository;
+    private final demo.bookingsalon.repository.BookingRepository bookingRepository;
+    private final demo.bookingsalon.repository.StylistRepository stylistRepository;
     private final NotificationWebSocketHandler webSocketHandler;
     private final ObjectMapper objectMapper;
     private final ReviewMapper reviewMapper;
@@ -75,7 +75,7 @@ public class ReviewService {
         }
 
         if (reviewDTO.getBookingId() != null) {
-            demo.bookingsalon.Entity.Booking b = bookingRepository.findById(reviewDTO.getBookingId()).orElse(null);
+            demo.bookingsalon.entity.Booking b = bookingRepository.findById(reviewDTO.getBookingId()).orElse(null);
             if (b != null) {
                 // SECURITY CHECK: Chỉ chính khách hàng của booking này mới được đánh giá
                 if (b.getUser() != null && !b.getUser().getId().equals(effectiveUserId)) {
@@ -83,7 +83,7 @@ public class ReviewService {
                             "Bạn không có quyền đánh giá lịch hẹn của người khác!"
                     );
                 }
-                if (b.getStatus() != demo.bookingsalon.Enum.BookingStatus.COMPLETED) {
+                if (b.getStatus() != demo.bookingsalon.enums.BookingStatus.COMPLETED) {
                     throw new IllegalStateException("Chỉ có thể gửi đánh giá cho lịch hẹn đã hoàn thành dịch vụ!");
                 }
                 if (b.isReviewed()) {

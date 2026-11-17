@@ -1,8 +1,8 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Entity.Salon;
-import demo.bookingsalon.Payload.DTO.SalonDTO;
-import demo.bookingsalon.Service.SalonService;
+import demo.bookingsalon.entity.Salon;
+import demo.bookingsalon.dto.SalonDTO;
+import demo.bookingsalon.service.SalonService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;

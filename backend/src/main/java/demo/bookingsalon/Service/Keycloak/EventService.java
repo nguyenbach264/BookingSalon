@@ -1,8 +1,8 @@
-package demo.bookingsalon.Service.Keycloak;
+package demo.bookingsalon.service.keycloak;
 
-import demo.bookingsalon.Payload.Request.Keycloak.FilterEventRequest;
-import demo.bookingsalon.Payload.Response.Keycloak.AdminEventResponse;
-import demo.bookingsalon.Payload.Response.Keycloak.EventResponse;
+import demo.bookingsalon.dto.request.keycloak.FilterEventRequest;
+import demo.bookingsalon.dto.response.keycloak.AdminEventResponse;
+import demo.bookingsalon.dto.response.keycloak.EventResponse;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;

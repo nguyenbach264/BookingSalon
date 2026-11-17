@@ -1,4 +1,4 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
 import java.util.Map;
 
@@ -12,16 +12,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import demo.bookingsalon.Payload.Request.Business.ForgotPasswordRequest;
-import demo.bookingsalon.Payload.Request.Business.LoginRequest;
-import demo.bookingsalon.Payload.Request.Business.OAuth2TokenRequest;
-import demo.bookingsalon.Payload.Request.Business.RegisterRequest;
-import demo.bookingsalon.Payload.Request.Business.ResetPasswordWithOtpRequest;
-import demo.bookingsalon.Payload.Request.Business.SendOtpRequest;
-import demo.bookingsalon.Payload.Request.Business.VerifyOtpRequest;
-import demo.bookingsalon.Payload.Response.Business.AuthResponse;
-import demo.bookingsalon.Service.AuthService;
-import demo.bookingsalon.Service.BffSessionService;
+import demo.bookingsalon.dto.request.business.ForgotPasswordRequest;
+import demo.bookingsalon.dto.request.business.LoginRequest;
+import demo.bookingsalon.dto.request.business.OAuth2TokenRequest;
+import demo.bookingsalon.dto.request.business.RegisterRequest;
+import demo.bookingsalon.dto.request.business.ResetPasswordWithOtpRequest;
+import demo.bookingsalon.dto.request.business.SendOtpRequest;
+import demo.bookingsalon.dto.request.business.VerifyOtpRequest;
+import demo.bookingsalon.dto.response.business.AuthResponse;
+import demo.bookingsalon.service.AuthService;
+import demo.bookingsalon.service.BffSessionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;

@@ -1,12 +1,12 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
-import demo.bookingsalon.Entity.Payment;
-import demo.bookingsalon.Entity.PaymentTransaction;
-import demo.bookingsalon.Enum.PaymentMethod;
-import demo.bookingsalon.Enum.PaymentStatus;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Repository.PaymentRepository;
-import demo.bookingsalon.Repository.PaymentTransactionRepository;
+import demo.bookingsalon.entity.Payment;
+import demo.bookingsalon.entity.PaymentTransaction;
+import demo.bookingsalon.enums.PaymentMethod;
+import demo.bookingsalon.enums.PaymentStatus;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.repository.PaymentRepository;
+import demo.bookingsalon.repository.PaymentTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

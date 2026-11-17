@@ -1,9 +1,9 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
-import demo.bookingsalon.Entity.Product;
-import demo.bookingsalon.Enum.MediaOwnerType;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Repository.ProductRepository;
+import demo.bookingsalon.entity.Product;
+import demo.bookingsalon.enums.MediaOwnerType;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

@@ -1,8 +1,8 @@
-package demo.bookingsalon.Storage;
+package demo.bookingsalon.storage;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import demo.bookingsalon.Payload.Response.Business.MediaUploadResponse;
+import demo.bookingsalon.dto.response.business.MediaUploadResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

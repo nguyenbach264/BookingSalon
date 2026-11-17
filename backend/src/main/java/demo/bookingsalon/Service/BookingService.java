@@ -1,18 +1,18 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
-import demo.bookingsalon.Entity.*;
-import demo.bookingsalon.Enum.BookingStatus;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Mapper.BookingMapper;
-import demo.bookingsalon.Mapper.SalonMapper;
-import demo.bookingsalon.Mapper.UserMapper;
-import demo.bookingsalon.Payload.DTO.SalonDTO;
-import demo.bookingsalon.Payload.Request.Business.CreateBookingRequest;
-import demo.bookingsalon.Payload.Response.Business.BookingResponse;
-import demo.bookingsalon.Payload.Response.Business.BookingStatisticsResponse;
-import demo.bookingsalon.Payload.Response.Common.PageResponse;
-import demo.bookingsalon.Publisher.BookingEventPublisher;
-import demo.bookingsalon.Repository.*;
+import demo.bookingsalon.entity.*;
+import demo.bookingsalon.enums.BookingStatus;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.mapper.BookingMapper;
+import demo.bookingsalon.mapper.SalonMapper;
+import demo.bookingsalon.mapper.UserMapper;
+import demo.bookingsalon.dto.SalonDTO;
+import demo.bookingsalon.dto.request.business.CreateBookingRequest;
+import demo.bookingsalon.dto.response.business.BookingResponse;
+import demo.bookingsalon.dto.response.business.BookingStatisticsResponse;
+import demo.bookingsalon.dto.response.common.PageResponse;
+import demo.bookingsalon.publisher.BookingEventPublisher;
+import demo.bookingsalon.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -52,7 +52,7 @@ public class BookingService {
     private final UserVoucherRepository userVoucherRepository;
     private final VoucherService voucherService;
     private final NotificationService notificationService;
-    private final demo.bookingsalon.Handler.NotificationWebSocketHandler notificationWebSocketHandler;
+    private final demo.bookingsalon.handler.NotificationWebSocketHandler notificationWebSocketHandler;
 
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<BookingResponse> getBookings() {
@@ -234,11 +234,11 @@ public class BookingService {
             if (voucherOpt.isPresent()) {
                 Voucher voucher = voucherOpt.get();
                 // Sử dụng voucherService để kiểm tra toàn diện: isActive, hạn dùng, minOrderAmount, usageLimitTotal
-                demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest applyReq = demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest.builder()
+                demo.bookingsalon.dto.request.business.ApplyVoucherRequest applyReq = demo.bookingsalon.dto.request.business.ApplyVoucherRequest.builder()
                         .voucherCode(code)
                         .orderAmount(totalPrice)
                         .build();
-                demo.bookingsalon.Payload.Response.Business.ApplyVoucherResponse validation = voucherService.validateAndCalculate(applyReq);
+                demo.bookingsalon.dto.response.business.ApplyVoucherResponse validation = voucherService.validateAndCalculate(applyReq);
 
                 if (!validation.isValid()) {
                     throw new Exception("Voucher không thể áp dụng: " + validation.getMessage());
@@ -313,17 +313,17 @@ public class BookingService {
         booking.setBookingDetails(bookingDetails);
 
         // Tạo bản ghi Payment giả lập
-        demo.bookingsalon.Enum.PaymentMethod methodEnum = demo.bookingsalon.Enum.PaymentMethod.COD;
+        demo.bookingsalon.enums.PaymentMethod methodEnum = demo.bookingsalon.enums.PaymentMethod.COD;
         if ("BANK_TRANSFER".equals(paymentMethodStr)) {
-            methodEnum = demo.bookingsalon.Enum.PaymentMethod.BANK_TRANSFER;
+            methodEnum = demo.bookingsalon.enums.PaymentMethod.BANK_TRANSFER;
         } else if ("VNPAY".equals(paymentMethodStr)) {
-            methodEnum = demo.bookingsalon.Enum.PaymentMethod.VNPAY;
+            methodEnum = demo.bookingsalon.enums.PaymentMethod.VNPAY;
         }
 
         Payment payment = Payment.builder()
                 .paymentCode("PAY-" + UUID.randomUUID().toString().replace("-","").substring(0, 10).toUpperCase())
                 .amount(finalTotal)
-                .status("PAID".equals(paymentStatusStr) ? demo.bookingsalon.Enum.PaymentStatus.SUCCESS : demo.bookingsalon.Enum.PaymentStatus.PENDING)
+                .status("PAID".equals(paymentStatusStr) ? demo.bookingsalon.enums.PaymentStatus.SUCCESS : demo.bookingsalon.enums.PaymentStatus.PENDING)
                 .paymentMethod(methodEnum)
                 .user(user)
                 .booking(booking)

@@ -1,4 +1,4 @@
-package demo.bookingsalon.Exception;
+package demo.bookingsalon.exception;
 
 public class InvalidClientException extends RuntimeException {
     public InvalidClientException(String message) {

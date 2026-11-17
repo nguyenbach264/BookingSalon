@@ -1,21 +1,21 @@
 package demo.bookingsalon.AdminShopTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.bookingsalon.Controller.AdminShopController;
-import demo.bookingsalon.Entity.Order;
-import demo.bookingsalon.Entity.Product;
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Enum.OrderStatus;
-import demo.bookingsalon.Enum.PaymentStatus;
-import demo.bookingsalon.Handler.NotificationWebSocketHandler;
-import demo.bookingsalon.Payload.Response.Business.OrderResponse;
-import demo.bookingsalon.Repository.OrderDetailRepository;
-import demo.bookingsalon.Repository.OrderRepository;
-import demo.bookingsalon.Repository.ProductCategoryRepository;
-import demo.bookingsalon.Repository.ProductRepository;
-import demo.bookingsalon.Service.NotificationService;
-import demo.bookingsalon.Service.OrderService;
-import demo.bookingsalon.Service.ProductService;
+import demo.bookingsalon.controller.AdminShopController;
+import demo.bookingsalon.entity.Order;
+import demo.bookingsalon.entity.Product;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.enums.OrderStatus;
+import demo.bookingsalon.enums.PaymentStatus;
+import demo.bookingsalon.handler.NotificationWebSocketHandler;
+import demo.bookingsalon.dto.response.business.OrderResponse;
+import demo.bookingsalon.repository.OrderDetailRepository;
+import demo.bookingsalon.repository.OrderRepository;
+import demo.bookingsalon.repository.ProductCategoryRepository;
+import demo.bookingsalon.repository.ProductRepository;
+import demo.bookingsalon.service.NotificationService;
+import demo.bookingsalon.service.OrderService;
+import demo.bookingsalon.service.ProductService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +65,7 @@ public class AdminShopIntegrationTest {
     @MockitoBean
     private NotificationWebSocketHandler notificationWebSocketHandler;
     @MockitoBean
-    private demo.bookingsalon.Configuration.WebSocketAuthInterceptor webSocketAuthInterceptor;
+    private demo.bookingsalon.config.WebSocketAuthInterceptor webSocketAuthInterceptor;
     @MockitoBean
     private JwtDecoder jwtDecoder;
     @MockitoBean

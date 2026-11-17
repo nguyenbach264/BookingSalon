@@ -1,7 +1,7 @@
-package demo.bookingsalon.Entity;
+package demo.bookingsalon.entity;
 
-import demo.bookingsalon.Enum.PaymentMethod;
-import demo.bookingsalon.Enum.PaymentStatus;
+import demo.bookingsalon.enums.PaymentMethod;
+import demo.bookingsalon.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

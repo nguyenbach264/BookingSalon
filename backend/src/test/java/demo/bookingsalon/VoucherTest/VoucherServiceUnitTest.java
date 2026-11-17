@@ -1,15 +1,15 @@
 package demo.bookingsalon.VoucherTest;
 
-import demo.bookingsalon.Entity.Voucher;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Payload.DTO.VoucherDTO;
-import demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest;
-import demo.bookingsalon.Payload.Request.Business.CreateVoucherRequest;
-import demo.bookingsalon.Payload.Response.Business.ApplyVoucherResponse;
-import demo.bookingsalon.Repository.UserRepository;
-import demo.bookingsalon.Repository.UserVoucherRepository;
-import demo.bookingsalon.Repository.VoucherRepository;
-import demo.bookingsalon.Service.VoucherService;
+import demo.bookingsalon.entity.Voucher;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.dto.VoucherDTO;
+import demo.bookingsalon.dto.request.business.ApplyVoucherRequest;
+import demo.bookingsalon.dto.request.business.CreateVoucherRequest;
+import demo.bookingsalon.dto.response.business.ApplyVoucherResponse;
+import demo.bookingsalon.repository.UserRepository;
+import demo.bookingsalon.repository.UserVoucherRepository;
+import demo.bookingsalon.repository.VoucherRepository;
+import demo.bookingsalon.service.VoucherService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,14 +1,14 @@
 package demo.bookingsalon.NotificationTest;
 
-import demo.bookingsalon.Entity.Notification;
-import demo.bookingsalon.Handler.NotificationWebSocketHandler;
-import demo.bookingsalon.Mapper.BookingMapper;
-import demo.bookingsalon.Mapper.NotificationMapper;
-import demo.bookingsalon.Payload.DTO.NotificationDTO;
-import demo.bookingsalon.Repository.BookingRepository;
-import demo.bookingsalon.Repository.NotificationRepository;
-import demo.bookingsalon.Repository.OrderRepository;
-import demo.bookingsalon.Service.NotificationService;
+import demo.bookingsalon.entity.Notification;
+import demo.bookingsalon.handler.NotificationWebSocketHandler;
+import demo.bookingsalon.mapper.BookingMapper;
+import demo.bookingsalon.mapper.NotificationMapper;
+import demo.bookingsalon.dto.NotificationDTO;
+import demo.bookingsalon.repository.BookingRepository;
+import demo.bookingsalon.repository.NotificationRepository;
+import demo.bookingsalon.repository.OrderRepository;
+import demo.bookingsalon.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

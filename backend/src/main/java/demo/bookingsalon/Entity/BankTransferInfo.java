@@ -1,4 +1,4 @@
-package demo.bookingsalon.Entity;
+package demo.bookingsalon.entity;
 
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;

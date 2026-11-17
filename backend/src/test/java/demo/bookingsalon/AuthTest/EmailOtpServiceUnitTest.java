@@ -1,6 +1,6 @@
 package demo.bookingsalon.AuthTest;
 
-import demo.bookingsalon.Service.EmailOtpService;
+import demo.bookingsalon.service.EmailOtpService;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;

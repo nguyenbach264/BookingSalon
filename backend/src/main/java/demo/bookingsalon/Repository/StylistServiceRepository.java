@@ -1,4 +1,4 @@
-package demo.bookingsalon.Repository;
+package demo.bookingsalon.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import demo.bookingsalon.Entity.StylistService;
+import demo.bookingsalon.entity.StylistService;
 
 public interface StylistServiceRepository extends JpaRepository<StylistService, UUID> {
     List<StylistService> findByStylistId(UUID stylistId);

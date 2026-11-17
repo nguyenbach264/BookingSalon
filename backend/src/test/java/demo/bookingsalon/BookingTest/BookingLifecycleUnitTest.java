@@ -1,14 +1,14 @@
 package demo.bookingsalon.BookingTest;
 
-import demo.bookingsalon.Entity.Booking;
-import demo.bookingsalon.Entity.Stylist;
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Enum.BookingStatus;
-import demo.bookingsalon.Handler.NotificationWebSocketHandler;
-import demo.bookingsalon.Publisher.BookingEventPublisher;
-import demo.bookingsalon.Repository.BookingRepository;
-import demo.bookingsalon.Service.BookingService;
-import demo.bookingsalon.Service.NotificationService;
+import demo.bookingsalon.entity.Booking;
+import demo.bookingsalon.entity.Stylist;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.enums.BookingStatus;
+import demo.bookingsalon.handler.NotificationWebSocketHandler;
+import demo.bookingsalon.publisher.BookingEventPublisher;
+import demo.bookingsalon.repository.BookingRepository;
+import demo.bookingsalon.service.BookingService;
+import demo.bookingsalon.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

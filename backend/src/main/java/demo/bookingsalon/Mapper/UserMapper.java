@@ -1,9 +1,9 @@
-package demo.bookingsalon.Mapper;
+package demo.bookingsalon.mapper;
 
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Payload.DTO.UserDTO;
-import demo.bookingsalon.Payload.Request.Business.CreateUserRequest;
-import demo.bookingsalon.Payload.Response.Business.UserResponse;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.dto.UserDTO;
+import demo.bookingsalon.dto.request.business.CreateUserRequest;
+import demo.bookingsalon.dto.response.business.UserResponse;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.mapstruct.Mapper;
 

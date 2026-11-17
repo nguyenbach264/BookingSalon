@@ -1,6 +1,6 @@
-package demo.bookingsalon.Mapper;
+package demo.bookingsalon.mapper;
 
-import demo.bookingsalon.Payload.Response.Keycloak.ClientResponse;
+import demo.bookingsalon.dto.response.keycloak.ClientResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.mapstruct.Mapper;
 

@@ -1,15 +1,15 @@
 package demo.bookingsalon.SalonTest;
 
-import demo.bookingsalon.Controller.AdminStylistController;
-import demo.bookingsalon.Entity.Salon;
-import demo.bookingsalon.Entity.Stylist;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Payload.Admin.AdminStylistResponse;
-import demo.bookingsalon.Payload.DTO.SalonDTO;
-import demo.bookingsalon.Repository.SalonRepository;
-import demo.bookingsalon.Repository.StylistRepository;
-import demo.bookingsalon.Service.AdminStylistService;
-import demo.bookingsalon.Service.SalonService;
+import demo.bookingsalon.controller.AdminStylistController;
+import demo.bookingsalon.entity.Salon;
+import demo.bookingsalon.entity.Stylist;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.dto.admin.AdminStylistResponse;
+import demo.bookingsalon.dto.SalonDTO;
+import demo.bookingsalon.repository.SalonRepository;
+import demo.bookingsalon.repository.StylistRepository;
+import demo.bookingsalon.service.AdminStylistService;
+import demo.bookingsalon.service.SalonService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

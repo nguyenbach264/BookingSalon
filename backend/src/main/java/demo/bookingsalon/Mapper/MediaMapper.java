@@ -1,7 +1,7 @@
-package demo.bookingsalon.Mapper;
+package demo.bookingsalon.mapper;
 
-import demo.bookingsalon.Entity.Media;
-import demo.bookingsalon.Payload.Response.Business.MediaResponse;
+import demo.bookingsalon.entity.Media;
+import demo.bookingsalon.dto.response.business.MediaResponse;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

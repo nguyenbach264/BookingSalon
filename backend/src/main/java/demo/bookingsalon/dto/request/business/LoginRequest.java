@@ -1,0 +1,16 @@
+package demo.bookingsalon.dto.request.business;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class LoginRequest {
+
+    @NotBlank(message = "Username mustn't be blank!")
+    private String username;
+
+    @NotBlank(message = "Password mustn't be blank!")
+    private String password;
+
+    private Boolean rememberMe = false;
+}

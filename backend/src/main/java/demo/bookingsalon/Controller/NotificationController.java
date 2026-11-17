@@ -1,8 +1,8 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Entity.Notification;
-import demo.bookingsalon.Payload.Request.Business.CreateNotificationRequest;
-import demo.bookingsalon.Service.NotificationService;
+import demo.bookingsalon.entity.Notification;
+import demo.bookingsalon.dto.request.business.CreateNotificationRequest;
+import demo.bookingsalon.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

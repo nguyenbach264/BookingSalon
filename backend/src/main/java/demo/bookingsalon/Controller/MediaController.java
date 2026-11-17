@@ -1,8 +1,8 @@
-package demo.bookingsalon.Controller;
+package demo.bookingsalon.controller;
 
-import demo.bookingsalon.Enum.MediaOwnerType;
-import demo.bookingsalon.Payload.Response.Business.MediaResponse;
-import demo.bookingsalon.Service.MediaApplicationService;
+import demo.bookingsalon.enums.MediaOwnerType;
+import demo.bookingsalon.dto.response.business.MediaResponse;
+import demo.bookingsalon.service.MediaApplicationService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,9 +22,9 @@ public class MediaController {
     private final MediaApplicationService mediaApplicationService;
 
     // UPLOAD ONE
-    @demo.bookingsalon.Security.RateLimit.RateLimit(
+    @demo.bookingsalon.security.ratelimit.RateLimit(
         keyPrefix = "upload",
-        type = demo.bookingsalon.Security.RateLimit.RateLimitType.USER,
+        type = demo.bookingsalon.security.ratelimit.RateLimitType.USER,
         capacity = 10,
         durationSeconds = 60,
         message = "Bạn đã tải lên quá nhiều tệp tin. Vui lòng chờ 1 phút!"

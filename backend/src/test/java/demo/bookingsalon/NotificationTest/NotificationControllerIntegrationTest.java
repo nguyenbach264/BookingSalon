@@ -1,9 +1,9 @@
 package demo.bookingsalon.NotificationTest;
 
-import demo.bookingsalon.Controller.NotificationController;
-import demo.bookingsalon.Payload.DTO.NotificationDTO;
-import demo.bookingsalon.Service.BffSessionService;
-import demo.bookingsalon.Service.NotificationService;
+import demo.bookingsalon.controller.NotificationController;
+import demo.bookingsalon.dto.NotificationDTO;
+import demo.bookingsalon.service.BffSessionService;
+import demo.bookingsalon.service.NotificationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

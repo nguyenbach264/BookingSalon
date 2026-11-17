@@ -1,6 +1,6 @@
-package demo.bookingsalon.Storage;
+package demo.bookingsalon.storage;
 
-import demo.bookingsalon.Enum.MediaOwnerType;
+import demo.bookingsalon.enums.MediaOwnerType;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;

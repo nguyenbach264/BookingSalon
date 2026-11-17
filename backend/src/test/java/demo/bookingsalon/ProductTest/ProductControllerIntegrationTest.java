@@ -1,10 +1,10 @@
 package demo.bookingsalon.ProductTest;
 
-import demo.bookingsalon.Controller.ProductController;
-import demo.bookingsalon.Payload.DTO.ProductCategoryDTO;
-import demo.bookingsalon.Payload.DTO.ProductDTO;
-import demo.bookingsalon.Service.BffSessionService;
-import demo.bookingsalon.Service.ProductService;
+import demo.bookingsalon.controller.ProductController;
+import demo.bookingsalon.dto.ProductCategoryDTO;
+import demo.bookingsalon.dto.ProductDTO;
+import demo.bookingsalon.service.BffSessionService;
+import demo.bookingsalon.service.ProductService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,25 +1,25 @@
-package demo.bookingsalon.Service;
+package demo.bookingsalon.service;
 
-import demo.bookingsalon.Configuration.VnPayConfig;
-import demo.bookingsalon.Utility.VnPaySignatureUtil;
-import demo.bookingsalon.Entity.Order;
-import demo.bookingsalon.Entity.OrderDetail;
-import demo.bookingsalon.Entity.Product;
-import demo.bookingsalon.Entity.User;
-import demo.bookingsalon.Enum.OrderStatus;
-import demo.bookingsalon.Enum.PaymentMethod;
-import demo.bookingsalon.Enum.PaymentStatus;
-import demo.bookingsalon.Exception.NotFoundException;
-import demo.bookingsalon.Exception.PaymentException;
-import demo.bookingsalon.Handler.NotificationWebSocketHandler;
-import demo.bookingsalon.Payload.Request.Business.CreateOrderRequest;
-import demo.bookingsalon.Payload.Response.Business.OrderResponse;
-import demo.bookingsalon.Repository.OrderDetailRepository;
-import demo.bookingsalon.Repository.OrderRepository;
-import demo.bookingsalon.Repository.ProductRepository;
-import demo.bookingsalon.Repository.UserRepository;
-import demo.bookingsalon.Repository.VoucherRepository;
-import demo.bookingsalon.Utility.IdempotencyService;
+import demo.bookingsalon.config.VnPayConfig;
+import demo.bookingsalon.util.VnPaySignatureUtil;
+import demo.bookingsalon.entity.Order;
+import demo.bookingsalon.entity.OrderDetail;
+import demo.bookingsalon.entity.Product;
+import demo.bookingsalon.entity.User;
+import demo.bookingsalon.enums.OrderStatus;
+import demo.bookingsalon.enums.PaymentMethod;
+import demo.bookingsalon.enums.PaymentStatus;
+import demo.bookingsalon.exception.NotFoundException;
+import demo.bookingsalon.exception.PaymentException;
+import demo.bookingsalon.handler.NotificationWebSocketHandler;
+import demo.bookingsalon.dto.request.business.CreateOrderRequest;
+import demo.bookingsalon.dto.response.business.OrderResponse;
+import demo.bookingsalon.repository.OrderDetailRepository;
+import demo.bookingsalon.repository.OrderRepository;
+import demo.bookingsalon.repository.ProductRepository;
+import demo.bookingsalon.repository.UserRepository;
+import demo.bookingsalon.repository.VoucherRepository;
+import demo.bookingsalon.service.idempotency.IdempotencyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -153,11 +153,11 @@ public class OrderService {
         if (request.getVoucherCode() != null && !request.getVoucherCode().trim().isBlank()) {
             String vCode = request.getVoucherCode().trim().toUpperCase();
             try {
-                demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest applyReq = demo.bookingsalon.Payload.Request.Business.ApplyVoucherRequest.builder()
+                demo.bookingsalon.dto.request.business.ApplyVoucherRequest applyReq = demo.bookingsalon.dto.request.business.ApplyVoucherRequest.builder()
                         .voucherCode(vCode)
                         .orderAmount(totalAmount)
                         .build();
-                demo.bookingsalon.Payload.Response.Business.ApplyVoucherResponse vResp = voucherService.validateAndCalculate(applyReq);
+                demo.bookingsalon.dto.response.business.ApplyVoucherResponse vResp = voucherService.validateAndCalculate(applyReq);
                 if (vResp.isValid()) {
                     discountAmount = vResp.getDiscountAmount();
                     voucherRepository.findByVoucherCodeAndIsDeletedFalse(vResp.getVoucherCode())

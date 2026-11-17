@@ -1,9 +1,9 @@
-package demo.bookingsalon.Controller.Keycloak;
+package demo.bookingsalon.controller.keycloak;
 
-import demo.bookingsalon.Payload.Request.Keycloak.FilterEventRequest;
-import demo.bookingsalon.Payload.Response.Keycloak.AdminEventResponse;
-import demo.bookingsalon.Payload.Response.Keycloak.EventResponse;
-import demo.bookingsalon.Service.Keycloak.EventService;
+import demo.bookingsalon.dto.request.keycloak.FilterEventRequest;
+import demo.bookingsalon.dto.response.keycloak.AdminEventResponse;
+import demo.bookingsalon.dto.response.keycloak.EventResponse;
+import demo.bookingsalon.service.keycloak.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

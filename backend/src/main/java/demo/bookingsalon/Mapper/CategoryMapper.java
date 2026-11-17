@@ -1,7 +1,7 @@
-package demo.bookingsalon.Mapper;
+package demo.bookingsalon.mapper;
 
-import demo.bookingsalon.Entity.Category;
-import demo.bookingsalon.Payload.DTO.CategoryDTO;
+import demo.bookingsalon.entity.Category;
+import demo.bookingsalon.dto.CategoryDTO;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

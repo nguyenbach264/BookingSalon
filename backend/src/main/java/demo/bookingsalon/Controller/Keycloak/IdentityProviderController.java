@@ -1,11 +1,11 @@
-package demo.bookingsalon.Controller.Keycloak;
+package demo.bookingsalon.controller.keycloak;
 
-import demo.bookingsalon.Payload.Request.Keycloak.CreateIdentityProviderMapperRequest;
-import demo.bookingsalon.Payload.Request.Keycloak.CreateIdentityProviderRequest;
-import demo.bookingsalon.Payload.Request.Keycloak.UpdateIdentityProviderRequest;
-import demo.bookingsalon.Payload.Response.Keycloak.IdentityProviderMapperResponse;
-import demo.bookingsalon.Payload.Response.Keycloak.IdentityProviderResponse;
-import demo.bookingsalon.Service.Keycloak.IdentityProviderService;
+import demo.bookingsalon.dto.request.keycloak.CreateIdentityProviderMapperRequest;
+import demo.bookingsalon.dto.request.keycloak.CreateIdentityProviderRequest;
+import demo.bookingsalon.dto.request.keycloak.UpdateIdentityProviderRequest;
+import demo.bookingsalon.dto.response.keycloak.IdentityProviderMapperResponse;
+import demo.bookingsalon.dto.response.keycloak.IdentityProviderResponse;
+import demo.bookingsalon.service.keycloak.IdentityProviderService;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;

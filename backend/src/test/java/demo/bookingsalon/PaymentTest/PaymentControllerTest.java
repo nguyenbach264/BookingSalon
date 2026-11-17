@@ -1,12 +1,12 @@
 package demo.bookingsalon.PaymentTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import demo.bookingsalon.Controller.PaymentController;
-import demo.bookingsalon.Enum.PaymentMethod;
-import demo.bookingsalon.Enum.PaymentStatus;
-import demo.bookingsalon.Payload.Request.Business.CreatePaymentRequest;
-import demo.bookingsalon.Payload.Response.Business.PaymentResponse;
-import demo.bookingsalon.Service.PaymentApplicationService;
+import demo.bookingsalon.controller.PaymentController;
+import demo.bookingsalon.enums.PaymentMethod;
+import demo.bookingsalon.enums.PaymentStatus;
+import demo.bookingsalon.dto.request.business.CreatePaymentRequest;
+import demo.bookingsalon.dto.response.business.PaymentResponse;
+import demo.bookingsalon.service.PaymentApplicationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,13 +40,13 @@ public class PaymentControllerTest {
     private PaymentApplicationService paymentApplicationService;
 
     @MockitoBean
-    private demo.bookingsalon.Service.PaymentWebhookService paymentWebhookService;
+    private demo.bookingsalon.service.PaymentWebhookService paymentWebhookService;
 
     @MockitoBean
-    private demo.bookingsalon.Configuration.VnPayConfig vnPayConfig;
+    private demo.bookingsalon.config.VnPayConfig vnPayConfig;
 
     @MockitoBean
-    private demo.bookingsalon.Repository.OrderRepository orderRepository;
+    private demo.bookingsalon.repository.OrderRepository orderRepository;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;

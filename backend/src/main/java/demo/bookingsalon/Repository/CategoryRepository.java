@@ -1,6 +1,6 @@
-package demo.bookingsalon.Repository;
+package demo.bookingsalon.repository;
 
-import demo.bookingsalon.Entity.Category;
+import demo.bookingsalon.entity.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;

@@ -1,4 +1,4 @@
-package demo.bookingsalon.Handler;
+package demo.bookingsalon.handler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,7 +1,7 @@
-package demo.bookingsalon.Listener;
+package demo.bookingsalon.listener;
 
-import demo.bookingsalon.Event.BookingCancelledEvent;
-import demo.bookingsalon.Event.BookingCreatedEvent;
+import demo.bookingsalon.event.BookingCancelledEvent;
+import demo.bookingsalon.event.BookingCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;

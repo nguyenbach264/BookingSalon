@@ -1,8 +1,8 @@
-package demo.bookingsalon.Service.Keycloak;
+package demo.bookingsalon.service.keycloak;
 
-import demo.bookingsalon.Payload.Request.Keycloak.OtpPolicyRequest;
-import demo.bookingsalon.Payload.Response.Keycloak.CredentialResponse;
-import demo.bookingsalon.Payload.Response.Keycloak.OtpStatusResponse;
+import demo.bookingsalon.dto.request.keycloak.OtpPolicyRequest;
+import demo.bookingsalon.dto.response.keycloak.CredentialResponse;
+import demo.bookingsalon.dto.response.keycloak.OtpStatusResponse;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
