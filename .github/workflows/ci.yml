@@ -3,12 +3,14 @@ name: BookingSalon CI/CD Pipeline
 on:
   push:
     branches:
+      - main
       - master
       - demo-app
     tags:
       - 'v*.*.*'
   pull_request:
     branches:
+      - main
       - master
       - demo-app
   workflow_dispatch:
@@ -162,12 +164,12 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────
   # 4. CD DEPLOYMENT: Tự động deploy lên VPS Azure qua SSH
-  # Chỉ thực hiện khi merge vào master hoặc demo-app
+  # Chỉ thực hiện khi merge vào main, master hoặc demo-app
   # ─────────────────────────────────────────────────────────────
   deploy-production:
     name: Deploy to Production VPS
     needs: [docker-build-push]
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo-app')
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo-app')
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
